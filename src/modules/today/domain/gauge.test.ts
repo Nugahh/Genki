@@ -15,8 +15,9 @@ describe('expectedProgress', () => {
 describe('paceColor', () => {
   const GOAL = 2500;
 
-  test('is green before 7 h, whatever the progress', () => {
+  test('is green until 7 h, whatever the progress', () => {
     expect(paceColor(0, GOAL, 6.9)).toBe('green');
+    expect(paceColor(0, GOAL, 7)).toBe('green');
   });
 
   test.each<[number, GaugeColor]>([

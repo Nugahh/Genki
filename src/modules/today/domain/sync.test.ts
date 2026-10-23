@@ -6,6 +6,7 @@ test.each<[SyncMeta, boolean, SyncStatus]>([
   [{ hasPendingWrites: true, fromCache: false }, false, 'pending'],
   [{ hasPendingWrites: false, fromCache: true }, false, 'offline'],
   [{ hasPendingWrites: false, fromCache: false }, true, 'error'],
+  [{ hasPendingWrites: true, fromCache: true }, true, 'error'], // a refused write outranks waiting ones
 ])('%o with failed=%s is %s', (meta, failed, status) => {
   expect(syncStatus(meta, failed)).toBe(status);
 });
