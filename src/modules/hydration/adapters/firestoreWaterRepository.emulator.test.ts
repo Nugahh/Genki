@@ -51,8 +51,14 @@ test('removing a glass hides it from the journal and takes it off the total', as
   await waterOn(db).add(glass(500));
   const quarter = (await journal(db)).find((e) => e.ml === 250);
   await waterOn(db).remove(quarter!);
-  expect((await journal(db)).map((e) => e.ml)).toEqual([500]);
+  expect(await journal(db)).toEqual([{ id: expect.any(String), ...glass(500) }]);
   expect(await serverTotal(db)).toBe(500);
+});
+
+test('a glass the rules refuse leaves the total alone: one batch', async () => {
+  const db = phone();
+  await expect(waterOn(db).add(glass(6000))).rejects.toThrow();
+  expect(await serverTotal(db)).toBeUndefined();
 });
 
 test('a glass removed offline on two phones comes off the total once', async () => {
