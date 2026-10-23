@@ -6,6 +6,8 @@ module.exports = {
   // jest-expo only compiles TypeScript here; modules resolve as in plain Node.
   transform,
   testMatch: ['<rootDir>/**/*.emulator.test.ts'],
+  // Emulator files share one project and clear it after each test: run them one at a time.
+  maxWorkers: 1,
   moduleNameMapper: {
     // React Native Firebase's modular API mirrors the web SDK: adapters run on it against the emulator.
     '^@react-native-firebase/firestore$': 'firebase/firestore',

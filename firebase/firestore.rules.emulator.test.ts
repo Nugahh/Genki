@@ -44,6 +44,7 @@ describe('ownership', () => {
   test('the owner reads and writes their own data', async () => {
     await assertSucceeds(setDoc(doc(db('alice'), 'users/alice/waterEntries/e1'), entry()));
     await assertSucceeds(getDoc(doc(db('alice'), 'users/alice/waterEntries/e1')));
+    await assertSucceeds(setDoc(doc(db('alice'), 'users/alice/waterEntries/e2'), { ...entry(), ml: 5000 }));
   });
 
   test('another user or a signed-out client gets nothing', async () => {
@@ -51,6 +52,10 @@ describe('ownership', () => {
     await assertFails(getDoc(doc(db('bob'), 'users/alice/waterEntries/e1')));
     await assertFails(getDoc(doc(db(), 'users/alice/waterEntries/e1')));
     await assertFails(setDoc(doc(db('bob'), 'users/alice/waterEntries/e2'), entry()));
+    await assertFails(updateDoc(doc(db('bob'), 'users/alice/waterEntries/e1'), { deletedAt: Timestamp.now() }));
+    await assertFails(
+      setDoc(doc(db('bob'), 'users/alice/days/2026-10-23'), { waterMl: 250, updatedAt: Timestamp.now() }),
+    );
   });
 
   test('documents without validation yet stay closed to writes', async () => {
@@ -82,6 +87,7 @@ describe('waterEntries', () => {
     await seed('users/alice/waterEntries/e1', entry());
     const ref = doc(db('alice'), 'users/alice/waterEntries/e1');
     await assertFails(updateDoc(ref, { ml: 500 }));
+    await assertFails(updateDoc(ref, { ml: 500, deletedAt: Timestamp.now() }));
     await assertFails(deleteDoc(ref));
     await assertSucceeds(updateDoc(ref, { deletedAt: Timestamp.now() }));
     // A second delete would take the glass off the day total twice.
