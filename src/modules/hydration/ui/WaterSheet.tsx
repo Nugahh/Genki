@@ -1,0 +1,57 @@
+import { useEffect, useState } from 'react';
+import { ScrollView, StyleSheet } from 'react-native';
+import { IconButton, List, Modal, Portal, Text } from 'react-native-paper';
+import type { WaterContainer } from '@/modules/settings';
+import type { WaterEntry } from '../application/ports';
+import type { Hydration } from '../application/waterUseCases';
+import { WaterButtons } from './WaterButtons';
+
+type Props = {
+  visible: boolean;
+  onDismiss: () => void;
+  day: string;
+  timezone: string;
+  containers: WaterContainer[];
+  hydration: Hydration;
+  run: (write: () => Promise<void>) => void;
+};
+
+/** Quick-add sheet: the add buttons and the day's glasses, no stats page (spec §6). */
+export function WaterSheet({ visible, onDismiss, day, timezone, containers, hydration, run }: Props) {
+  const [entries, setEntries] = useState<WaterEntry[]>([]);
+  // Listener errors show on the SyncIcon, which watches the same user's data.
+  useEffect(() => hydration.observeDay(day, setEntries, () => {}), [hydration, day]);
+
+  const time = (date: Date) => date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', timeZone: timezone });
+
+  return (
+    <Portal>
+      <Modal visible={visible} onDismiss={onDismiss} overlayAccessibilityLabel="Fermer" contentContainerStyle={styles.sheet}>
+        <Text variant="titleLarge">Eau</Text>
+        <WaterButtons containers={containers} onAdd={(ml) => run(() => hydration.addWater(ml))} />
+        <ScrollView style={styles.list}>
+          {entries.length === 0 && <Text>Aucun verre aujourd’hui.</Text>}
+          {entries.map((entry) => (
+            <List.Item
+              key={entry.id}
+              title={`${entry.ml} ml`}
+              description={time(entry.createdAt)}
+              right={() => (
+                <IconButton
+                  icon="delete-outline"
+                  accessibilityLabel={`Supprimer ${entry.ml} ml de ${time(entry.createdAt)}`}
+                  onPress={() => run(() => hydration.removeWater(entry))}
+                />
+              )}
+            />
+          ))}
+        </ScrollView>
+      </Modal>
+    </Portal>
+  );
+}
+
+const styles = StyleSheet.create({
+  sheet: { margin: 16, padding: 16, gap: 12, borderRadius: 16, backgroundColor: 'white' },
+  list: { maxHeight: 360 },
+});
