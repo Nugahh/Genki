@@ -3,6 +3,7 @@ import { Icon, Text, TouchableRipple } from 'react-native-paper';
 import type { GaugeColor } from '../domain/gauge';
 
 const COLORS: Record<GaugeColor, string> = { green: '#2E7D32', orange: '#EF6C00', red: '#C62828' };
+const PACE: Record<GaugeColor, string> = { green: 'dans le rythme', orange: 'un peu en retard', red: 'en retard' };
 
 type Props = {
   label: string;
@@ -24,6 +25,7 @@ export function GaugeBar({ label, text, progress, expected, color, icon, onPress
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={`${label} : ${text}`}
+      accessibilityValue={{ text: PACE[color] }}
       style={styles.touch}
     >
       <View style={styles.content}>
@@ -36,7 +38,8 @@ export function GaugeBar({ label, text, progress, expected, color, icon, onPress
         </View>
         <View style={styles.track}>
           <View style={[styles.fill, { width: `${Math.min(progress, 1) * 100}%`, backgroundColor: COLORS[color] }]} />
-          <View style={[styles.marker, { left: `${expected * 100}%` }]} />
+          {/* Pulled back by its 2 dp width as it nears 100 %, or the track's overflow would clip it. */}
+          <View style={[styles.marker, { left: `${expected * 100}%`, marginLeft: -2 * expected }]} />
         </View>
       </View>
     </TouchableRipple>

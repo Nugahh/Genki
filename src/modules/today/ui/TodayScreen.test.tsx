@@ -35,7 +35,7 @@ function renderToday() {
 
 test('a quick-add button fills the water gauge', async () => {
   await renderToday();
-  expect(screen.getByLabelText('Eau : 0 / 2,5 L')).toBeTruthy();
+  expect(screen.getByLabelText('Eau : 0 / 2,5 L')).toHaveAccessibilityValue({ text: 'en retard' });
   await fireEvent.press(screen.getByText('+500 ml'));
   expect(screen.getByLabelText('Eau : 0,5 / 2,5 L')).toBeTruthy();
 });
