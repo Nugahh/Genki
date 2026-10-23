@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import { Pressable, Text } from 'react-native';
 import { PaperProvider } from 'react-native-paper';
 import { AppProvider, useApp } from './appContext';
@@ -30,7 +30,10 @@ let warn: jest.SpyInstance;
 beforeEach(() => {
   warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
 });
-afterEach(() => warn.mockRestore());
+afterEach(() => {
+  warn.mockRestore();
+  jest.useRealTimers();
+});
 
 test('a rejected write is offered again: « Réessayer » runs the same write', async () => {
   const write = jest.fn().mockRejectedValueOnce(denied).mockResolvedValue(undefined);
@@ -43,7 +46,7 @@ test('a rejected write is offered again: « Réessayer » runs the same write', 
   await fireEvent.press(screen.getByText('Réessayer'));
   expect(write).toHaveBeenCalledTimes(2);
   expect(screen.getByText('ok')).toBeTruthy();
-  await waitFor(() => expect(screen.queryByText(MESSAGE)).toBeNull());
+  expect(screen.queryByText(MESSAGE)).toBeNull();
 });
 
 test('a retry that fails again shows the message again', async () => {
@@ -54,6 +57,23 @@ test('a retry that fails again shows the message again', async () => {
   expect(write).toHaveBeenCalledTimes(2);
   expect(screen.getByText('échec')).toBeTruthy();
   expect(screen.getByText(MESSAGE)).toBeTruthy();
+});
+
+test('a retry refused while the message fades out still offers « Réessayer »', async () => {
+  jest.useFakeTimers();
+  const write = jest
+    .fn()
+    .mockRejectedValueOnce(denied)
+    .mockImplementationOnce(() => new Promise((_, reject) => setTimeout(() => reject(denied), 5)));
+  await renderSaver(write);
+  await fireEvent.press(screen.getByText('ok'));
+  await fireEvent.press(await screen.findByText('Réessayer'));
+  // The refusal (5 ms) renders before the fade-out ends (16 ms under Jest's native animation mock)...
+  await act(() => jest.advanceTimersByTime(5));
+  // ...then the fade-out ends.
+  await act(() => jest.advanceTimersByTime(300));
+  expect(screen.getByText(MESSAGE)).toBeTruthy();
+  expect(screen.getByText('Réessayer')).toBeTruthy();
 });
 
 test('« Fermer » drops the failed write without running it again', async () => {

@@ -1,4 +1,5 @@
 import { fireEvent, renderRouter, screen } from 'expo-router/testing-library';
+import { Appearance } from 'react-native';
 import type { App } from '@/composition';
 import { signInWithGoogle, useAuthUser } from '@/platform/firebase';
 
@@ -45,4 +46,11 @@ test('a signed-in user lands on Today, with the sync icon in the top bar', async
   await renderRouter();
   expect(screen.getByLabelText('Eau : 0 / 2,5 L')).toBeTruthy();
   expect(screen.getByLabelText('Synchronisé')).toBeTruthy();
+});
+
+test('a phone in dark mode keeps the light theme', async () => {
+  jest.spyOn(Appearance, 'getColorScheme').mockReturnValue('dark');
+  signedInAs({ uid: 'alice' });
+  await renderRouter();
+  expect(screen.getByText('Eau')).toHaveStyle({ color: 'rgba(28, 27, 31, 1)' });
 });

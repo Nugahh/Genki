@@ -9,6 +9,7 @@ const AppContext = createContext<AppContextValue | null>(null);
 
 /** Provides the composed app and runs its writes: a rejected write is kept and offered again (spec §8). */
 export function AppProvider({ app, children }: { app: App; children: ReactNode }) {
+  // shortcut: only the last refused write is kept; keep a list if refusals stop being rare.
   const [failed, setFailed] = useState<Write | null>(null);
   // Not awaited: offline, a write only settles once the server has it.
   const run = useCallback((write: Write) => {
@@ -28,16 +29,19 @@ export function AppProvider({ app, children }: { app: App; children: ReactNode }
   return (
     <AppContext.Provider value={value}>
       {children}
-      <Snackbar
-        visible={failed !== null}
-        onDismiss={() => setFailed(null)}
-        duration={Number.POSITIVE_INFINITY}
-        action={{ label: 'Réessayer', onPress: retry, contentStyle: { minHeight: 48 } }}
-        onIconPress={() => setFailed(null)}
-        iconAccessibilityLabel="Fermer"
-      >
-        L’enregistrement a échoué.
-      </Snackbar>
+      {/* Mounted per failure: Paper's Snackbar misses a refusal that lands during its fade-out. */}
+      {failed !== null && (
+        <Snackbar
+          visible
+          onDismiss={() => setFailed(null)}
+          duration={Number.POSITIVE_INFINITY}
+          action={{ label: 'Réessayer', onPress: retry, contentStyle: { minHeight: 48 } }}
+          onIconPress={() => setFailed(null)}
+          iconAccessibilityLabel="Fermer"
+        >
+          L’enregistrement a échoué.
+        </Snackbar>
+      )}
     </AppContext.Provider>
   );
 }
