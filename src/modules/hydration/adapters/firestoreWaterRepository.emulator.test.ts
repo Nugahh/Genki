@@ -57,12 +57,14 @@ test('removing a glass hides it from the journal and takes it off the total', as
 
 test('a glass removed offline on two phones comes off the total once', async () => {
   const [a, b] = [phone(), phone()];
+  // The 500 ml glass keeps a double decrement above zero: only the delete-once rule can stop it.
+  await waterOn(a).add(glass(500));
   await waterOn(a).add(glass(250));
-  const [entry] = await journal(a);
+  const quarter = (await journal(a)).find((e) => e.ml === 250);
   await Promise.all([disableNetwork(a), disableNetwork(b)]);
-  const removals = [waterOn(a).remove(entry), waterOn(b).remove(entry)];
+  const removals = [waterOn(a).remove(quarter!), waterOn(b).remove(quarter!)];
   await Promise.all([enableNetwork(a), enableNetwork(b)]);
   const results = await Promise.allSettled(removals);
   expect(results.filter((r) => r.status === 'rejected')).toHaveLength(1);
-  expect(await serverTotal(a)).toBe(0);
+  expect(await serverTotal(a)).toBe(500);
 });
