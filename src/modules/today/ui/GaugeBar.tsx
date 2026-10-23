@@ -14,12 +14,10 @@ type Props = {
   /** Where the user should be by now, from 0 to 1. */
   expected: number;
   color: GaugeColor;
-  /** "plus" adds, "chevron-right" opens (spec §6). */
-  icon: 'plus' | 'chevron-right';
   onPress: () => void;
 };
 
-export function GaugeBar({ label, text, progress, expected, color, icon, onPress }: Props) {
+export function GaugeBar({ label, text, progress, expected, color, onPress }: Props) {
   return (
     <TouchableRipple
       onPress={onPress}
@@ -33,7 +31,7 @@ export function GaugeBar({ label, text, progress, expected, color, icon, onPress
           <Text variant="titleMedium">{label}</Text>
           <View style={styles.row}>
             <Text variant="bodyLarge">{text}</Text>
-            <Icon source={icon} size={24} />
+            <Icon source="plus" size={24} />
           </View>
         </View>
         <View style={styles.track}>

@@ -16,8 +16,7 @@ module.exports = {
       comment: 'domain/ is plain TypeScript: no Firebase, React or any other package (spec §5).',
       severity: 'error',
       from: { path: '^src/modules/[^/]+/domain/' },
-      // Only the pure parts of shared/ (shared/useNow.ts is a React hook).
-      to: { pathNot: '^src/(modules/[^/]+/domain/|shared/clock\\.ts$)' },
+      to: { pathNot: '^src/modules/[^/]+/domain/' },
     },
     {
       name: 'no-circular',

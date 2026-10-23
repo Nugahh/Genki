@@ -39,7 +39,6 @@ export function TodayScreen({ profile, clock, dayTotals, hydration, run }: Props
         progress={goal > 0 ? waterMl / goal : 1}
         expected={expectedProgress(hour)}
         color={paceColor(waterMl, goal, hour)}
-        icon="plus"
         onPress={() => setSheetOpen(true)}
       />
       <WaterButtons containers={profile.waterContainers} onAdd={addWater} />
