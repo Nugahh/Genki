@@ -12,7 +12,10 @@ export function AppProvider({ app, children }: { app: App; children: ReactNode }
   const [failed, setFailed] = useState<Write | null>(null);
   // Not awaited: offline, a write only settles once the server has it.
   const run = useCallback((write: Write) => {
-    write().catch(() => setFailed(() => write));
+    write().catch((error) => {
+      console.warn(error);
+      setFailed(() => write);
+    });
   }, []);
   const value = useMemo(() => ({ app, run, writeFailed: failed !== null }), [app, run, failed]);
 
@@ -29,7 +32,7 @@ export function AppProvider({ app, children }: { app: App; children: ReactNode }
         visible={failed !== null}
         onDismiss={() => setFailed(null)}
         duration={Number.POSITIVE_INFINITY}
-        action={{ label: 'Réessayer', onPress: retry }}
+        action={{ label: 'Réessayer', onPress: retry, contentStyle: { minHeight: 48 } }}
         onIconPress={() => setFailed(null)}
         iconAccessibilityLabel="Fermer"
       >

@@ -1,6 +1,6 @@
-import { renderRouter, screen } from 'expo-router/testing-library';
+import { fireEvent, renderRouter, screen } from 'expo-router/testing-library';
 import type { App } from '@/composition';
-import { useAuthUser } from '@/platform/firebase';
+import { signInWithGoogle, useAuthUser } from '@/platform/firebase';
 
 jest.mock('@/platform/firebase', () => ({ useAuthUser: jest.fn(), signInWithGoogle: jest.fn() }));
 
@@ -30,6 +30,14 @@ test('a signed-out user lands on the Google sign-in', async () => {
   signedInAs(null);
   await renderRouter();
   expect(screen.getByText('Se connecter avec Google')).toBeTruthy();
+});
+
+test('a failed Google sign-in shows why', async () => {
+  signedInAs(null);
+  jest.mocked(signInWithGoogle).mockRejectedValue(new Error('DEVELOPER_ERROR'));
+  await renderRouter();
+  await fireEvent.press(screen.getByText('Se connecter avec Google'));
+  expect(screen.getByText('La connexion a échoué. DEVELOPER_ERROR')).toBeTruthy();
 });
 
 test('a signed-in user lands on Today, with the sync icon in the top bar', async () => {

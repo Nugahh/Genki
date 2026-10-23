@@ -23,10 +23,10 @@ Deux projets sur la formule Spark (gratuite) : un pour le dev, un pour la prod.
 1. [Console Firebase](https://console.firebase.google.com) → Ajouter un projet (par exemple `genki-dev`, puis `genki-prod`). Google Analytics n'est pas utile.
 2. Firestore Database → Créer une base → mode production → emplacement `europe-west9` (Paris). Ce choix est définitif.
 3. Authentication → Méthodes de connexion → Google → Activer.
-4. Paramètres du projet → Ajouter une application Android, nom de package `com.nugah.genki.dev` (projet dev) ou `com.nugah.genki` (projet prod). Ajouter l'empreinte SHA-1 de la clé de signature. La clé de debug est créée au premier build Android :
+4. Paramètres du projet → Ajouter une application Android, nom de package `com.nugah.genki.dev` (projet dev) ou `com.nugah.genki` (projet prod). Ajouter l'empreinte SHA-1 `5E:8F:16:06:2E:A3:CD:2C:4A:0D:54:78:76:BA:A6:F3:8C:AB:F6:25`, la même dans les deux projets : `npx expo prebuild` copie la clé de debug d'Expo dans `android/app/debug.keystore`, et les deux variantes sont signées avec elle. Pour la vérifier après le premier prebuild :
 
    ```bash
-   keytool -list -v -keystore ~/.android/debug.keystore -alias androiddebugkey -storepass android
+   keytool -list -v -keystore android/app/debug.keystore -alias androiddebugkey -storepass android
    ```
 
 5. Télécharger `google-services.json` après l'étape 3. Il doit contenir un `oauth_client` de `client_type` 3 (client Web), sans quoi la connexion Google échoue. Le placer à la racine du dépôt sous le nom `google-services.dev.json` (projet dev) ou `google-services.json` (projet prod). Ces fichiers ne vont pas dans git ; `google-services.example.json` montre leur forme.
@@ -55,6 +55,6 @@ npm run test:emulator   # règles et adaptateurs Firestore, émulateur sur le po
 
 La CI GitHub Actions lance les mêmes commandes.
 
-## À vérifier sur le téléphone avant M2 (spec §11)
+## À vérifier sur le téléphone (spec §11)
 
-Deux téléphones connectés au même compte Google : couper le réseau sur les deux, ajouter de l'eau sur chacun, rétablir le réseau. Les deux doivent afficher la somme, et l'icône nuage repasser à « Synchronisé ».
+La spec §11 place cette vérification avant M1. Elle se fait maintenant, car elle demande les projets Firebase et les téléphones. Deux téléphones connectés au même compte Google : couper le réseau sur les deux, ajouter de l'eau sur chacun, rétablir le réseau. Les deux doivent afficher la somme, et l'icône nuage repasser à « Synchronisé ».

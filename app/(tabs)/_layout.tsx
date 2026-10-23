@@ -1,4 +1,4 @@
-import { Tabs } from 'expo-router';
+import { Tabs } from 'expo-router/js-tabs';
 import { useMemo } from 'react';
 import { Icon } from 'react-native-paper';
 import { AppProvider, useApp } from '@/appContext';
