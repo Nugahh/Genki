@@ -1756,7 +1756,7 @@ Téléphone Android en USB (débogage USB activé) ou émulateur Android.
 - Variante dev (projet dev) : `npm run android` construit l'app native et l'installe. Ensuite, `npm start` suffit pour recharger le JavaScript.
 - Variante prod (projet prod) : `APP_VARIANT=production npx expo run:android --variant release`.
 
-Les deux variantes s'installent côte à côte (`Genki (dev)` et `Genki`).
+Les deux variantes s'installent côte à côte (`Genki (dev)` et `Genki`). Le nom de package et le fichier `google-services` sont figés dans le dossier `android/` généré : pour changer de variante, le régénérer d'abord, avec `npx expo prebuild --clean --platform android` (préfixé de `APP_VARIANT=production` pour la prod).
 
 ## Vérifications
 
