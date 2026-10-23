@@ -1,0 +1,44 @@
+rules_version = '2';
+
+// Closed by default: only the owner reaches users/{uid}/**, and a collection
+// accepts writes only once its milestone validates them here (spec §8).
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isOwner(uid) {
+      return request.auth != null && request.auth.uid == uid;
+    }
+
+    function isDayKey(value) {
+      return value is string && value.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$');
+    }
+
+    match /users/{uid}/{document=**} {
+      allow read: if isOwner(uid);
+    }
+
+    match /users/{uid}/waterEntries/{entryId} {
+      allow create: if isOwner(uid)
+        && request.resource.data.keys().hasOnly(['day', 'ml', 'createdAt', 'deletedAt'])
+        && isDayKey(request.resource.data.day)
+        && request.resource.data.ml is number
+        && request.resource.data.ml > 0
+        && request.resource.data.ml <= 5000
+        && request.resource.data.createdAt is timestamp
+        && request.resource.data.deletedAt == null;
+      // Soft delete only, and only once: the batch moving the day total fails with it.
+      allow update: if isOwner(uid)
+        && resource.data.deletedAt == null
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['deletedAt'])
+        && request.resource.data.deletedAt is timestamp;
+    }
+
+    match /users/{uid}/days/{day} {
+      allow create, update: if isOwner(uid)
+        && isDayKey(day)
+        && request.resource.data.keys().hasOnly(['waterMl', 'updatedAt'])
+        && request.resource.data.waterMl is number
+        && request.resource.data.waterMl >= 0
+        && request.resource.data.updatedAt is timestamp;
+    }
+  }
+}

@@ -44,7 +44,8 @@
     "lint": "expo lint",
     "typecheck": "tsc --noEmit",
     "test": "jest",
-    "lint:deps": "depcruise --config .dependency-cruiser.cjs src"
+    "lint:deps": "depcruise --config .dependency-cruiser.cjs src",
+    "test:emulator": "firebase emulators:exec --only firestore --project demo-genki \"jest -c jest.emulator.config.js\""
   },
   "jest": {
     "preset": "jest-expo",
