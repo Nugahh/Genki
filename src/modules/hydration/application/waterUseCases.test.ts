@@ -2,11 +2,14 @@ import { inMemoryWaterRepository } from '../adapters/inMemoryWaterRepository';
 import type { WaterEntry } from './ports';
 import { waterUseCases } from './waterUseCases';
 
-test('a glass logged at 23:50 in Paris stays on that day', async () => {
+test("a glass goes on the profile's day around midnight", async () => {
   const repo = inMemoryWaterRepository();
-  const lateEvening = { now: () => new Date('2026-10-24T21:50:00Z') };
-  await waterUseCases(repo, lateEvening, 'Europe/Paris').addWater(250);
-  expect(repo.entries).toEqual([expect.objectContaining({ day: '2026-10-24', ml: 250 })]);
+  const clock = { now: () => new Date('2026-10-24T21:50:00Z') }; // 23:50 in Paris
+  const water = waterUseCases(repo, clock, 'Europe/Paris');
+  await water.addWater(250);
+  clock.now = () => new Date('2026-10-24T22:10:00Z'); // 00:10 in Paris
+  await water.addWater(250);
+  expect(repo.entries.map((e) => e.day)).toEqual(['2026-10-24', '2026-10-25']);
 });
 
 test('the day journal lists live glasses newest first and drops removed ones', async () => {
