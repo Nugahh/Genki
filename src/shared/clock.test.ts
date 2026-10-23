@@ -9,6 +9,7 @@ describe('dayKey', () => {
     ['2026-10-25T22:50:00Z', '2026-10-25'], // 23:50, winter time (clocks went back that night)
     ['2026-10-25T23:10:00Z', '2026-10-26'], // 00:10, winter time
     ['2026-03-28T22:50:00Z', '2026-03-28'], // 23:50, the night summer time starts
+    ['2026-03-29T22:10:00Z', '2026-03-30'], // 00:10, summer time (a fixed +1 h offset would say 29)
   ])('%s falls on %s in Paris', (iso, day) => {
     expect(dayKey(new Date(iso), PARIS)).toBe(day);
   });

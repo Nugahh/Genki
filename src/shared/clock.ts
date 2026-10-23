@@ -5,7 +5,8 @@ export interface Clock {
 export const systemClock: Clock = { now: () => new Date() };
 
 function partsIn(timeZone: string, date: Date): Record<string, string> {
-  const format = new Intl.DateTimeFormat('en-US', {
+  // en-GB is 24-hour by default, in case an engine (Hermes) ignores hourCycle.
+  const format = new Intl.DateTimeFormat('en-GB', {
     timeZone,
     year: 'numeric',
     month: '2-digit',
