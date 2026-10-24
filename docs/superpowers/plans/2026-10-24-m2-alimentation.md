@@ -1110,7 +1110,7 @@ git commit -m "feat: nutrition domain, ports, meal and food use cases with in-me
 **Interfaces:**
 - Consumes: `FoodCatalog` (tâche 2), `normalizeSearch`, `assets/ciqual.db` (tâche 1).
 - Produces:
-  - `type SqlReader = { getAllAsync<T>(sql: string, params?: (string | number)[]): Promise<T[]> }` (compatible avec `SQLiteDatabase` d'`expo-sqlite`).
+  - `type SqlReader = { getAllAsync<T>(sql: string, params: (string | number)[]): Promise<T[]> }` (compatible avec `SQLiteDatabase` d'`expo-sqlite`).
   - `ciqualCatalog(open: () => Promise<SqlReader>): FoodCatalog` (la base est ouverte à la première recherche, puis gardée).
   - `src/platform/ciqual.ts` : `openCiqual(): Promise<SqlReader>` (copie la base embarquée dans le stockage de l'app à la première ouverture, sous un nom contenant la version, puis l'ouvre en lecture).
 
@@ -1194,7 +1194,7 @@ import type { Food, FoodState } from '../domain/food';
 import { normalizeSearch } from '../domain/normalize';
 
 /** The one method of expo-sqlite's database this adapter needs, so tests can run on Node's SQLite. */
-export type SqlReader = { getAllAsync<T>(sql: string, params?: (string | number)[]): Promise<T[]> };
+export type SqlReader = { getAllAsync<T>(sql: string, params: (string | number)[]): Promise<T[]> };
 
 type Row = { id: string; name: string; state: FoodState; kcal: number; protein: number; carbs: number; fat: number };
 const COLUMNS = 'id, name, state, kcal, protein, carbs, fat';
@@ -1210,7 +1210,12 @@ const toFood = (r: Row): Food => ({
 /** The embedded Ciqual table. `open` runs on first use and its database is kept. */
 export function ciqualCatalog(open: () => Promise<SqlReader>): FoodCatalog {
   let db: Promise<SqlReader> | undefined;
-  const reader = () => (db ??= open());
+  // A failed open (storage, asset not reachable yet) must not stick until the app restarts.
+  const reader = () =>
+    (db ??= open().catch((error) => {
+      db = undefined;
+      throw error;
+    }));
 
   return {
     async search(query, { state, limit = 30 } = {}) {

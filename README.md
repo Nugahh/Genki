@@ -58,6 +58,8 @@ Pour la régénérer, télécharger `alim_*.xml` et `compo_*.xml` sur `entrepot.
 npm run build:ciqual -- <dossier> <version, par exemple 2025-11-03> [sortie]
 ```
 
+Le téléphone copie la base une seule fois, sous le nom `ciqual-<version>.db` (constante `DATABASE` de `src/platform/ciqual.ts`). Quand `assets/ciqual.db` change alors que des téléphones l'ont déjà installée, donner un nouveau libellé de version à `build:ciqual` (par exemple `2025-11-03.2`) et mettre la constante à jour, sinon ils gardent l'ancienne copie. Le test `src/platform/ciqual.test.ts` échoue quand les deux divergent.
+
 Règles de conversion (`scripts/ciqual/convert.ts`), valeurs pour 100 g arrondies à 0,1 :
 
 - Énergie : code 328 (kcal, règlement UE 1169/2011) ; protéines : 25003 (N × 6,25) ; glucides : 31000 ; lipides : 40000.

@@ -19,7 +19,12 @@ const toFood = (r: Row): Food => ({
 /** The embedded Ciqual table. `open` runs on first use and its database is kept. */
 export function ciqualCatalog(open: () => Promise<SqlReader>): FoodCatalog {
   let db: Promise<SqlReader> | undefined;
-  const reader = () => (db ??= open());
+  // A failed open (storage, asset not reachable yet) must not stick until the app restarts.
+  const reader = () =>
+    (db ??= open().catch((error) => {
+      db = undefined;
+      throw error;
+    }));
 
   return {
     async search(query, { state, limit = 30 } = {}) {

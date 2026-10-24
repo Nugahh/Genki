@@ -1,12 +1,15 @@
 import { DatabaseSync } from 'node:sqlite';
+import { normalizeSearch } from '../domain/normalize';
 import { ciqualCatalog, type SqlReader } from './ciqualCatalog';
+
+const readerOf = (database: DatabaseSync): SqlReader => ({
+  getAllAsync: async (sql, params = []) => database.prepare(sql).all(...params) as never,
+});
 
 // The real embedded table, opened read-only through Node's SQLite.
 const db = new DatabaseSync('assets/ciqual.db', { readOnly: true });
 afterAll(() => db.close());
-const reader: SqlReader = {
-  getAllAsync: async (sql, params = []) => db.prepare(sql).all(...params) as never,
-};
+const reader = readerOf(db);
 const catalog = ciqualCatalog(async () => reader);
 
 const names = async (query: string, state?: 'raw' | 'cooked') => (await catalog.search(query, { state })).map((f) => f.name);
@@ -18,7 +21,7 @@ test('finds foods by name, ignoring accents, case and the œ ligature', async ()
   expect(await names('oeuf')).toEqual(oeuf);
 });
 
-test('needs every term and puts names starting with the first term first', async () => {
+test('every result holds every term, and the first result of "riz" starts with riz', async () => {
   const results = await names('poulet filet');
   expect(results.length).toBeGreaterThan(0);
   expect(results.every((n) => /poulet/i.test(n) && /filet/i.test(n))).toBe(true);
@@ -55,4 +58,29 @@ test('opens the database once, on first use', async () => {
   await lazy.search('riz');
   await lazy.get('9100');
   expect(open).toHaveBeenCalledTimes(1);
+});
+
+test('a failed open does not stick: the next call opens again', async () => {
+  const open = jest.fn(async () => reader).mockRejectedValueOnce(new Error('storage not ready'));
+  const flaky = ciqualCatalog(open);
+  await expect(flaky.search('riz')).rejects.toThrow('storage not ready');
+  expect((await flaky.search('riz')).map((f) => f.name)).toContain('Riz blanc, cru');
+  expect(open).toHaveBeenCalledTimes(2);
+});
+
+test('ranks names starting with the first term, then words starting with it, then the rest, shorter first', async () => {
+  const fixture = new DatabaseSync(':memory:');
+  fixture.exec((db.prepare("SELECT sql FROM sqlite_master WHERE name = 'foods'").get() as { sql: string }).sql);
+  const insert = fixture.prepare("INSERT INTO foods VALUES (?, ?, ?, 'other', 100, 0, 0, 0)");
+  ['Riz soufflé', 'Riz au lait vanille', 'Pain de riz complet', 'Brizzi', 'Riz et pain frais'].forEach((name, i) =>
+    insert.run(String(i), name, normalizeSearch(name)),
+  );
+  const ranked = ciqualCatalog(async () => readerOf(fixture));
+  const order = async (query: string) => (await ranked.search(query)).map((f) => f.name);
+
+  // prefix (shorter first), then a word starting with it, then inside a word
+  expect(await order('riz')).toEqual(['Riz soufflé', 'Riz et pain frais', 'Riz au lait vanille', 'Pain de riz complet', 'Brizzi']);
+  // the first term decides the tier, not the last one
+  expect(await order('pain riz')).toEqual(['Pain de riz complet', 'Riz et pain frais']);
+  fixture.close();
 });
