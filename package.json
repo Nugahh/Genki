@@ -43,7 +43,8 @@
     "android": "expo run:android",
     "lint": "expo lint",
     "typecheck": "tsc --noEmit",
-    "test": "jest",
+    "test": "NODE_OPTIONS=--disable-warning=ExperimentalWarning jest",
+    "build:ciqual": "NODE_NO_WARNINGS=1 node scripts/build-ciqual.ts",
     "lint:deps": "depcruise --config .dependency-cruiser.cjs src",
     "test:emulator": "firebase emulators:exec --only firestore --project demo-genki \"jest -c jest.emulator.config.js\""
   },

@@ -46,6 +46,25 @@ Téléphone Android en USB (débogage USB activé) ou émulateur Android.
 
 Les deux variantes s'installent côte à côte (`Genki (dev)` et `Genki`). Le nom de package et le fichier `google-services` sont figés dans le dossier `android/` généré : pour changer de variante, le régénérer d'abord, avec `npx expo prebuild --clean --platform android` (préfixé de `APP_VARIANT=production` pour la prod).
 
+## Données alimentaires
+
+Les aliments viennent de la table Ciqual 2025 de l'Anses (`doi:10.57745/RDMHWY`, Licence Ouverte Etalab 2.0). Citation : « Anses. 2025. Ciqual French food composition table ». Elle est convertie en une base SQLite en lecture seule, `assets/ciqual.db`, embarquée dans l'application : recherche hors-ligne, aucune lecture Firestore.
+
+`assets/ciqual.db` est committée. La régénérer change l'application : refaire ensuite un build natif (`npm run android`).
+
+Pour la régénérer, télécharger `alim_*.xml` et `compo_*.xml` sur `entrepot.recherche.data.gouv.fr`, les placer dans un dossier sous les noms `alim.xml` et `compo.xml`, puis :
+
+```bash
+npm run build:ciqual -- <dossier> <version, par exemple 2025-11-03> [sortie]
+```
+
+Règles de conversion (`scripts/ciqual/convert.ts`), valeurs pour 100 g arrondies à 0,1 :
+
+- Énergie : code 328 (kcal, règlement UE 1169/2011) ; protéines : 25003 (N × 6,25) ; glucides : 31000 ; lipides : 40000.
+- « traces » et « < x » comptent pour 0 ; « - » (non déterminé) compte pour 0 pour les protéines, glucides et lipides.
+- Si l'énergie manque (143 aliments sur 3 484), elle est estimée par Atwater : 4 × protéines + 4 × glucides + 9 × lipides + 7 × alcool (code 60000). Sans aucune donnée, l'aliment est écarté.
+- Ciqual ne relie pas un aliment cru à son équivalent cuit : l'état (cru, cuit ou autre) est déduit du nom. Un nom qui contient les deux (« cru ou cuit ») ou aucun est « autre ».
+
 ## Vérifications
 
 ```bash
