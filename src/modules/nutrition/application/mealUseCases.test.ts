@@ -21,6 +21,8 @@ function setup(now = '2026-10-24T09:00:00Z') {
 }
 
 const latest = (entries: { entries: FoodEntry[] }) => entries.entries[entries.entries.length - 1];
+const BAD_GRAMS = 'La quantité doit être comprise entre 0 et 5 000 g.';
+const BAD_FAVORITE = 'Un favori a un nom et 1 à 50 aliments.';
 
 test('logFood freezes the macros of the quantity and uses the profile-zone day', async () => {
   const { entries, meals } = setup('2026-10-24T22:10:00Z'); // 00:10 in Paris, already the 25th
@@ -46,12 +48,12 @@ test('removeEntry takes the entry out of the day', async () => {
 });
 
 test('the day journal lists entries oldest first', async () => {
-  const { clock, meals } = setup();
+  const { clock, meals } = setup('2026-10-24T10:00:00Z');
   const seen: string[][] = [];
   meals.observeDay('2026-10-24', (list) => seen.push(list.map((e) => e.foodName)), () => {});
-  await meals.logFood('breakfast', egg, 60);
-  clock.now = () => new Date('2026-10-24T10:00:00Z');
   await meals.logFood('lunch', rice, 100);
+  clock.now = () => new Date('2026-10-24T09:00:00Z'); // logged second, but eaten earlier
+  await meals.logFood('breakfast', egg, 60);
   expect(seen[seen.length - 1]).toEqual(['Oeuf', 'Riz blanc, cru']);
 });
 
@@ -99,6 +101,33 @@ test('logFavorite skips foods that no longer exist', async () => {
   expect(entries.entries.filter((e) => e.meal === 'dinner')).toEqual([]);
 });
 
+test('logFavorite logs the foods that still exist and skips the others', async () => {
+  const { entries, meals } = setup();
+  const favorite = {
+    id: 'f1', name: 'Mixte', items: [
+      { foodRef: egg.ref, foodName: egg.name, grams: 60 },
+      { foodRef: rice.ref, foodName: rice.name, grams: 100 },
+    ],
+  };
+  await meals.logFavorite(favorite, 'dinner', async (ref) => (ref.id === rice.ref.id ? rice : undefined));
+  expect(entries.entries.map((e) => [e.foodName, e.grams])).toEqual([['Riz blanc, cru', 100]]);
+});
+
+test('logFavorite spaces its entries by 1 ms in the favorite order, all on the day it started', async () => {
+  const { entries, meals } = setup('2026-10-24T21:59:59.999Z'); // 23:59:59.999 in Paris: the next entry is past midnight
+  const favorite = {
+    id: 'f1', name: 'Deux', items: [
+      { foodRef: rice.ref, foodName: rice.name, grams: 100 },
+      { foodRef: egg.ref, foodName: egg.name, grams: 60 },
+    ],
+  };
+  await meals.logFavorite(favorite, 'dinner', async (ref) => (ref.id === rice.ref.id ? rice : egg));
+  expect(entries.entries.map((e) => [e.foodName, e.day, e.createdAt.toISOString()])).toEqual([
+    ['Riz blanc, cru', '2026-10-24', '2026-10-24T21:59:59.999Z'],
+    ['Oeuf', '2026-10-24', '2026-10-24T22:00:00.000Z'],
+  ]);
+});
+
 test('logFavorite starts every write without waiting for the server (offline writes never settle)', async () => {
   const { entries, meals } = setup();
   const add = jest.spyOn(entries, 'add').mockImplementation(() => new Promise(() => {}));
@@ -119,4 +148,36 @@ test('writes reject instead of throwing synchronously', async () => {
     throw new Error('boom');
   });
   await expect(meals.logFood('lunch', rice, 100)).rejects.toThrow('boom');
+});
+
+test('logFood rejects a quantity outside ]0 ; 5 000] g and writes nothing', async () => {
+  const { entries, meals } = setup();
+  for (const grams of [0, -1, 5001, Number.NaN]) await expect(meals.logFood('lunch', rice, grams)).rejects.toThrow(BAD_GRAMS);
+  expect(entries.entries).toEqual([]);
+  await meals.logFood('lunch', rice, 5000); // the upper bound itself is allowed
+  expect(entries.entries).toHaveLength(1);
+});
+
+test('changeGrams rejects a quantity outside ]0 ; 5 000] g and leaves the entry alone', async () => {
+  const { entries, meals } = setup();
+  await meals.logFood('lunch', rice, 100);
+  const entry = latest(entries);
+  for (const grams of [0, -1, 5001, Number.NaN]) await expect(meals.changeGrams(entry, grams)).rejects.toThrow(BAD_GRAMS);
+  expect(latest(entries)).toMatchObject({ grams: 100 });
+  await meals.changeGrams(entry, 5000); // the upper bound itself is allowed
+  expect(latest(entries)).toMatchObject({ grams: 5000 });
+});
+
+test('saveFavorite rejects a blank name and a list of 0 or more than 50 foods', async () => {
+  const { entries, meals } = setup();
+  await meals.logFood('lunch', rice, 100);
+  const [entry] = entries.entries;
+  let saved = 0;
+  meals.observeFavorites((list) => (saved = list.length), () => {});
+  await expect(meals.saveFavorite('   ', [entry])).rejects.toThrow(BAD_FAVORITE);
+  await expect(meals.saveFavorite('Vide', [])).rejects.toThrow(BAD_FAVORITE);
+  await expect(meals.saveFavorite('Trop', Array(51).fill(entry))).rejects.toThrow(BAD_FAVORITE);
+  expect(saved).toBe(0);
+  await meals.saveFavorite('Limite', Array(50).fill(entry)); // the bound itself is allowed
+  expect(saved).toBe(1);
 });

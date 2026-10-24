@@ -1,6 +1,6 @@
 export type Macros = { kcal: number; protein: number; carbs: number; fat: number };
 
-export const ZERO_MACROS: Macros = { kcal: 0, protein: 0, carbs: 0, fat: 0 };
+export const ZERO_MACROS: Macros = Object.freeze({ kcal: 0, protein: 0, carbs: 0, fat: 0 });
 
 const round1 = (n: number) => Math.round(n * 10) / 10;
 const map = (m: Macros, f: (n: number) => number): Macros => ({ kcal: f(m.kcal), protein: f(m.protein), carbs: f(m.carbs), fat: f(m.fat) });
@@ -10,13 +10,17 @@ export function macrosFor(per100g: Macros, grams: number): Macros {
   return map(per100g, (n) => round1((n * grams) / 100));
 }
 
-/** The same entry at another quantity, from its own frozen values: never from the food's current ones. */
+/**
+ * The same entry at another quantity, from its own frozen values: never from the food's current ones.
+ * Needs `from > 0`. Rescaling rounded values is exact for modest changes, approximate for large ratios
+ * (correcting 2 g to 200 g loses precision on the small macros).
+ */
 export function scaleMacros(macros: Macros, from: number, to: number): Macros {
   return map(macros, (n) => round1((n * to) / from));
 }
 
 export function sumMacros(list: Macros[]): Macros {
-  return list.reduce((sum, m) => ({ kcal: round1(sum.kcal + m.kcal), protein: round1(sum.protein + m.protein), carbs: round1(sum.carbs + m.carbs), fat: round1(sum.fat + m.fat) }), ZERO_MACROS);
+  return list.reduce((sum, m) => ({ kcal: round1(sum.kcal + m.kcal), protein: round1(sum.protein + m.protein), carbs: round1(sum.carbs + m.carbs), fat: round1(sum.fat + m.fat) }), { ...ZERO_MACROS });
 }
 
 /** `a − b`, rounded: the delta a day total moves by when an entry changes. */

@@ -29,7 +29,7 @@ export type NewFavoriteMeal = Omit<FavoriteMeal, 'id'>;
 
 export type RecentFood = { ref: FoodRef; name: string; grams: number };
 
-/** A French message for the first problem with a custom food, or null. Bounds mirror the Firestore rules. */
+/** A French message for the first problem with a custom food, or null. The Firestore rules bound each value; the sum of the macros (100.5 g at most) and the portion weights are checked here only. */
 export function validateFood(food: FoodInput): string | null {
   const name = food.name.trim();
   if (name.length === 0 || name.length > 100) return 'Le nom doit faire entre 1 et 100 caractères.';

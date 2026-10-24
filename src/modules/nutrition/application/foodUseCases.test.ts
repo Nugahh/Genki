@@ -7,7 +7,9 @@ const ciqualRice: Food = {
   ref: { type: 'ciqual', id: '9100' }, name: 'Riz blanc, cru', state: 'raw',
   per100g: { kcal: 354, protein: 7, carbs: 78, fat: 0.6 }, portions: [],
 };
-const input: FoodInput = { name: '  Pain maison ', state: 'other', per100g: { kcal: 250, protein: 8, carbs: 48, fat: 2 }, portions: [] };
+const input: FoodInput = {
+  name: '  Pain maison ', state: 'other', per100g: { kcal: 250, protein: 8, carbs: 48, fat: 2 }, portions: [{ label: ' 1 tranche ', grams: 30 }],
+};
 
 const setup = () => ({ foods: foodUseCases({ catalog: inMemoryFoodCatalog([ciqualRice]), repo: inMemoryFoodRepository() }) });
 
@@ -23,6 +25,7 @@ test('create trims and validates; an invalid food is rejected before any write',
   let custom: Food[] = [];
   foods.observeCustom((list) => (custom = list), () => {});
   expect(custom.map((f) => f.name)).toEqual(['Pain maison']);
+  expect(custom[0].portions).toEqual([{ label: '1 tranche', grams: 30 }]);
   await expect(foods.create({ ...input, name: ' ' })).rejects.toThrow(/nom/i);
   expect(custom).toHaveLength(1);
 });

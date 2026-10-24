@@ -7,7 +7,7 @@ export function foodUseCases(deps: { catalog: FoodCatalog; repo: FoodRepository 
   const checked = (food: FoodInput): FoodInput => {
     const problem = validateFood(food);
     if (problem) throw new Error(problem);
-    return { ...food, name: food.name.trim() };
+    return { ...food, name: food.name.trim(), portions: food.portions.map((p) => ({ ...p, label: p.label.trim() })) };
   };
 
   return {
