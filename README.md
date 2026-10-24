@@ -50,7 +50,7 @@ Les deux variantes s'installent côte à côte (`Genki (dev)` et `Genki`). Le no
 
 Les aliments viennent de la table Ciqual 2025 de l'Anses (`doi:10.57745/RDMHWY`, Licence Ouverte Etalab 2.0). Citation : « Anses. 2025. Ciqual French food composition table ». Elle est convertie en une base SQLite en lecture seule, `assets/ciqual.db`, embarquée dans l'application : recherche hors-ligne, aucune lecture Firestore.
 
-`assets/ciqual.db` est committée. La régénérer change l'application : refaire ensuite un build natif (`npm run android`).
+`assets/ciqual.db` est committée. La régénérer change l'application : refaire ensuite un build natif (`npm run android`). `normalizeSearch` (`src/modules/nutrition/domain/normalize.ts`) sert à la conversion comme à la recherche, et la colonne `search` de la base en garde le résultat : modifier cette fonction impose de régénérer `assets/ciqual.db`.
 
 Pour la régénérer, télécharger `alim_*.xml` et `compo_*.xml` sur `entrepot.recherche.data.gouv.fr`, les placer dans un dossier sous les noms `alim.xml` et `compo.xml`, puis :
 
@@ -62,7 +62,7 @@ Règles de conversion (`scripts/ciqual/convert.ts`), valeurs pour 100 g arrondie
 
 - Énergie : code 328 (kcal, règlement UE 1169/2011) ; protéines : 25003 (N × 6,25) ; glucides : 31000 ; lipides : 40000.
 - « traces » et « < x » comptent pour 0 ; « - » (non déterminé) compte pour 0 pour les protéines, glucides et lipides.
-- Si l'énergie manque (143 aliments sur 3 484), elle est estimée par Atwater : 4 × protéines + 4 × glucides + 9 × lipides + 7 × alcool (code 60000). Sans aucune donnée, l'aliment est écarté.
+- Si l'énergie manque (143 aliments sur 3 484), elle est estimée par Atwater : 4 × protéines + 4 × glucides + 9 × lipides + 7 × alcool (code 60000), mais seulement quand ces quatre valeurs sont connues : 59 aliments. Les 84 autres sont écartés (Ciqual ne donne pas l'énergie et une valeur n'est pas déterminée : la compter pour 0 sous-estimerait les calories), d'où 3 400 aliments dans la base.
 - Ciqual ne relie pas un aliment cru à son équivalent cuit : l'état (cru, cuit ou autre) est déduit du nom. Un nom qui contient les deux (« cru ou cuit ») ou aucun est « autre ».
 
 ## Vérifications

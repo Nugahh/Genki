@@ -37,7 +37,7 @@ Contraintes d'outillage (vérifiées pendant M0/M1 et la préparation de M2) :
 ## Décisions de périmètre (M2)
 
 - **Cru / cuit :** Ciqual ne relie pas un aliment cru à son équivalent cuit (« Riz blanc, cru » et « Riz blanc, cuit, sans sel ajouté » sont deux entrées sans lien). L'état est donc déduit du nom, affiché en pastille sur chaque résultat, et la recherche propose les filtres **Tous / Cru / Cuit**. Pas d'appariement automatique (fragile, et il induirait en erreur sur les calories). Écart assumé avec « Après le choix : état cru ou cuit » : le choix se fait avant, dans la recherche.
-- **Valeurs Ciqual :** énergie = code 328 (kcal, règlement UE 1169/2011) ; protéines = 25003 (N × 6,25) ; glucides 31000 ; lipides 40000. « traces » et « < x » comptent pour 0 ; « - » (non déterminé) compte pour 0 pour les protéines, glucides et lipides. Si l'énergie manque (143 aliments sur 3 484), elle est estimée par Atwater (4 × protéines + 4 × glucides + 9 × lipides + 7 × alcool, code 60000) ; sans aucune donnée, l'aliment est écarté.
+- **Valeurs Ciqual :** énergie = code 328 (kcal, règlement UE 1169/2011) ; protéines = 25003 (N × 6,25) ; glucides 31000 ; lipides 40000. « traces » et « < x » comptent pour 0 ; « - » (non déterminé) compte pour 0 pour les protéines, glucides et lipides. Si l'énergie manque (143 aliments sur 3 484), elle est estimée par Atwater (4 × protéines + 4 × glucides + 9 × lipides + 7 × alcool, code 60000) **seulement quand ces quatre valeurs sont connues** (59 aliments) ; les 84 autres sont écartés (une valeur inconnue comptée pour 0 sous-estimerait les calories : « Boeuf, jarret cru » sortirait à 38 kcal), soit 3 400 aliments dans la base. L'utilisateur crée un aliment personnalisé pour ceux qui manquent.
 - **Portions :** Ciqual n'en fournit pas. Un aliment Ciqual propose la puce « 100 g » (plus la dernière quantité mangée, depuis Récents) et la saisie libre ; un aliment personnalisé apporte ses propres portions.
 - **Favoris :** « Favoris » liste les **repas types** (`favoriteMeals`) ; un aliment favori est un repas type d'un seul élément. « Récents » = les aliments distincts des 50 dernières entrées.
 - **Lignes du journal :** toucher une ligne ouvre ses actions (modifier la quantité, supprimer) au lieu du glissement : accessible et testable. Écart assumé avec « Glisser une ligne » ; le glissement pourra s'ajouter plus tard.
@@ -155,12 +155,46 @@ test('"traces" and "< x" count as 0, "-" counts as 0 for protein, carbs and fat'
   expect(food).toMatchObject({ kcal: 0, protein: 0, carbs: 0, fat: 0 });
 });
 
-test('estimates the energy with Atwater factors when Ciqual gives none', () => {
+test('estimates the energy with Atwater factors when Ciqual gives none but every macro is known', () => {
   const [food] = convertCiqual(
-    alim([['2', 'Boeuf, jarret cru']]),
-    compo([['2', KCAL, '-'], ['2', PROTEIN, '20'], ['2', CARBS, '-'], ['2', FAT, '5']]),
+    alim([['2', 'Pain maison']]),
+    compo([['2', KCAL, '-'], ['2', PROTEIN, '20'], ['2', CARBS, '10'], ['2', FAT, '5'], ['2', ALCOHOL, '0']]),
   );
-  expect(food.kcal).toBe(125); // 4 × 20 + 9 × 5
+  expect(food.kcal).toBe(165); // 4 × 20 + 4 × 10 + 9 × 5
+});
+
+test('drops a food whose energy is missing and some macro is undetermined (a floor is not an estimate)', () => {
+  const macros = [PROTEIN, CARBS, FAT, ALCOHOL];
+  for (const undetermined of macros) {
+    const rows = macros.map((code): [string, string, string] => ['2', code, code === undetermined ? '-' : '5']);
+    expect(convertCiqual(alim([['2', 'Boeuf, jarret cru']]), compo([['2', KCAL, '-'], ...rows]))).toEqual([]);
+  }
+});
+
+test('"traces" and "< x" count as known zeros, and decimals are rounded to 0.1', () => {
+  const [food] = convertCiqual(
+    alim([['3', 'Huile aromatisée']]),
+    compo([['3', KCAL, '-'], ['3', PROTEIN, 'traces'], ['3', CARBS, '&lt; 0,5'], ['3', FAT, '0'], ['3', ALCOHOL, '0']]),
+  );
+  expect(food).toMatchObject({ kcal: 0, protein: 0, carbs: 0, fat: 0 }); // kept: they are determined, not unknown
+  const [rounded] = convertCiqual(
+    alim([['4', 'X']]),
+    compo([['4', KCAL, '100,04'], ['4', PROTEIN, '7,38'], ['4', CARBS, '12,34'], ['4', FAT, '0,56']]),
+  );
+  expect(rounded).toMatchObject({ kcal: 100, protein: 7.4, carbs: 12.3, fat: 0.6 });
+});
+
+test('an unrecognised or blank teneur throws instead of becoming a guess', () => {
+  const convert = (teneur: string) => convertCiqual(alim([['6', 'X']]), compo([['6', FAT, teneur]]));
+  expect(() => convert('abc')).toThrow('unrecognised Ciqual value: "abc"');
+  expect(() => convert('')).toThrow('unrecognised Ciqual value: ""');
+});
+
+test('names come out in NFC, entities decoded and repeated spaces collapsed', () => {
+  const nfd = 'Sardine,  grillée/poêlée à l&apos;huile'.normalize('NFD');
+  const [food] = convertCiqual(alim([['5', nfd]]), compo([['5', KCAL, '100']]));
+  expect(food.name).toBe("Sardine, grillée/poêlée à l'huile");
+  expect(food.state).toBe('cooked');
 });
 
 test('counts alcohol (7 kcal/g) in the estimate', () => {
@@ -250,13 +284,15 @@ const ENTITIES: Record<string, string> = { apos: "'", quot: '"', lt: '<', gt: '>
 const decode = (s: string) => s.replace(/&(apos|quot|lt|gt|amp);/g, (_, e: string) => ENTITIES[e]);
 const round1 = (n: number) => Math.round(n * 10) / 10;
 
-/** A teneur as a number: "12,5" → 12.5, "traces" and "< 0,5" → 0, "-" (not determined) → undefined. */
+/** A teneur as a number: "12,5" → 12.5, "traces" and "< 0,5" → 0, "-" (not determined) → undefined. Anything else throws. */
 function amount(teneur: string): number | undefined {
   const t = decode(teneur).trim();
   if (t === '-') return undefined;
   if (t === 'traces' || t.startsWith('<')) return 0;
   const n = Number(t.replace(',', '.'));
-  return Number.isFinite(n) ? n : undefined;
+  // A blank or unknown form would be silently wrong: a format change must be loud.
+  if (t === '' || !Number.isFinite(n)) throw new Error(`unrecognised Ciqual value: "${teneur}"`);
+  return n;
 }
 
 // \b ignores accents, so letters are delimited explicitly.
@@ -276,11 +312,15 @@ function stateOf(name: string): CiqualFood['state'] {
   return raw ? 'raw' : 'cooked';
 }
 
-/** Energy in kcal/100 g: Ciqual's own, else Atwater (4/4/9, alcohol 7) from what is known. */
+/**
+ * Energy in kcal/100 g: Ciqual's own, else Atwater (4/4/9, alcohol 7) but only when all four are determined:
+ * an undetermined value counted as 0 would understate the calories (a floor, not an estimate).
+ */
 function energy(v: Record<string, number | undefined>): number | undefined {
   if (v[KCAL] !== undefined) return v[KCAL];
-  if ([PROTEIN, CARBS, FAT, ALCOHOL].every((c) => v[c] === undefined)) return undefined;
-  return 4 * (v[PROTEIN] ?? 0) + 4 * (v[CARBS] ?? 0) + 9 * (v[FAT] ?? 0) + 7 * (v[ALCOHOL] ?? 0);
+  const [p, c, f, a] = [v[PROTEIN], v[CARBS], v[FAT], v[ALCOHOL]];
+  if (p === undefined || c === undefined || f === undefined || a === undefined) return undefined;
+  return 4 * p + 4 * c + 9 * f + 7 * a;
 }
 
 export function convertCiqual(alimXml: string, compoXml: string): CiqualFood[] {
@@ -296,7 +336,7 @@ export function convertCiqual(alimXml: string, compoXml: string): CiqualFood[] {
     const v = values.get(id) ?? {};
     const kcal = energy(v);
     if (kcal === undefined) continue;
-    const name = decode(rawName).normalize('NFC');
+    const name = decode(rawName).replace(/\s+/g, ' ').normalize('NFC');
     foods.push({
       id,
       name,
@@ -317,20 +357,25 @@ export function convertCiqual(alimXml: string, compoXml: string): CiqualFood[] {
 ```ts
 // Builds the read-only food database shipped with the app from the Anses Ciqual XML files:
 //   npm run build:ciqual -- <dir with alim.xml and compo.xml> <version, e.g. 2025-11-03> [output]
-import { readFileSync, rmSync } from 'node:fs';
+import { readFileSync, renameSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import { convertCiqual } from './ciqual/convert.ts';
 
 const [dir, version, out = 'assets/ciqual.db'] = process.argv.slice(2);
-if (!dir || !version) throw new Error('usage: build-ciqual <dir with alim.xml and compo.xml> <version> [output]');
+if (!dir || !version) {
+  console.error('usage: build-ciqual <dir with alim.xml and compo.xml> <version> [output]');
+  process.exit(1);
+}
 
 const read = (file: string) => readFileSync(join(dir, file), 'utf8');
 const foods = convertCiqual(read('alim.xml'), read('compo.xml'));
 if (foods.length < 3000) throw new Error(`unexpected Ciqual format: only ${foods.length} foods converted`);
 
-rmSync(out, { force: true });
-const db = new DatabaseSync(out);
+// Built beside the target and renamed over it: a failure never leaves a broken database behind.
+const tmp = `${out}.tmp`;
+rmSync(tmp, { force: true });
+const db = new DatabaseSync(tmp);
 db.exec(`
   CREATE TABLE foods (
     id TEXT PRIMARY KEY, name TEXT NOT NULL, search TEXT NOT NULL,
@@ -349,12 +394,14 @@ meta.run('licence', 'Licence Ouverte Etalab 2.0');
 meta.run('citation', `Anses. 2025. Table de composition nutritionnelle des aliments Ciqual (version ${version}).`);
 db.exec('COMMIT; VACUUM;');
 db.close();
+renameSync(tmp, out);
 console.log(`${out}: ${foods.length} foods`);
 ```
 
-Dans `package.json`, remplacer le script `test` et ajouter `build:ciqual` :
+Dans `package.json`, remplacer les scripts `lint` (il couvre aussi `scripts/`) et `test`, et ajouter `build:ciqual` :
 
 ```json
+    "lint": "expo lint src app scripts",
     "test": "NODE_OPTIONS=--disable-warning=ExperimentalWarning jest",
     "build:ciqual": "NODE_NO_WARNINGS=1 node scripts/build-ciqual.ts",
 ```
@@ -364,7 +411,7 @@ Dans `tsconfig.json`, ajouter `"allowImportingTsExtensions": true` à `compilerO
 - [ ] **Step 4: Lancer les tests et vérifier qu'ils passent**
 
 Run: `npx jest src/modules/nutrition/domain scripts/ciqual && npm run typecheck && npm run lint && npm run lint:deps`
-Expected: PASS (2 suites, 18 tests : 5 pour `normalize`, 13 pour `convert`), aucune erreur.
+Expected: PASS (2 suites, 22 tests : 5 pour `normalize`, 17 pour `convert`), aucune erreur.
 
 - [ ] **Step 5: Générer la base et vérifier son contenu**
 
@@ -381,11 +428,11 @@ console.log(db.prepare(\"select id, name, kcal, protein, carbs, fat from foods w
 console.log(db.prepare('select * from meta').all());"
 ```
 
-Expected : `assets/ciqual.db: N foods` avec N entre 3 400 et 3 484 ; fichier de moins de 1 Mo ; état `raw` environ 660, `cooked` environ 550 ; « Riz blanc, cru » avec environ 350 kcal. Noter N dans le rapport.
+Expected : `assets/ciqual.db: 3400 foods` (3 341 avec énergie Ciqual + 59 estimées) ; fichier de moins de 1 Mo ; état `raw` 622, `cooked` 541, `other` 2 237 ; « Riz blanc, cru » avec environ 350 kcal. Noter N dans le rapport.
 
 - [ ] **Step 6: Documenter les données dans le README**
 
-Ajouter à `README.md` une section « Données alimentaires » : source (table Ciqual 2025 de l'Anses, `doi:10.57745/RDMHWY`, licence Etalab 2.0, citation « Anses. 2025. Ciqual French food composition table »), fichiers d'entrée (`alim_*.xml` et `compo_*.xml`, téléchargeables sur `entrepot.recherche.data.gouv.fr`), règles de conversion (résumées depuis « Décisions de périmètre »), commande `npm run build:ciqual -- <dossier> <version>`, et le fait que `assets/ciqual.db` est committée (la régénérer change l'application : refaire un build natif).
+Ajouter à `README.md` une section « Données alimentaires » : source (table Ciqual 2025 de l'Anses, `doi:10.57745/RDMHWY`, licence Etalab 2.0, citation « Anses. 2025. Ciqual French food composition table »), fichiers d'entrée (`alim_*.xml` et `compo_*.xml`, téléchargeables sur `entrepot.recherche.data.gouv.fr`), règles de conversion (résumées depuis « Décisions de périmètre »), commande `npm run build:ciqual -- <dossier> <version>`, et le fait que `assets/ciqual.db` est committée (la régénérer change l'application : refaire un build natif ; modifier `normalizeSearch` impose aussi de la régénérer, car la colonne `search` en garde le résultat).
 
 - [ ] **Step 7: Vérifier l'ensemble puis commit**
 

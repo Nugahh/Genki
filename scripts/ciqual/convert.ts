@@ -28,13 +28,15 @@ const ENTITIES: Record<string, string> = { apos: "'", quot: '"', lt: '<', gt: '>
 const decode = (s: string) => s.replace(/&(apos|quot|lt|gt|amp);/g, (_, e: string) => ENTITIES[e]);
 const round1 = (n: number) => Math.round(n * 10) / 10;
 
-/** A teneur as a number: "12,5" → 12.5, "traces" and "< 0,5" → 0, "-" (not determined) → undefined. */
+/** A teneur as a number: "12,5" → 12.5, "traces" and "< 0,5" → 0, "-" (not determined) → undefined. Anything else throws. */
 function amount(teneur: string): number | undefined {
   const t = decode(teneur).trim();
   if (t === '-') return undefined;
   if (t === 'traces' || t.startsWith('<')) return 0;
   const n = Number(t.replace(',', '.'));
-  return Number.isFinite(n) ? n : undefined;
+  // A blank or unknown form would be silently wrong: a format change must be loud.
+  if (t === '' || !Number.isFinite(n)) throw new Error(`unrecognised Ciqual value: "${teneur}"`);
+  return n;
 }
 
 // \b ignores accents, so letters are delimited explicitly.
@@ -54,11 +56,15 @@ function stateOf(name: string): CiqualFood['state'] {
   return raw ? 'raw' : 'cooked';
 }
 
-/** Energy in kcal/100 g: Ciqual's own, else Atwater (4/4/9, alcohol 7) from what is known. */
+/**
+ * Energy in kcal/100 g: Ciqual's own, else Atwater (4/4/9, alcohol 7) but only when all four are determined:
+ * an undetermined value counted as 0 would understate the calories (a floor, not an estimate).
+ */
 function energy(v: Record<string, number | undefined>): number | undefined {
   if (v[KCAL] !== undefined) return v[KCAL];
-  if ([PROTEIN, CARBS, FAT, ALCOHOL].every((c) => v[c] === undefined)) return undefined;
-  return 4 * (v[PROTEIN] ?? 0) + 4 * (v[CARBS] ?? 0) + 9 * (v[FAT] ?? 0) + 7 * (v[ALCOHOL] ?? 0);
+  const [p, c, f, a] = [v[PROTEIN], v[CARBS], v[FAT], v[ALCOHOL]];
+  if (p === undefined || c === undefined || f === undefined || a === undefined) return undefined;
+  return 4 * p + 4 * c + 9 * f + 7 * a;
 }
 
 export function convertCiqual(alimXml: string, compoXml: string): CiqualFood[] {
@@ -74,7 +80,7 @@ export function convertCiqual(alimXml: string, compoXml: string): CiqualFood[] {
     const v = values.get(id) ?? {};
     const kcal = energy(v);
     if (kcal === undefined) continue;
-    const name = decode(rawName).normalize('NFC');
+    const name = decode(rawName).replace(/\s+/g, ' ').normalize('NFC');
     foods.push({
       id,
       name,

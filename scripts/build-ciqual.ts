@@ -1,19 +1,24 @@
 // Builds the read-only food database shipped with the app from the Anses Ciqual XML files:
 //   npm run build:ciqual -- <dir with alim.xml and compo.xml> <version, e.g. 2025-11-03> [output]
-import { readFileSync, rmSync } from 'node:fs';
+import { readFileSync, renameSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import { convertCiqual } from './ciqual/convert.ts';
 
 const [dir, version, out = 'assets/ciqual.db'] = process.argv.slice(2);
-if (!dir || !version) throw new Error('usage: build-ciqual <dir with alim.xml and compo.xml> <version> [output]');
+if (!dir || !version) {
+  console.error('usage: build-ciqual <dir with alim.xml and compo.xml> <version> [output]');
+  process.exit(1);
+}
 
 const read = (file: string) => readFileSync(join(dir, file), 'utf8');
 const foods = convertCiqual(read('alim.xml'), read('compo.xml'));
 if (foods.length < 3000) throw new Error(`unexpected Ciqual format: only ${foods.length} foods converted`);
 
-rmSync(out, { force: true });
-const db = new DatabaseSync(out);
+// Built beside the target and renamed over it: a failure never leaves a broken database behind.
+const tmp = `${out}.tmp`;
+rmSync(tmp, { force: true });
+const db = new DatabaseSync(tmp);
 db.exec(`
   CREATE TABLE foods (
     id TEXT PRIMARY KEY, name TEXT NOT NULL, search TEXT NOT NULL,
@@ -32,4 +37,5 @@ meta.run('licence', 'Licence Ouverte Etalab 2.0');
 meta.run('citation', `Anses. 2025. Table de composition nutritionnelle des aliments Ciqual (version ${version}).`);
 db.exec('COMMIT; VACUUM;');
 db.close();
+renameSync(tmp, out);
 console.log(`${out}: ${foods.length} foods`);

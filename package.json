@@ -42,7 +42,7 @@
   "scripts": {
     "start": "expo start",
     "android": "expo run:android",
-    "lint": "expo lint",
+    "lint": "expo lint src app scripts",
     "typecheck": "tsc --noEmit",
     "test": "NODE_OPTIONS=--disable-warning=ExperimentalWarning jest",
     "build:ciqual": "NODE_NO_WARNINGS=1 node scripts/build-ciqual.ts",

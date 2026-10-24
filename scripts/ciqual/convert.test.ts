@@ -39,12 +39,46 @@ test('"traces" and "< x" count as 0, "-" counts as 0 for protein, carbs and fat'
   expect(food).toMatchObject({ kcal: 0, protein: 0, carbs: 0, fat: 0 });
 });
 
-test('estimates the energy with Atwater factors when Ciqual gives none', () => {
+test('estimates the energy with Atwater factors when Ciqual gives none but every macro is known', () => {
   const [food] = convertCiqual(
-    alim([['2', 'Boeuf, jarret cru']]),
-    compo([['2', KCAL, '-'], ['2', PROTEIN, '20'], ['2', CARBS, '-'], ['2', FAT, '5']]),
+    alim([['2', 'Pain maison']]),
+    compo([['2', KCAL, '-'], ['2', PROTEIN, '20'], ['2', CARBS, '10'], ['2', FAT, '5'], ['2', ALCOHOL, '0']]),
   );
-  expect(food.kcal).toBe(125); // 4 × 20 + 9 × 5
+  expect(food.kcal).toBe(165); // 4 × 20 + 4 × 10 + 9 × 5
+});
+
+test('drops a food whose energy is missing and some macro is undetermined (a floor is not an estimate)', () => {
+  const macros = [PROTEIN, CARBS, FAT, ALCOHOL];
+  for (const undetermined of macros) {
+    const rows = macros.map((code): [string, string, string] => ['2', code, code === undetermined ? '-' : '5']);
+    expect(convertCiqual(alim([['2', 'Boeuf, jarret cru']]), compo([['2', KCAL, '-'], ...rows]))).toEqual([]);
+  }
+});
+
+test('"traces" and "< x" count as known zeros, and decimals are rounded to 0.1', () => {
+  const [food] = convertCiqual(
+    alim([['3', 'Huile aromatisée']]),
+    compo([['3', KCAL, '-'], ['3', PROTEIN, 'traces'], ['3', CARBS, '&lt; 0,5'], ['3', FAT, '0'], ['3', ALCOHOL, '0']]),
+  );
+  expect(food).toMatchObject({ kcal: 0, protein: 0, carbs: 0, fat: 0 }); // kept: they are determined, not unknown
+  const [rounded] = convertCiqual(
+    alim([['4', 'X']]),
+    compo([['4', KCAL, '100,04'], ['4', PROTEIN, '7,38'], ['4', CARBS, '12,34'], ['4', FAT, '0,56']]),
+  );
+  expect(rounded).toMatchObject({ kcal: 100, protein: 7.4, carbs: 12.3, fat: 0.6 });
+});
+
+test('an unrecognised or blank teneur throws instead of becoming a guess', () => {
+  const convert = (teneur: string) => convertCiqual(alim([['6', 'X']]), compo([['6', FAT, teneur]]));
+  expect(() => convert('abc')).toThrow('unrecognised Ciqual value: "abc"');
+  expect(() => convert('')).toThrow('unrecognised Ciqual value: ""');
+});
+
+test('names come out in NFC, entities decoded and repeated spaces collapsed', () => {
+  const nfd = 'Sardine,  grillée/poêlée à l&apos;huile'.normalize('NFD');
+  const [food] = convertCiqual(alim([['5', nfd]]), compo([['5', KCAL, '100']]));
+  expect(food.name).toBe("Sardine, grillée/poêlée à l'huile");
+  expect(food.state).toBe('cooked');
 });
 
 test('counts alcohol (7 kcal/g) in the estimate', () => {
