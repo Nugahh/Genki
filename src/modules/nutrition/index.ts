@@ -1,0 +1,8 @@
+export { inMemoryFavoriteMealRepository } from './adapters/inMemoryFavoriteMealRepository';
+export { inMemoryFoodCatalog } from './adapters/inMemoryFoodCatalog';
+export { inMemoryFoodEntryRepository } from './adapters/inMemoryFoodEntryRepository';
+export { inMemoryFoodRepository } from './adapters/inMemoryFoodRepository';
+export { foodUseCases, type FoodUseCases } from './application/foodUseCases';
+export { mealUseCases, type MealUseCases } from './application/mealUseCases';
+export type { Food } from './domain/food';
+export { defaultMeal, MEALS, type Meal } from './domain/meal';
