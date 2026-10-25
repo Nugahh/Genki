@@ -16,7 +16,10 @@ function renderToday() {
       water.observeDay(
         day,
         (entries) =>
-          onNext({ waterMl: entries.reduce((sum, e) => sum + e.ml, 0) }, { hasPendingWrites: false, fromCache: false }),
+          onNext(
+            { waterMl: entries.reduce((sum, e) => sum + e.ml, 0), kcal: 0, proteinG: 0, carbsG: 0, fatG: 0 },
+            { hasPendingWrites: false, fromCache: false },
+          ),
         () => {},
       ),
   };

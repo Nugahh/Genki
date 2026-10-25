@@ -17,7 +17,7 @@ jest.mock('@/composition', () => {
       hydration: waterUseCases(inMemoryWaterRepository(), clock, DEFAULT_PROFILE.timezone),
       dayTotals: {
         observe: (_day, onNext) => {
-          onNext({ waterMl: 0 }, { hasPendingWrites: false, fromCache: false });
+          onNext({ waterMl: 0, kcal: 0, proteinG: 0, carbsG: 0, fatG: 0 }, { hasPendingWrites: false, fromCache: false });
           return () => {};
         },
       },

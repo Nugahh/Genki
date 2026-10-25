@@ -1,6 +1,7 @@
 import { initializeTestEnvironment, type RulesTestEnvironment } from '@firebase/rules-unit-testing';
 import { disableNetwork, doc, enableNetwork, serverTimestamp, setDoc, type Firestore } from 'firebase/firestore';
 import { readFileSync } from 'node:fs';
+import type { DayTotals } from '../application/ports';
 import type { SyncMeta } from '../domain/sync';
 import { firestoreDayTotals } from './firestoreDayTotals';
 
@@ -17,16 +18,16 @@ afterAll(() => env.cleanup());
 
 const phone = () => env.authenticatedContext('alice').firestore() as unknown as Firestore;
 
-/** Resolves on the first snapshot of today's totals that matches. */
+/** Resolves with the totals of the first snapshot of today that matches. */
 const totalsUntil = (db: Firestore, matches: (waterMl: number, sync: SyncMeta) => boolean) =>
-  new Promise<void>((resolve, reject) => {
+  new Promise<DayTotals>((resolve, reject) => {
     // The adapter is typed for React Native Firebase; here it runs on the web SDK (jest.emulator.config.js).
     const stop = firestoreDayTotals(db as never, 'alice').observe(
       '2026-10-23',
       (totals, sync) => {
         if (!matches(totals.waterMl, sync)) return;
         stop();
-        resolve();
+        resolve(totals);
       },
       reject,
     );
@@ -45,4 +46,13 @@ test('a write is pending offline, then synced once the server has it', async () 
   await enableNetwork(db);
   await write;
   await totalsUntil(db, (waterMl, sync) => waterMl === 250 && !sync.hasPendingWrites && !sync.fromCache);
+});
+
+test('reads the nutrition totals, a missing field as zero and a slight negative drift as zero', async () => {
+  const db = phone();
+  const day = doc(db, 'users/alice/days/2026-10-23');
+  await setDoc(day, { kcal: 1200.4, proteinG: 80, carbsG: 130, fatG: 40, updatedAt: serverTimestamp() });
+  expect(await totalsUntil(db, (_, sync) => !sync.fromCache)).toEqual({ waterMl: 0, kcal: 1200.4, proteinG: 80, carbsG: 130, fatG: 40 });
+  await setDoc(day, { kcal: -0.03, updatedAt: serverTimestamp() });
+  expect(await totalsUntil(db, (_, sync) => !sync.fromCache)).toEqual({ waterMl: 0, kcal: 0, proteinG: 0, carbsG: 0, fatG: 0 });
 });

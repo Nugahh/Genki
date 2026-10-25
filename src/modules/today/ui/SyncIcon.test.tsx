@@ -26,9 +26,9 @@ const renderIcon = (writeFailed: boolean) =>
 test('the cloud follows the snapshot metadata of the day totals', async () => {
   await renderIcon(false);
   expect(screen.getByLabelText('Hors-ligne')).toBeTruthy();
-  await act(() => onNext({ waterMl: 0 }, { hasPendingWrites: true, fromCache: true }));
+  await act(() => onNext({ waterMl: 0, kcal: 0, proteinG: 0, carbsG: 0, fatG: 0 }, { hasPendingWrites: true, fromCache: true }));
   expect(screen.getByLabelText('En attente d’envoi')).toBeTruthy();
-  await act(() => onNext({ waterMl: 0 }, { hasPendingWrites: false, fromCache: false }));
+  await act(() => onNext({ waterMl: 0, kcal: 0, proteinG: 0, carbsG: 0, fatG: 0 }, { hasPendingWrites: false, fromCache: false }));
   expect(screen.getByLabelText('Synchronisé')).toBeTruthy();
   await act(() => onError(new Error('denied')));
   expect(screen.getByLabelText('Erreur de synchronisation')).toBeTruthy();
