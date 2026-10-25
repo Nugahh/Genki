@@ -12,6 +12,54 @@ service cloud.firestore {
       return value is string && value.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$');
     }
 
+    function isShortText(value, max) {
+      return value is string && value.size() > 0 && value.size() <= max;
+    }
+
+    function isFoodRef(ref) {
+      return ref is map
+        && ref.keys().hasOnly(['type', 'id'])
+        && ref.type in ['ciqual', 'custom']
+        && isShortText(ref.id, 64);
+    }
+
+    // Per-entry macros: grams are capped at 5 000, so no entry goes past 50 000 kcal.
+    function isEntryMacros(m) {
+      return m is map
+        && m.keys().hasOnly(['kcal', 'protein', 'carbs', 'fat'])
+        && m.kcal is number && m.kcal >= 0 && m.kcal <= 50000
+        && m.protein is number && m.protein >= 0 && m.protein <= 5000
+        && m.carbs is number && m.carbs >= 0 && m.carbs <= 5000
+        && m.fat is number && m.fat >= 0 && m.fat <= 5000;
+    }
+
+    function isGrams(value) {
+      return value is number && value > 0 && value <= 5000;
+    }
+
+    function isPer100g(m) {
+      return m is map
+        && m.keys().hasOnly(['kcal', 'protein', 'carbs', 'fat'])
+        && m.kcal is number && m.kcal >= 0 && m.kcal <= 900
+        && m.protein is number && m.protein >= 0 && m.protein <= 100
+        && m.carbs is number && m.carbs >= 0 && m.carbs <= 100
+        && m.fat is number && m.fat >= 0 && m.fat <= 100;
+    }
+
+    function isFoodFields(d) {
+      return isShortText(d.name, 100)
+        && d.state in ['raw', 'cooked', 'other']
+        && isPer100g(d.per100g)
+        && d.portions is list
+        && d.portions.size() <= 20
+        && d.updatedAt is timestamp;
+    }
+
+    // A day total field is optional; macro totals tolerate a tiny negative drift (sums of 0.1-rounded floats).
+    function atLeast(data, field, min) {
+      return !(field in data) || (data[field] is number && data[field] >= min);
+    }
+
     match /users/{uid}/{document=**} {
       allow read: if isOwner(uid);
     }
@@ -35,10 +83,64 @@ service cloud.firestore {
     match /users/{uid}/days/{day} {
       allow create, update: if isOwner(uid)
         && isDayKey(day)
-        && request.resource.data.keys().hasOnly(['waterMl', 'updatedAt'])
-        && request.resource.data.waterMl is number
-        && request.resource.data.waterMl >= 0
+        && request.resource.data.keys().hasOnly(['waterMl', 'kcal', 'proteinG', 'carbsG', 'fatG', 'updatedAt'])
+        && request.resource.data.updatedAt is timestamp
+        && atLeast(request.resource.data, 'waterMl', 0)
+        && atLeast(request.resource.data, 'kcal', -0.05)
+        && atLeast(request.resource.data, 'proteinG', -0.05)
+        && atLeast(request.resource.data, 'carbsG', -0.05)
+        && atLeast(request.resource.data, 'fatG', -0.05);
+    }
+
+    match /users/{uid}/foodEntries/{entryId} {
+      allow create: if isOwner(uid)
+        && request.resource.data.keys().hasOnly(['day', 'meal', 'foodRef', 'foodName', 'grams', 'macros', 'createdAt', 'updatedAt', 'deletedAt'])
+        && isDayKey(request.resource.data.day)
+        && request.resource.data.meal in ['breakfast', 'lunch', 'dinner', 'snack']
+        && isFoodRef(request.resource.data.foodRef)
+        && isShortText(request.resource.data.foodName, 200)
+        && isGrams(request.resource.data.grams)
+        && isEntryMacros(request.resource.data.macros)
+        && request.resource.data.createdAt is timestamp
+        && request.resource.data.updatedAt is timestamp
+        && request.resource.data.deletedAt == null;
+      // Either a soft delete (once: the batch moving the day totals fails with it) or a quantity change.
+      allow update: if isOwner(uid)
+        && resource.data.deletedAt == null
+        && (
+          (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['deletedAt'])
+            && request.resource.data.deletedAt is timestamp)
+          || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['grams', 'macros', 'updatedAt'])
+            && isGrams(request.resource.data.grams)
+            && isEntryMacros(request.resource.data.macros)
+            && request.resource.data.updatedAt is timestamp)
+        );
+    }
+
+    match /users/{uid}/foods/{foodId} {
+      allow create: if isOwner(uid)
+        && request.resource.data.keys().hasOnly(['name', 'state', 'per100g', 'portions', 'updatedAt', 'deletedAt'])
+        && isFoodFields(request.resource.data)
+        && request.resource.data.deletedAt == null;
+      allow update: if isOwner(uid)
+        && resource.data.deletedAt == null
+        && (
+          (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['deletedAt'])
+            && request.resource.data.deletedAt is timestamp)
+          || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'state', 'per100g', 'portions', 'updatedAt'])
+            && isFoodFields(request.resource.data))
+        );
+    }
+
+    match /users/{uid}/favoriteMeals/{mealId} {
+      allow create, update: if isOwner(uid)
+        && request.resource.data.keys().hasOnly(['name', 'items', 'updatedAt'])
+        && isShortText(request.resource.data.name, 100)
+        && request.resource.data.items is list
+        && request.resource.data.items.size() >= 1
+        && request.resource.data.items.size() <= 50
         && request.resource.data.updatedAt is timestamp;
+      allow delete: if isOwner(uid);
     }
   }
 }
