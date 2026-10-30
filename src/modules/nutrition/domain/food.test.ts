@@ -1,4 +1,4 @@
-import { matchCustom, validateFood, type Food, type FoodInput } from './food';
+import { isValidGrams, matchCustom, validateFood, type Food, type FoodInput } from './food';
 
 const input = (over: Partial<FoodInput> = {}): FoodInput => ({
   name: 'Pain de mie complet',
@@ -6,6 +6,11 @@ const input = (over: Partial<FoodInput> = {}): FoodInput => ({
   per100g: { kcal: 250, protein: 9, carbs: 45, fat: 4 },
   portions: [{ label: '1 tranche', grams: 30 }],
   ...over,
+});
+
+test('a quantity is valid from just above 0 up to 5 000 g, and never NaN or infinite', () => {
+  for (const grams of [0.1, 5000]) expect(isValidGrams(grams)).toBe(true);
+  for (const grams of [0, -1, 5001, Number.NaN, Number.POSITIVE_INFINITY]) expect(isValidGrams(grams)).toBe(false);
 });
 
 describe('validateFood', () => {

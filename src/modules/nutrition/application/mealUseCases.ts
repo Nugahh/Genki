@@ -1,5 +1,5 @@
 import { dayKey, type Clock } from '@/shared/clock';
-import type { FavoriteMeal, Food, FoodEntry, FoodRef, RecentFood } from '../domain/food';
+import { isValidGrams, type FavoriteMeal, type Food, type FoodEntry, type FoodRef, type RecentFood } from '../domain/food';
 import { macrosFor, scaleMacros } from '../domain/macros';
 import type { Meal } from '../domain/meal';
 import type { FavoriteMealRepository, FoodEntryRepository } from './ports';
@@ -9,7 +9,7 @@ const RECENT_SHOWN = 20;
 const oldestFirst = (a: FoodEntry, b: FoodEntry) => a.createdAt.getTime() - b.createdAt.getTime();
 // A use case does not trust its caller (the UI and the Firestore rules bound these values too).
 const assertGrams = (grams: number) => {
-  if (!(grams > 0 && grams <= 5000)) throw new Error('La quantité doit être comprise entre 0 et 5 000 g.');
+  if (!isValidGrams(grams)) throw new Error('La quantité doit être comprise entre 0 et 5 000 g.');
 };
 
 export function mealUseCases(deps: { entries: FoodEntryRepository; favorites: FavoriteMealRepository; clock: Clock; timezone: string }) {

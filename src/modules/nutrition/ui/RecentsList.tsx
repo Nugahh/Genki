@@ -25,7 +25,9 @@ export function RecentsList({ meals, foods, custom, onPick }: Props) {
 
   const open = async ({ ref, grams }: RecentFood) => {
     if (custom === null) return; // the rows are disabled until then
-    const food = await foods.resolve(ref, custom);
+    const food = await foods.resolve(ref, custom).catch((error) => {
+      console.warn(error);
+    });
     if (food) onPick(food, grams);
     else setGone(true);
   };

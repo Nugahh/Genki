@@ -389,7 +389,7 @@ test('custom foods that match come before the Ciqual results', async () => {
   expect(screen.getAllByText(/^Riz/).map((title) => title.props.children)).toEqual(['Riz maison', 'Riz blanc, cru', 'Riz blanc, cuit, sans sel ajouté']);
 });
 
-test('a catalog that fails leaves the custom foods and the message for the rest', async () => {
+test('a catalog that fails says the search is unavailable and leaves the custom foods', async () => {
   const warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
   const failing: FoodCatalog = { search: () => Promise.reject(new Error('disk')), get: async () => undefined };
   const { foods } = await setup({ catalog: failing });
@@ -399,10 +399,31 @@ test('a catalog that fails leaves the custom foods and the message for the rest'
 
   await search('pain');
   expect(await screen.findByText('Pain maison')).toBeTruthy();
+  expect(await screen.findByText('Recherche indisponible.')).toBeTruthy();
   expect(screen.queryByText('Aucun aliment trouvé.')).toBeNull();
+  // « Aucun aliment trouvé. » would be false: the Ciqual foods were not searched.
   await search('zzz');
-  expect(await screen.findByText('Aucun aliment trouvé.')).toBeTruthy();
+  expect(await screen.findByText('Recherche indisponible.')).toBeTruthy();
+  expect(screen.queryByText('Aucun aliment trouvé.')).toBeNull();
   expect(warn).toHaveBeenCalledWith(new Error('disk'));
+});
+
+test('« Aucun aliment trouvé. » also waits for the custom foods', async () => {
+  const { catalog, answer } = manualCatalog();
+  let release = () => {};
+  await setup({
+    catalog,
+    observeCustom: (onNext) => {
+      release = () => onNext([]);
+      return () => {};
+    },
+  });
+
+  await search('zzz');
+  await answer('zzz', []);
+  expect(screen.queryByText('Aucun aliment trouvé.')).toBeNull();
+  await act(async () => release());
+  expect(screen.getByText('Aucun aliment trouvé.')).toBeTruthy();
 });
 
 test('« Retour » brings the results back, with the search and the filter as they were', async () => {
@@ -430,6 +451,10 @@ test('« Ajouter » needs a quantity above 0 and up to 5 000 g, typed with a com
     await fireEvent.changeText(field, text);
     if (valid) expect(screen.getByText('Ajouter à Déjeuner')).toBeEnabled();
     else expect(screen.getByText('Ajouter à Déjeuner')).toBeDisabled();
+    // The reason is given for a quantity that was typed and is wrong, not for an empty field.
+    const reason = screen.queryByText('La quantité doit être comprise entre 0 et 5 000 g.');
+    if (valid || text === '') expect(reason).toBeNull();
+    else expect(reason).toBeTruthy();
     expect(screen.queryByText(/NaN/)).toBeNull();
   }
 
@@ -464,4 +489,49 @@ test('a favorite or a recent does nothing until the custom foods have arrived', 
   await act(async () => release());
   await fireEvent.press(screen.getByText('Riz blanc, cru'));
   expect(await screen.findByLabelText('Quantité (g)')).toBeTruthy();
+});
+
+test('« Ajouter à … » adds the food once, however often it is touched before the screen is left', async () => {
+  const { entries, onDone } = await setup();
+  await search('riz');
+  await fireEvent.press(await screen.findByText('Riz blanc, cru'));
+
+  await fireEvent.press(screen.getByText('Ajouter à Déjeuner'));
+  await fireEvent.press(screen.getByText('Ajouter à Déjeuner'));
+
+  expect(entries.entries).toHaveLength(1);
+  expect(onDone).toHaveBeenCalledTimes(1);
+});
+
+test('a favorite is logged once, however often it is touched before the screen is left', async () => {
+  const { entries, meals, onDone } = await setup({ meal: 'dinner' });
+  await act(async () => {
+    await meals.logFood('lunch', rawRice, 200);
+  });
+  await act(async () => {
+    await meals.saveFavorite('Riz du midi', entries.entries);
+  });
+
+  await fireEvent.press(screen.getByText('Favoris'));
+  await fireEvent.press(screen.getByText('Riz du midi'));
+  await fireEvent.press(screen.getByText('Riz du midi'));
+
+  await waitFor(() => expect(entries.entries).toHaveLength(2));
+  expect(onDone).toHaveBeenCalledTimes(1);
+});
+
+test('a recent whose lookup fails says the food is gone, instead of an unhandled rejection', async () => {
+  const warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
+  const failing: FoodCatalog = { ...inMemoryFoodCatalog([rawRice]), get: () => Promise.reject(new Error('disk')) };
+  const { meals } = await setup({ catalog: failing });
+  await act(async () => {
+    await meals.logFood('lunch', rawRice, 100);
+  });
+
+  await fireEvent.press(screen.getByText('Récents'));
+  await fireEvent.press(screen.getByText('Riz blanc, cru'));
+
+  expect(await screen.findByText('Cet aliment n’existe plus.')).toBeTruthy();
+  expect(screen.queryByLabelText('Quantité (g)')).toBeNull();
+  expect(warn).toHaveBeenCalledWith(new Error('disk'));
 });

@@ -1,25 +1,15 @@
-import { useState } from 'react';
-import { StyleSheet, View, type ViewStyle } from 'react-native';
-import { Button, Chip, Text, TextInput } from 'react-native-paper';
+import { useRef, useState } from 'react';
+import { StyleSheet, View } from 'react-native';
+import { Button, Chip, HelperText, Text, TextInput } from 'react-native-paper';
 import type { FoodUseCases } from '../application/foodUseCases';
 import type { MealUseCases } from '../application/mealUseCases';
-import type { Food, FoodState } from '../domain/food';
+import { isValidGrams, type Food } from '../domain/food';
 import { macrosFor } from '../domain/macros';
 import type { Meal } from '../domain/meal';
 import { FoodForm } from './FoodForm';
-import { gramsText, macrosText, MEAL_LABELS, parseNumber } from './format';
+import { asText, gramsText, macrosText, MEAL_LABELS, parseNumber } from './format';
+import { StateChip } from './StateChip';
 
-/** « cru » or « cuit » beside a food; nothing for a food that is neither. */
-export function StateChip({ state, style }: { state: FoodState; style?: ViewStyle }) {
-  if (state === 'other') return null;
-  return (
-    <Chip compact accessibilityRole="text" style={style}>
-      {state === 'raw' ? 'cru' : 'cuit'}
-    </Chip>
-  );
-}
-
-const asText = (n: number) => String(n).replace('.', ',');
 // A chip is 32 dp tall: 8 dp more above and below make the 48 dp target.
 const HIT_SLOP = { top: 8, bottom: 8 };
 
@@ -43,8 +33,10 @@ export function FoodDetail({ food: chosen, grams: last, meal, meals, foods, run,
   const [food, setFood] = useState(chosen);
   const [text, setText] = useState(asText(last ?? 100));
   const [editing, setEditing] = useState(false);
+  // Set by the first touch of « Ajouter à … »: a second one, before the host has left the screen, must not log the food again.
+  const submitted = useRef(false);
   const grams = parseNumber(text);
-  const valid = grams > 0 && grams <= 5000;
+  const valid = isValidGrams(grams);
 
   if (editing) {
     return (
@@ -87,12 +79,15 @@ export function FoodDetail({ food: chosen, grams: last, meal, meals, foods, run,
         ))}
       </View>
       <TextInput label="Quantité (g)" accessibilityLabel="Quantité (g)" value={text} onChangeText={setText} keyboardType="decimal-pad" />
+      {text.trim() !== '' && !valid && <HelperText type="error">La quantité doit être comprise entre 0 et 5 000 g.</HelperText>}
       {valid && <Text variant="bodyLarge">{macrosText(macrosFor(food.per100g, grams))}</Text>}
       <Button
         mode="contained"
         contentStyle={styles.button}
         disabled={!valid}
         onPress={() => {
+          if (submitted.current) return;
+          submitted.current = true;
           run(() => meals.logFood(meal, food, grams));
           onDone();
         }}

@@ -39,6 +39,7 @@ export function WaterSheet({ visible, onDismiss, day, timezone, containers, hydr
               right={() => (
                 <IconButton
                   icon="delete-outline"
+                  style={styles.iconButton}
                   accessibilityLabel={`Supprimer ${entry.ml} ml de ${time(entry.createdAt)}`}
                   onPress={() => run(() => hydration.removeWater(entry))}
                 />
@@ -54,4 +55,6 @@ export function WaterSheet({ visible, onDismiss, day, timezone, containers, hydr
 const styles = StyleSheet.create({
   sheet: { margin: 16, padding: 16, gap: 12, borderRadius: 16, backgroundColor: 'white' },
   list: { maxHeight: 360 },
+  // Paper's icon button is 40 dp, and its container clips the extra hit area: 48 dp make the touch target.
+  iconButton: { width: 48, height: 48, borderRadius: 24 },
 });

@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { StyleSheet } from 'react-native';
 import { Button, Dialog, Portal, TextInput } from 'react-native-paper';
-import type { FoodEntry } from '../domain/food';
-import { parseNumber } from './format';
+import { isValidGrams, type FoodEntry } from '../domain/food';
+import { asText, parseNumber } from './format';
 
 type Props = {
   /** The touched journal line; null while nothing is open. */
@@ -30,7 +30,7 @@ export function EntryActions({ entry, onDismiss, onChangeGrams, onRemove }: Prop
         <Dialog.Title>{entry.foodName}</Dialog.Title>
         {text === null ? (
           <Dialog.Content style={styles.choices}>
-            <Button mode="contained-tonal" contentStyle={styles.button} onPress={() => setText(String(entry.grams).replace('.', ','))}>
+            <Button mode="contained-tonal" contentStyle={styles.button} onPress={() => setText(asText(entry.grams))}>
               Modifier la quantité
             </Button>
             <Button
@@ -58,7 +58,7 @@ export function EntryActions({ entry, onDismiss, onChangeGrams, onRemove }: Prop
               </Button>
               <Button
                 contentStyle={styles.button}
-                disabled={!(grams > 0 && grams <= 5000)}
+                disabled={!isValidGrams(grams)}
                 onPress={() => {
                   onChangeGrams(entry, grams);
                   close();

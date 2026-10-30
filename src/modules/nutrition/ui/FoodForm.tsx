@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Button, HelperText, IconButton, SegmentedButtons, TextInput } from 'react-native-paper';
 import { validateFood, type FoodInput, type FoodState } from '../domain/food';
-import { parseNumber } from './format';
+import { asText, parseNumber } from './format';
 
 type Nutrient = keyof FoodInput['per100g'];
 // What is typed, as text: numbers are only read when the form is checked.
@@ -22,7 +22,6 @@ const STATES: { value: FoodState; label: string; labelStyle: typeof LABEL }[] = 
   { value: 'other', label: 'Autre', labelStyle: LABEL },
 ];
 
-const asText = (n: number) => String(n).replace('.', ',');
 const BLANK: Draft = { name: '', state: 'other', per100g: { kcal: '', protein: '', carbs: '', fat: '' }, portions: [] };
 const draftOf = ({ name, state, per100g: p, portions }: FoodInput): Draft => ({
   name,
@@ -85,7 +84,12 @@ export function FoodForm({ initial, submitLabel, onSubmit }: Props) {
             onChangeText={(grams) => changePortion(i, { grams })}
             keyboardType="decimal-pad"
           />
-          <IconButton icon="delete-outline" accessibilityLabel={`Supprimer la portion ${i + 1}`} onPress={() => change({ portions: draft.portions.filter((_, j) => j !== i) })} />
+          <IconButton
+            icon="delete-outline"
+            style={styles.iconButton}
+            accessibilityLabel={`Supprimer la portion ${i + 1}`}
+            onPress={() => change({ portions: draft.portions.filter((_, j) => j !== i) })}
+          />
         </View>
       ))}
       <Button icon="plus" contentStyle={styles.button} onPress={() => change({ portions: [...draft.portions, { label: '', grams: '' }] })}>
@@ -104,5 +108,7 @@ const styles = StyleSheet.create({
   portion: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   portionName: { flex: 2 },
   portionWeight: { flex: 1 },
+  // Paper's icon button is 40 dp, and its container clips the extra hit area: 48 dp make the touch target.
+  iconButton: { width: 48, height: 48, borderRadius: 24 },
   button: { minHeight: 48 },
 });

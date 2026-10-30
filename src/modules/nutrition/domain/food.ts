@@ -29,6 +29,9 @@ export type NewFavoriteMeal = Omit<FavoriteMeal, 'id'>;
 
 export type RecentFood = { ref: FoodRef; name: string; grams: number };
 
+/** The bound of a quantity of food and of a portion weight: above 0 and up to 5 000 g, like the Firestore rules. NaN and Infinity fail both comparisons. */
+export const isValidGrams = (grams: number) => grams > 0 && grams <= 5000;
+
 /** A French message for the first problem with a custom food, or null. The Firestore rules bound each value; the sum of the macros (100.5 g at most) and the portion weights are checked here only. */
 export function validateFood(food: FoodInput): string | null {
   const name = food.name.trim();
@@ -39,7 +42,7 @@ export function validateFood(food: FoodInput): string | null {
   if (kcal > 900) return 'Plus de 900 kcal pour 100 g n’est pas possible.';
   if (protein > 100 || carbs > 100 || fat > 100 || protein + carbs + fat > 100.5) return 'Protéines, glucides et lipides dépassent 100 g pour 100 g.';
   if (food.portions.length > 20) return '20 portions au maximum.';
-  if (food.portions.some((p) => p.label.trim().length === 0 || !(p.grams > 0 && p.grams <= 5000))) {
+  if (food.portions.some((p) => p.label.trim().length === 0 || !isValidGrams(p.grams))) {
     return 'Chaque portion a un nom et un poids entre 0 et 5 000 g.';
   }
   return null;

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { IconButton, List, Text } from 'react-native-paper';
 import type { FoodUseCases } from '../application/foodUseCases';
@@ -23,8 +23,12 @@ export function FavoritesList({ meal, meals, foods, custom, run, onDone }: Props
   // Listener errors show on the SyncIcon, which watches the same user's data.
   useEffect(() => meals.observeFavorites(setFavorites, () => {}), [meals]);
 
+  // Set by the first touch of a row: a second one, before the host has left the screen, must not log the meal again.
+  const submitted = useRef(false);
+
   const log = (favorite: FavoriteMeal) => {
-    if (custom === null) return; // the rows are disabled until then
+    if (custom === null || submitted.current) return; // the rows are disabled until the custom foods have arrived
+    submitted.current = true;
     run(() => meals.logFavorite(favorite, meal, (ref) => foods.resolve(ref, custom)));
     onDone();
   };
@@ -42,7 +46,12 @@ export function FavoritesList({ meal, meals, foods, custom, run, onDone }: Props
             disabled={custom === null}
             onPress={() => log(favorite)}
           />
-          <IconButton icon="delete-outline" accessibilityLabel={`Supprimer le favori ${favorite.name}`} onPress={() => run(() => meals.removeFavorite(favorite.id))} />
+          <IconButton
+            icon="delete-outline"
+            style={styles.iconButton}
+            accessibilityLabel={`Supprimer le favori ${favorite.name}`}
+            onPress={() => run(() => meals.removeFavorite(favorite.id))}
+          />
         </View>
       ))}
     </View>
@@ -52,4 +61,6 @@ export function FavoritesList({ meal, meals, foods, custom, run, onDone }: Props
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center' },
   item: { flex: 1 },
+  // Paper's icon button is 40 dp, and its container clips the extra hit area: 48 dp make the touch target.
+  iconButton: { width: 48, height: 48, borderRadius: 24 },
 });

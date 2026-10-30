@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { Chip, List, Text, TextInput } from 'react-native-paper';
+import { Chip, HelperText, List, Text, TextInput } from 'react-native-paper';
 import type { FoodUseCases } from '../application/foodUseCases';
 import { matchCustom, type Food } from '../domain/food';
-import { StateChip } from './FoodDetail';
 import { kcalText } from './format';
+import { StateChip } from './StateChip';
 
 /** What is typed and filtered; the screen keeps it, so it survives a visit to a food's fiche. */
 export type Search = { query: string; state?: 'raw' | 'cooked' };
@@ -24,17 +24,17 @@ type Props = {
 
 /** The search field and its filters, then the matching custom foods followed by the Ciqual ones. */
 export function FoodSearch({ foods, custom, search, onSearch, onSelect }: Props) {
-  // The Ciqual foods found, and the search they answer: until that is the current one, « Aucun aliment trouvé. » would be a guess.
-  const [answer, setAnswer] = useState<{ search: Search; found: Food[] } | null>(null);
+  // The Ciqual foods found (null when the catalog failed), and the search they answer: until that is the current one, « Aucun aliment trouvé. » would be a guess.
+  const [answer, setAnswer] = useState<{ search: Search; found: Food[] | null } | null>(null);
   useEffect(() => {
     // A newer search replaces this one: its answer, if it comes late, must not land.
     let stale = false;
-    const done = (found: Food[]) => {
+    const done = (found: Food[] | null) => {
       if (!stale) setAnswer({ search, found });
     };
     foods.searchCatalog(search.query, search.state).then(done, (error) => {
       console.warn(error);
-      done([]);
+      done(null);
     });
     return () => {
       stale = true;
@@ -60,7 +60,8 @@ export function FoodSearch({ foods, custom, search, onSearch, onSelect }: Props)
         ))}
       </View>
       {!typed && <Text>Tapez le nom d’un aliment.</Text>}
-      {typed && answer?.search === search && results.length === 0 && <Text>Aucun aliment trouvé.</Text>}
+      {typed && answer?.found === null && <HelperText type="error">Recherche indisponible.</HelperText>}
+      {typed && custom !== null && answer?.search === search && answer.found !== null && results.length === 0 && <Text>Aucun aliment trouvé.</Text>}
       {results.map((food) => (
         <List.Item
           key={`${food.ref.type}:${food.ref.id}`}

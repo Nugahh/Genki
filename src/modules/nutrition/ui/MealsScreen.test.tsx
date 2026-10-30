@@ -13,14 +13,14 @@ const yogurt = { ref: { type: 'custom' as const, id: 'c1' }, name: 'Yaourt natur
 // The thousands separator depends on the ICU data, so the expected text is built the way the screen does.
 const goal = (2200).toLocaleString('fr-FR');
 
-async function setup(at = clock) {
+async function setup(at = clock, run: (write: () => Promise<void>) => void = (write) => void write()) {
   const entries = inMemoryFoodEntryRepository();
   const favorites = inMemoryFavoriteMealRepository();
   const meals = mealUseCases({ entries, favorites, clock: at, timezone: DEFAULT_PROFILE.timezone });
   const onAdd = jest.fn();
   await render(
     <PaperProvider>
-      <MealsScreen profile={DEFAULT_PROFILE} clock={at} meals={meals} onAdd={onAdd} run={(write) => void write()} />
+      <MealsScreen profile={DEFAULT_PROFILE} clock={at} meals={meals} onAdd={onAdd} run={run} />
     </PaperProvider>,
   );
   return { entries, favorites, meals, onAdd };
@@ -49,7 +49,8 @@ test('the journal lists the day under each meal, with the subtotals and the day 
   await lunchOfRice(meals);
 
   expect(screen.getAllByTestId(/^meal-\w+$/).map((section) => section.props.testID)).toEqual(['meal-breakfast', 'meal-lunch', 'meal-dinner', 'meal-snack']);
-  for (const label of ['Petit-déjeuner', 'Déjeuner', 'Dîner', 'Collations']) expect(screen.getByText(label)).toBeTruthy();
+  // The meal titles are headings, for TalkBack to jump from one meal to the next.
+  for (const label of ['Petit-déjeuner', 'Déjeuner', 'Dîner', 'Collations']) expect(screen.getByRole('header', { name: label })).toBeTruthy();
   const lunch = within(screen.getByTestId('meal-lunch'));
   expect(lunch.getByText('Riz blanc, cru')).toBeTruthy();
   expect(lunch.getByText('200 g · 700 kcal')).toBeTruthy();
@@ -172,6 +173,8 @@ test('a favorite needs a name, and « Annuler » saves nothing', async () => {
   expect(screen.getAllByText('Enregistrer comme favori')).toHaveLength(1);
 
   await fireEvent.press(screen.getByLabelText('Enregistrer Déjeuner comme favori'));
+  // The rules refuse a longer name, which could then never be saved.
+  expect(screen.getByLabelText('Nom')).toHaveProp('maxLength', 100);
   for (const blank of ['', '   ']) {
     await fireEvent.changeText(screen.getByLabelText('Nom'), blank);
     expect(screen.getByText('Enregistrer')).toBeDisabled();
@@ -180,6 +183,37 @@ test('a favorite needs a name, and « Annuler » saves nothing', async () => {
 
   expect(screen.queryByLabelText('Nom')).toBeNull();
   expect(savedFavorites(meals)).toEqual([]);
+});
+
+test('a quantity change, a removal and a favorite are handed to run: nothing is written until it runs them', async () => {
+  const writes: (() => Promise<void>)[] = [];
+  const { entries, meals } = await setup(clock, (write) => void writes.push(write));
+  await lunchOfRice(meals);
+  const runWrite = (i: number) =>
+    act(async () => {
+      await writes[i]();
+    });
+
+  await fireEvent.changeText(await openQuantity(), '150');
+  await fireEvent.press(screen.getByText('Enregistrer'));
+  expect(writes).toHaveLength(1);
+  expect(entries.entries[0].grams).toBe(200);
+  await runWrite(0);
+  expect(entries.entries[0].grams).toBe(150);
+
+  await fireEvent.press(screen.getByLabelText('Enregistrer Déjeuner comme favori'));
+  await fireEvent.press(screen.getByText('Enregistrer'));
+  expect(writes).toHaveLength(2);
+  expect(savedFavorites(meals)).toEqual([]);
+  await runWrite(1);
+  expect(savedFavorites(meals)).toHaveLength(1);
+
+  await fireEvent.press(screen.getByLabelText('Riz blanc, cru, 150 g'));
+  await fireEvent.press(screen.getByText('Supprimer'));
+  expect(writes).toHaveLength(3);
+  expect(entries.entries).toHaveLength(1);
+  await runWrite(2);
+  expect(entries.entries).toEqual([]);
 });
 
 test('an entry of another day is neither listed nor counted', async () => {

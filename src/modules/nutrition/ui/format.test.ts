@@ -1,4 +1,4 @@
-import { gramsText, kcalText, macrosText, parseNumber } from './format';
+import { asText, gramsText, kcalText, macrosText, parseNumber } from './format';
 
 test('calories are whole numbers, grams keep one decimal, both with French separators', () => {
   expect(kcalText(349.6)).toBe('350');
@@ -16,4 +16,10 @@ test('a number is read with a comma or a point, NaN when there is none', () => {
   expect(parseNumber('  ')).toBeNaN();
   expect(parseNumber('abc')).toBeNaN();
   expect(parseNumber('1,5,5')).toBeNaN();
+});
+
+test('a number goes back into a field with a comma, and is read again as it was', () => {
+  expect(asText(150)).toBe('150');
+  expect(asText(37.5)).toBe('37,5');
+  expect(parseNumber(asText(0.6))).toBe(0.6);
 });

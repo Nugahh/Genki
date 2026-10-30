@@ -51,7 +51,7 @@ export function MealsScreen({ profile, clock, meals, onAdd, run }: Props) {
           <Surface key={meal} style={styles.card} testID={`meal-${meal}`}>
             <View style={styles.header}>
               <View>
-                <Text variant="titleMedium">{label}</Text>
+                <Text variant="titleMedium" accessibilityRole="header">{label}</Text>
                 <Text variant="bodyMedium">{`${kcalText(sumMacros(list.map((e) => e.macros)).kcal)} kcal`}</Text>
               </View>
               <Button mode="contained-tonal" icon="plus" accessibilityLabel={`Ajouter à ${label}`} contentStyle={styles.button} onPress={() => onAdd(meal)}>
@@ -63,8 +63,9 @@ export function MealsScreen({ profile, clock, meals, onAdd, run }: Props) {
               <List.Item
                 key={entry.id}
                 title={entry.foodName}
-                titleNumberOfLines={2}
+                titleNumberOfLines={3}
                 description={`${gramsText(entry.grams)} g · ${kcalText(entry.macros.kcal)} kcal`}
+                right={(props) => <List.Icon {...props} icon="chevron-right" />}
                 accessibilityLabel={`${entry.foodName}, ${gramsText(entry.grams)} g`}
                 onPress={() => setSelected(entry)}
               />
@@ -88,7 +89,7 @@ export function MealsScreen({ profile, clock, meals, onAdd, run }: Props) {
           <Dialog visible onDismiss={() => setFavorite(null)}>
             <Dialog.Title>Nom du favori</Dialog.Title>
             <Dialog.Content>
-              <TextInput label="Nom" accessibilityLabel="Nom" value={favorite.name} onChangeText={(name) => setFavorite({ ...favorite, name })} />
+              <TextInput label="Nom" accessibilityLabel="Nom" maxLength={100} value={favorite.name} onChangeText={(name) => setFavorite({ ...favorite, name })} />
             </Dialog.Content>
             <Dialog.Actions>
               <Button contentStyle={styles.button} onPress={() => setFavorite(null)}>
