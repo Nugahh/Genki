@@ -13,3 +13,13 @@ export function paceColor(value: number, goal: number, hour: number): GaugeColor
   if (pace >= 0.9) return 'green';
   return pace >= 0.6 ? 'orange' : 'red';
 }
+
+/** Calories: above 110 % of the goal is red, above 105 % orange (spec §9); otherwise the pace decides. */
+export function calorieColor(value: number, goal: number, hour: number): GaugeColor {
+  if (goal > 0) {
+    const ratio = value / goal;
+    if (ratio > 1.1) return 'red';
+    if (ratio > 1.05) return 'orange';
+  }
+  return paceColor(value, goal, hour);
+}

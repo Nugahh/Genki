@@ -2,7 +2,9 @@
 
 Application mobile personnelle de suivi : hydratation, alimentation, sport. Spec : `docs/superpowers/specs/2026-10-23-fitness-tracker-design.md`.
 
-État : M0 (socle, connexion Google, règles) et M1 (eau sur l'écran Aujourd'hui, hors-ligne, synchro entre deux téléphones).
+État : M0 (socle, connexion Google, règles), M1 (eau sur l'écran Aujourd'hui, hors-ligne, synchro entre deux téléphones) et M2 (alimentation : base Ciqual embarquée, journal par repas, favoris, aliments personnalisés, jauges Calories et Protéines sur l'écran Aujourd'hui).
+
+M2 ajoute du code natif (`expo-sqlite`) : après la mise à jour, refaire `npm run android`. Recharger le JavaScript ne suffit pas.
 
 ## Prérequis
 

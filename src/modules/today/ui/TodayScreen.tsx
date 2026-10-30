@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
-import { ScrollView, StyleSheet } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
+import { Button } from 'react-native-paper';
 import { WaterButtons, WaterSheet, type Hydration } from '@/modules/hydration';
 import type { Profile } from '@/modules/settings';
 import { dayKey, hourOfDay, type Clock } from '@/shared/clock';
 import { useNow } from '@/shared/useNow';
-import type { DayTotalsRepository } from '../application/ports';
-import { expectedProgress, paceColor } from '../domain/gauge';
+import type { DayTotals, DayTotalsRepository } from '../application/ports';
+import { calorieColor, expectedProgress, paceColor } from '../domain/gauge';
 import { GaugeBar } from './GaugeBar';
 
 type Props = {
@@ -15,33 +16,66 @@ type Props = {
   hydration: Hydration;
   /** Runs a write; a rejected one is offered again with « Réessayer » (spec §8). */
   run: (write: () => Promise<void>) => void;
+  /** « + Repas »: the host opens the add-food screen. */
+  onAddMeal: () => void;
+  /** The Calories and Protéines gauges: the host opens the day journal. */
+  onOpenMeals: () => void;
 };
 
-const liters = (ml: number) => (ml / 1000).toLocaleString('fr-FR', { maximumFractionDigits: 2 });
+const NO_TOTALS: DayTotals = { waterMl: 0, kcal: 0, proteinG: 0, carbsG: 0, fatG: 0 };
+const fr = (n: number, maximumFractionDigits: number) => n.toLocaleString('fr-FR', { maximumFractionDigits });
+const liters = (ml: number) => fr(ml / 1000, 2);
+/** A gauge with no goal is drawn full. */
+const progress = (value: number, goal: number) => (goal > 0 ? value / goal : 1);
 
-export function TodayScreen({ profile, clock, dayTotals, hydration, run }: Props) {
+export function TodayScreen({ profile, clock, dayTotals, hydration, run, onAddMeal, onOpenMeals }: Props) {
   const now = useNow(clock);
   const day = dayKey(now, profile.timezone);
   const hour = hourOfDay(now, profile.timezone);
-  const [waterMl, setWaterMl] = useState(0);
+  const [totals, setTotals] = useState(NO_TOTALS);
   const [sheetOpen, setSheetOpen] = useState(false);
   // Listener errors show on the SyncIcon, which watches the same document.
-  useEffect(() => dayTotals.observe(day, (totals) => setWaterMl(totals.waterMl), () => {}), [dayTotals, day]);
+  useEffect(() => dayTotals.observe(day, (next) => setTotals(next), () => {}), [dayTotals, day]);
 
-  const goal = profile.goals.waterMl;
+  const { goals } = profile;
+  const expected = expectedProgress(hour);
   const addWater = (ml: number) => run(() => hydration.addWater(ml));
 
   return (
     <ScrollView contentContainerStyle={styles.content}>
       <GaugeBar
         label="Eau"
-        text={`${liters(waterMl)} / ${liters(goal)} L`}
-        progress={goal > 0 ? waterMl / goal : 1}
-        expected={expectedProgress(hour)}
-        color={paceColor(waterMl, goal, hour)}
+        text={`${liters(totals.waterMl)} / ${liters(goals.waterMl)} L`}
+        progress={progress(totals.waterMl, goals.waterMl)}
+        expected={expected}
+        color={paceColor(totals.waterMl, goals.waterMl, hour)}
+        icon="plus"
         onPress={() => setSheetOpen(true)}
       />
-      <WaterButtons containers={profile.waterContainers} onAdd={addWater} />
+      <GaugeBar
+        label="Calories"
+        text={`${fr(totals.kcal, 0)} / ${fr(goals.kcal, 0)} kcal`}
+        progress={progress(totals.kcal, goals.kcal)}
+        expected={expected}
+        color={calorieColor(totals.kcal, goals.kcal, hour)}
+        icon="chevron-right"
+        onPress={onOpenMeals}
+      />
+      <GaugeBar
+        label="Protéines"
+        text={`${fr(totals.proteinG, 1)} / ${fr(goals.proteinG, 1)} g`}
+        progress={progress(totals.proteinG, goals.proteinG)}
+        expected={expected}
+        color={paceColor(totals.proteinG, goals.proteinG, hour)}
+        icon="chevron-right"
+        onPress={onOpenMeals}
+      />
+      <View style={styles.buttons}>
+        <WaterButtons containers={profile.waterContainers} onAdd={addWater} />
+        <Button mode="contained-tonal" icon="silverware-fork-knife" accessibilityLabel="Ajouter un repas" contentStyle={styles.button} onPress={onAddMeal}>
+          + Repas
+        </Button>
+      </View>
       <WaterSheet
         visible={sheetOpen}
         onDismiss={() => setSheetOpen(false)}
@@ -55,4 +89,8 @@ export function TodayScreen({ profile, clock, dayTotals, hydration, run }: Props
   );
 }
 
-const styles = StyleSheet.create({ content: { padding: 16, gap: 16 } });
+const styles = StyleSheet.create({
+  content: { padding: 16, gap: 16 },
+  buttons: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  button: { minHeight: 48 },
+});
