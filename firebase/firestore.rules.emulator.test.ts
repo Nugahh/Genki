@@ -143,6 +143,10 @@ describe('foodEntries', () => {
     ['the food reference type is unknown', { foodRef: { type: 'usda', id: '1' } }],
     ['the food name is empty', { foodName: '' }],
     ['a macro is negative', { macros: { ...macros, fat: -1 } }],
+    ['kcal is above 50 000', { macros: { ...macros, kcal: 50001 } }],
+    ['protein is above 5 000', { macros: { ...macros, protein: 5001 } }],
+    ['carbs is above 5 000', { macros: { ...macros, carbs: 5001 } }],
+    ['fat is above 5 000', { macros: { ...macros, fat: 5001 } }],
     ['a macro is missing', { macros: { kcal: 1, protein: 1, carbs: 1 } }],
     ['deletedAt is already set', { deletedAt: Timestamp.now() }],
     ['an unknown field is present', { note: 'x' }],
@@ -184,15 +188,23 @@ describe('foods', () => {
     ['the name is empty', { name: '' }],
     ['the state is unknown', { state: 'frozen' }],
     ['kcal per 100 g is above 900', { per100g: { kcal: 901, protein: 0, carbs: 0, fat: 0 } }],
-    ['a macro per 100 g is above 100', { per100g: { kcal: 400, protein: 101, carbs: 0, fat: 0 } }],
+    ['protein per 100 g is above 100', { per100g: { kcal: 400, protein: 101, carbs: 0, fat: 0 } }],
+    ['carbs per 100 g is above 100', { per100g: { kcal: 400, protein: 0, carbs: 101, fat: 0 } }],
+    ['fat per 100 g is above 100', { per100g: { kcal: 400, protein: 0, carbs: 0, fat: 101 } }],
     ['there are 21 portions', { portions: Array.from({ length: 21 }, () => ({ label: 'p', grams: 1 })) }],
     ['portions is not a list', { portions: 'une' }],
+    ['an unknown field is present', { note: 'x' }],
+    ['deletedAt is already set', { deletedAt: Timestamp.now() }],
   ])('rejects a food when %s', async (_, override) => {
     await assertFails(setDoc(doc(db('alice'), 'users/alice/foods/f1'), { ...customFood(), ...override }));
   });
 
-  test('another user cannot write', async () => {
+  test('another user can neither create, edit nor delete a food', async () => {
     await assertFails(setDoc(doc(db('bob'), 'users/alice/foods/f1'), customFood()));
+    await seed('users/alice/foods/f1', customFood());
+    const ref = doc(db('bob'), 'users/alice/foods/f1');
+    await assertFails(updateDoc(ref, { name: 'Pain de mie', updatedAt: Timestamp.now() }));
+    await assertFails(updateDoc(ref, { deletedAt: Timestamp.now() }));
   });
 });
 
@@ -221,6 +233,16 @@ describe('favoriteMeals', () => {
     await seed('users/alice/favoriteMeals/m1', favorite());
     await assertFails(deleteDoc(doc(db('bob'), 'users/alice/favoriteMeals/m1')));
   });
+
+  test.each<[string, string | undefined]>([
+    ['another user', 'bob'],
+    ['a signed-out client', undefined],
+  ])('%s can neither create nor update a favorite', async (_, uid) => {
+    const ref = doc(db(uid), 'users/alice/favoriteMeals/m1');
+    await assertFails(setDoc(ref, favorite()));
+    await seed('users/alice/favoriteMeals/m1', favorite());
+    await assertFails(setDoc(ref, { ...favorite(), name: 'Autre nom' }));
+  });
 });
 
 describe('days (nutrition totals)', () => {
@@ -233,6 +255,12 @@ describe('days (nutrition totals)', () => {
     await assertSucceeds(setDoc(doc(db('alice'), 'users/alice/days/2026-10-24'), { kcal: -0.01, updatedAt: Timestamp.now() }));
     await assertFails(setDoc(doc(db('alice'), 'users/alice/days/2026-10-24'), { kcal: -0.1, updatedAt: Timestamp.now() }));
     await assertFails(setDoc(doc(db('alice'), 'users/alice/days/2026-10-24'), { waterMl: -0.01, updatedAt: Timestamp.now() }));
+  });
+
+  test.each(['proteinG', 'carbsG', 'fatG'])('%s tolerates a drift of 0.01 below zero but rejects 0.1', async (field) => {
+    const ref = doc(db('alice'), 'users/alice/days/2026-10-24');
+    await assertSucceeds(setDoc(ref, { [field]: -0.01, updatedAt: Timestamp.now() }));
+    await assertFails(setDoc(ref, { [field]: -0.1, updatedAt: Timestamp.now() }));
   });
 
   test('rejects a total that is not a number', async () => {

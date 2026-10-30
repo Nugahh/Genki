@@ -32,7 +32,8 @@ export function firestoreFoodEntryRepository(db: Firestore, uid: string): FoodEn
         day: entry.day, meal: entry.meal, foodRef: entry.foodRef, foodName: entry.foodName,
         grams: entry.grams, macros: entry.macros, createdAt: at, updatedAt: at, deletedAt: null,
       });
-      moveDayTotals(batch, entry.day, entry.macros);
+      // Rounded like the other two writes, so that adding then removing an entry always nets to zero.
+      moveDayTotals(batch, entry.day, subtractMacros(entry.macros, ZERO_MACROS));
       return batch.commit();
     },
     updateGrams(entry, grams, macros) {

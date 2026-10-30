@@ -1,8 +1,11 @@
 import { initializeTestEnvironment, type RulesTestEnvironment } from '@firebase/rules-unit-testing';
-import { disableNetwork, doc, enableNetwork, getDocFromServer, type Firestore } from 'firebase/firestore';
+import { disableNetwork, doc, enableNetwork, getDocFromServer, setLogLevel, type Firestore } from 'firebase/firestore';
 import { readFileSync } from 'node:fs';
 import type { WaterEntry } from '../application/ports';
 import { firestoreWaterRepository } from './firestoreWaterRepository';
+
+// Denials here are expected: without this the SDK logs each one as a warning.
+setLogLevel('error');
 
 let env: RulesTestEnvironment;
 

@@ -56,6 +56,15 @@ test('an added entry is listed on its day and its macros go onto the day total',
   expect(await dayDoc(db)).toEqual({ ...totalsOf(rice), updatedAt: expect.anything() });
 });
 
+test('macros finer than 0.1 move the day total by their rounded value, on add and on remove alike', async () => {
+  const db = phone();
+  await entriesOn(db).add(entry({ macros: { kcal: 100.04, protein: 0.04, carbs: 0.06, fat: 0.14 } }));
+  expect(await dayDoc(db)).toMatchObject(totalsOf({ kcal: 100, protein: 0, carbs: 0.1, fat: 0.1 }));
+  const [added] = await journal(db);
+  await entriesOn(db).remove(added);
+  expect(await dayDoc(db)).toMatchObject(totalsOf(ZERO_MACROS));
+});
+
 test('two phones adding entries offline end up with the sum (spec §10)', async () => {
   const [a, b] = [phone(), phone()];
   await Promise.all([disableNetwork(a), disableNetwork(b)]);

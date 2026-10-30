@@ -27,7 +27,10 @@ export interface FoodEntryRepository {
   remove(entry: FoodEntry): Promise<void>;
   /** Live entries of `day`, deleted ones excluded. */
   observeDay(day: string, onNext: (entries: FoodEntry[]) => void, onError: (error: Error) => void): () => void;
-  /** The latest live entries, newest first. */
+  /**
+   * The live entries among the latest `limit` entries, newest first (so possibly fewer than `limit`):
+   * deleted ones are filtered after the limit; a server-side filter would need a composite index.
+   */
   observeRecent(limit: number, onNext: (entries: FoodEntry[]) => void, onError: (error: Error) => void): () => void;
 }
 
