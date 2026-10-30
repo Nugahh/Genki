@@ -1909,7 +1909,7 @@ describe('calorieColor', () => {
 3. toucher « + Repas » (`Ajouter un repas`) appelle `onAddMeal` ;
 4. la jauge Calories est rouge au-delà de 110 % (vérifier `accessibilityValue` `en retard`, ou une autre trace stable de la couleur, comme pour la jauge d'eau).
 
-`src/navigation.test.tsx` : le mock de `@/composition` renvoie aussi `nutrition` (use cases sur dépôts en mémoire) ; ajouter un test : connecté, l'onglet « Repas » mène à l'écran avec « Petit-déjeuner » ; et un test : « + Repas » sur Aujourd'hui ouvre l'écran « Ajouter un aliment » avec le segment « Recherche » et le bouton « Ajouter à {repas par défaut selon l'heure du faux horloge} ».
+`src/navigation.test.tsx` : le mock de `@/composition` renvoie aussi `nutrition` (use cases sur dépôts en mémoire) ; ajouter un test : connecté, l'onglet « Repas » mène à l'écran avec « Petit-déjeuner » ; et un test : « + Repas » sur Aujourd'hui ouvre l'écran « Ajouter un aliment » avec le segment « Recherche » actif (champ « Rechercher un aliment ») ; chercher « riz » (catalogue en mémoire qui contient « Riz blanc, cru ») puis ouvrir la fiche affiche « Ajouter à {libellé du repas par défaut selon l'heure du faux horloge} » (ce bouton n'existe que sur la fiche d'un aliment).
 
 - [ ] **Step 2: Lancer les tests et vérifier qu'ils échouent**
 
