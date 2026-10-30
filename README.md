@@ -78,6 +78,15 @@ npm run test:emulator   # règles et adaptateurs Firestore, émulateur sur le po
 
 La CI GitHub Actions lance les mêmes commandes.
 
-## À vérifier sur le téléphone (spec §11)
+## À vérifier sur le téléphone avant M3
 
-La spec §11 place cette vérification avant M1. Elle se fait maintenant, car elle demande les projets Firebase et les téléphones. Deux téléphones connectés au même compte Google : couper le réseau sur les deux, ajouter de l'eau sur chacun, rétablir le réseau. Les deux doivent afficher la somme, et l'icône nuage repasser à « Synchronisé ».
+Ce que Jest ne montre pas : le natif, le réseau et la mise en page. D'abord, refaire le client de développement avec `npm run android` (M2 ajoute le module natif `expo-sqlite` : recharger le JavaScript ne suffit pas). Ensuite :
+
+- **Eau sur deux téléphones (M1, spec §11).** Connectés au même compte Google, couper le réseau sur les deux, ajouter de l'eau sur chacun, rétablir le réseau. Les deux doivent afficher la somme, et l'icône nuage repasser à « Synchronisé ».
+- **Base Ciqual.** Au premier lancement, l'application copie la base embarquée vers `files/SQLite/ciqual-2025-11-03.db` dans son stockage. Ensuite, en mode avion, chercher « riz » (Repas › Ajouter › Recherche) : les résultats arrivent aussitôt. Avec un build de développement, Metro doit être joignable au tout premier lancement à froid : `Asset.downloadAsync` s'exécute avant de regarder si la base est déjà installée.
+- **Repas sur deux téléphones.** Ajouter un repas sur chacun hors-ligne, puis rétablir le réseau : les deux affichent les calories et les protéines additionnées.
+- **Journal.** Modifier la quantité d'une ligne, puis supprimer une ligne : les totaux suivent.
+- **« Réessayer ».** Le message d'un enregistrement refusé est visible et utilisable au-dessus de la fenêtre native « Ajouter un aliment ».
+- **Mise en page, sur 360 dp et sur 412 dp.** Les quatre libellés « Favoris », « Récents », « Recherche » et « Créer » ne sont pas tronqués ; la rangée +250 ml, +500 ml, + Repas passe à la ligne proprement ; les textes des jauges tiennent.
+- **Formats français sur Hermes.** « 1 200 / 2 200 kcal », « 0,6 g ».
+- **Attribution Ciqual.** Elle figure dans ce README (licence Etalab 2.0, section « Données alimentaires »).

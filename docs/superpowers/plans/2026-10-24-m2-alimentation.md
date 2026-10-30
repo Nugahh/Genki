@@ -70,7 +70,12 @@ src/modules/nutrition/ui/MealsScreen.tsx (+test), EntryActions.tsx              
 src/modules/nutrition/ui/AddFoodScreen.tsx, FoodDetail.tsx, FoodForm.tsx, … (+tests)                 (T6)
 src/modules/nutrition/index.ts                      API publique du module                           (T2, T5, T6)
 src/modules/today/… DayTotals, gauges, TodayScreen   Calories, Protéines, « + Repas »                (T7)
-src/composition.ts, app/(app)/…, app/(tabs)/repas.tsx, app/(app)/add-food.tsx, README.md             (T7)
+src/composition.ts                                  la nutrition branchée dans l'application         (T7)
+app/(app)/_layout.tsx                               AppProvider et pile du groupe (app)              (T7)
+app/(app)/(tabs)/index.tsx                          onglet Aujourd'hui                               (T7)
+app/(app)/(tabs)/repas.tsx                          onglet Repas                                     (T7)
+app/(app)/add-food.tsx                              modale « Ajouter un aliment »                    (T7)
+README.md                                           vérifications sur le téléphone                   (T7)
 ```
 
 ---

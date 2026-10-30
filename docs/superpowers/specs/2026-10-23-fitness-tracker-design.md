@@ -162,13 +162,15 @@ Barre du bas à quatre onglets : Aujourd'hui, Repas, Sport, Suivi. Les réglages
 
 ### Routes (Expo Router)
 ```
-app/(tabs)/index.tsx                 Aujourd'hui
-app/(tabs)/repas.tsx                 Repas
-app/(tabs)/sport.tsx                 Sport
-app/(tabs)/suivi/index.tsx           hub Suivi
-app/(tabs)/suivi/[section].tsx       nutrition | activite | corps | tabac | entrainement | eau
-app/settings/...                     réglages
+app/(app)/(tabs)/index.tsx               Aujourd'hui
+app/(app)/(tabs)/repas.tsx               Repas
+app/(app)/(tabs)/sport.tsx               Sport
+app/(app)/(tabs)/suivi/index.tsx         hub Suivi
+app/(app)/(tabs)/suivi/[section].tsx     nutrition | activite | corps | tabac | entrainement | eau
+app/(app)/add-food.tsx                   ajout d'un aliment (fenêtre modale)
+app/(app)/settings/...                   réglages
 ```
+Le groupe `(app)` n'apparaît pas dans l'adresse : son `_layout.tsx` porte l'`AppProvider` (chaque route peut donc appeler `useApp`) et la pile qui ouvre `add-food` en modale par-dessus les onglets.
 L'option `backBehavior="history"` des onglets doit faire revenir de Suivi à Aujourd'hui quand on y arrive depuis l'accueil. Elle est à vérifier pendant M4. Retoucher l'onglet Suivi renvoie au hub.
 
 ### Aujourd'hui
