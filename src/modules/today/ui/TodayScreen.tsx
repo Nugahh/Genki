@@ -6,7 +6,7 @@ import type { Profile } from '@/modules/settings';
 import { dayKey, hourOfDay, type Clock } from '@/shared/clock';
 import { useNow } from '@/shared/useNow';
 import type { DayTotals, DayTotalsRepository } from '../application/ports';
-import { calorieColor, expectedProgress, paceColor } from '../domain/gauge';
+import { calorieColor, expectedProgress, isOverGoal, paceColor } from '../domain/gauge';
 import { GaugeBar } from './GaugeBar';
 
 type Props = {
@@ -58,6 +58,7 @@ export function TodayScreen({ profile, clock, dayTotals, hydration, run, onAddMe
         progress={progress(totals.kcal, goals.kcal)}
         expected={expected}
         color={calorieColor(totals.kcal, goals.kcal, hour)}
+        status={isOverGoal(totals.kcal, goals.kcal) ? 'au-dessus de l’objectif' : undefined}
         icon="chevron-right"
         onPress={onOpenMeals}
       />

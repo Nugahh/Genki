@@ -79,9 +79,18 @@ test('« + Repas » adds a meal', async () => {
   expect(onAddMeal).toHaveBeenCalledTimes(1);
 });
 
-test('the Calories gauge is red above 110 % of the goal, while Protéines only follows the pace', async () => {
+test('the Calories gauge is red and over the goal above 110 %, while Protéines only follows the pace', async () => {
   // 2 500 of 2 200 kcal is 114 %; 200 of 130 g is far above the goal but on pace.
   await renderToday({ kcal: 2500, proteinG: 200 });
-  expect(screen.getByLabelText(/^Calories : /)).toHaveAccessibilityValue({ text: 'en retard' });
+  expect(screen.getByLabelText(/^Calories : /)).toHaveAccessibilityValue({ text: 'au-dessus de l’objectif' });
   expect(screen.getByLabelText(/^Protéines : /)).toHaveAccessibilityValue({ text: 'dans le rythme' });
+});
+
+test.each([
+  [300, 'en retard'], // 14 % of the goal when half is expected: the pace, as for the water
+  [2300, 'dans le rythme'], // 104.5 %: not over the goal yet
+  [2400, 'au-dessus de l’objectif'], // 109 %: orange because of the overshoot, not the pace
+])('the Calories gauge with %i kcal is read « %s »', async (kcal, status) => {
+  await renderToday({ kcal });
+  expect(screen.getByLabelText(/^Calories : /)).toHaveAccessibilityValue({ text: status });
 });

@@ -1,4 +1,4 @@
-import { calorieColor, expectedProgress, paceColor, type GaugeColor } from './gauge';
+import { calorieColor, expectedProgress, isOverGoal, paceColor, type GaugeColor } from './gauge';
 
 describe('expectedProgress', () => {
   test.each<[number, number]>([
@@ -57,5 +57,13 @@ describe('calorieColor', () => {
 
   test('without a goal, only the pace rule applies', () => {
     expect(calorieColor(100, 0, 12)).toBe('green');
+  });
+});
+
+describe('isOverGoal', () => {
+  test('is true above 105 % of the goal, and never without a goal', () => {
+    expect(isOverGoal(2100, 2000)).toBe(false); // exactly 105 %
+    expect(isOverGoal(2101, 2000)).toBe(true);
+    expect(isOverGoal(100, 0)).toBe(false);
   });
 });

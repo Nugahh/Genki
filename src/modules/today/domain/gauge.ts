@@ -14,12 +14,12 @@ export function paceColor(value: number, goal: number, hour: number): GaugeColor
   return pace >= 0.6 ? 'orange' : 'red';
 }
 
+/** Calories above 105 % of the goal (spec §9): the gauge then reports the overshoot, not the pace. */
+export const isOverGoal = (value: number, goal: number) => goal > 0 && value / goal > 1.05;
+
 /** Calories: above 110 % of the goal is red, above 105 % orange (spec §9); otherwise the pace decides. */
 export function calorieColor(value: number, goal: number, hour: number): GaugeColor {
-  if (goal > 0) {
-    const ratio = value / goal;
-    if (ratio > 1.1) return 'red';
-    if (ratio > 1.05) return 'orange';
-  }
+  if (goal > 0 && value / goal > 1.1) return 'red';
+  if (isOverGoal(value, goal)) return 'orange';
   return paceColor(value, goal, hour);
 }

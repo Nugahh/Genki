@@ -14,18 +14,20 @@ type Props = {
   /** Where the user should be by now, from 0 to 1. */
   expected: number;
   color: GaugeColor;
+  /** What the color means, read by TalkBack: the pace wording unless the gauge has something else to say. */
+  status?: string;
   /** "plus" adds, "chevron-right" opens (spec §6). */
   icon: 'plus' | 'chevron-right';
   onPress: () => void;
 };
 
-export function GaugeBar({ label, text, progress, expected, color, icon, onPress }: Props) {
+export function GaugeBar({ label, text, progress, expected, color, status = PACE[color], icon, onPress }: Props) {
   return (
     <TouchableRipple
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={`${label} : ${text}`}
-      accessibilityValue={{ text: PACE[color] }}
+      accessibilityValue={{ text: status }}
       style={styles.touch}
     >
       <View style={styles.content}>

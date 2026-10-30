@@ -45,6 +45,8 @@ jest.mock('@/composition', () => {
 
 const signedInAs = (user: { uid: string } | null) => jest.mocked(useAuthUser).mockReturnValue(user as never);
 
+afterEach(() => jest.restoreAllMocks());
+
 test('a signed-out user lands on the Google sign-in', async () => {
   signedInAs(null);
   await renderRouter();
@@ -109,4 +111,25 @@ test('the « Ajouter » of a meal on the journal opens the search for that meal'
   await fireEvent.press(screen.getByLabelText('Ajouter à Dîner'));
   expect(screen).toHavePathname('/add-food');
   expect(screen).toHaveSearchParams({ meal: 'dinner' });
+});
+
+test('adding a food from the journal comes back to the Repas tab, not to Today', async () => {
+  signedInAs({ uid: 'alice' });
+  await renderRouter();
+  await fireEvent.press(screen.getByText('Repas'));
+  await fireEvent.press(screen.getByLabelText('Ajouter à Dîner'));
+  await fireEvent.changeText(screen.getByLabelText('Rechercher un aliment'), 'riz');
+  await fireEvent.press(await screen.findByText('Riz blanc, cru'));
+  await fireEvent.press(screen.getByText('Ajouter à Dîner'));
+  expect(screen).toHavePathname('/repas');
+});
+
+test('a link to the add-food screen with an unknown meal adds to the snacks', async () => {
+  // Opened straight on the modal, expo-router warns that no screen lies under it: not what this test is about.
+  jest.spyOn(console, 'warn').mockImplementation(() => {});
+  signedInAs({ uid: 'alice' });
+  await renderRouter(undefined, { initialUrl: '/add-food?meal=bogus' });
+  await fireEvent.changeText(screen.getByLabelText('Rechercher un aliment'), 'riz');
+  await fireEvent.press(await screen.findByText('Riz blanc, cru'));
+  expect(screen.getByText('Ajouter à Collations')).toBeTruthy();
 });
