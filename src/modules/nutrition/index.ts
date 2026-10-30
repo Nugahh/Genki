@@ -6,3 +6,4 @@ export { foodUseCases, type FoodUseCases } from './application/foodUseCases';
 export { mealUseCases, type MealUseCases } from './application/mealUseCases';
 export type { Food } from './domain/food';
 export { defaultMeal, MEALS, type Meal } from './domain/meal';
+export { MealsScreen } from './ui/MealsScreen';
