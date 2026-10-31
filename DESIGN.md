@@ -17,56 +17,62 @@ colors:
   error-red: "rgb(186, 26, 26)"
   inverse-surface: "rgb(50, 48, 44)"
   inverse-ink: "rgb(246, 240, 233)"
+  water-tint: "rgb(214, 227, 255)"
+  water-tint-ink: "rgb(0, 27, 60)"
+  calories-tint: "rgb(249, 216, 254)"
+  calories-tint-ink: "rgb(40, 19, 47)"
+  protein-tint: "rgb(178, 237, 235)"
+  protein-tint-ink: "rgb(0, 32, 31)"
   pace-green: "#007334"
   pace-orange: "#B56A00"
   pace-red: "#9E1910"
 typography:
   headline-md:
-    fontFamily: "sans-serif"
+    fontFamily: "Nunito, sans-serif"
     fontSize: "28px"
     fontWeight: 400
     lineHeight: "36px"
     letterSpacing: "0px"
   headline-sm:
-    fontFamily: "sans-serif"
+    fontFamily: "Nunito, sans-serif"
     fontSize: "24px"
     fontWeight: 400
     lineHeight: "32px"
     letterSpacing: "0px"
   title-lg:
-    fontFamily: "sans-serif"
+    fontFamily: "Nunito, sans-serif"
     fontSize: "22px"
     fontWeight: 400
     lineHeight: "28px"
     letterSpacing: "0px"
   title-md:
-    fontFamily: "sans-serif-medium"
+    fontFamily: "Nunito, sans-serif"
     fontSize: "16px"
-    fontWeight: 500
+    fontWeight: 600
     lineHeight: "24px"
     letterSpacing: "0.15px"
   body-lg:
-    fontFamily: "sans-serif"
+    fontFamily: "Nunito, sans-serif"
     fontSize: "16px"
     fontWeight: 400
     lineHeight: "24px"
     letterSpacing: "0.15px"
   body-md:
-    fontFamily: "sans-serif"
+    fontFamily: "Nunito, sans-serif"
     fontSize: "14px"
     fontWeight: 400
     lineHeight: "20px"
     letterSpacing: "0.25px"
   body-sm:
-    fontFamily: "sans-serif"
+    fontFamily: "Nunito, sans-serif"
     fontSize: "12px"
     fontWeight: 400
     lineHeight: "16px"
     letterSpacing: "0.4px"
   label-lg:
-    fontFamily: "sans-serif-medium"
+    fontFamily: "Nunito, sans-serif"
     fontSize: "14px"
-    fontWeight: 500
+    fontWeight: 600
     lineHeight: "20px"
     letterSpacing: "0.1px"
 rounded:
@@ -106,10 +112,32 @@ components:
     rounded: "{rounded.button}"
     height: "48px"
   gauge:
+    backgroundColor: "{colors.paper-card}"
     textColor: "{colors.ink}"
     typography: "{typography.headline-sm}"
-    rounded: "{rounded.md}"
-    padding: "{spacing.md}"
+    rounded: "{rounded.lg}"
+    padding: "{spacing.lg}"
+  metric-disc-water:
+    backgroundColor: "{colors.water-tint}"
+    textColor: "{colors.water-tint-ink}"
+    rounded: "{rounded.lg}"
+    size: "32px"
+  metric-disc-calories:
+    backgroundColor: "{colors.calories-tint}"
+    textColor: "{colors.calories-tint-ink}"
+    rounded: "{rounded.lg}"
+    size: "32px"
+  metric-disc-protein:
+    backgroundColor: "{colors.protein-tint}"
+    textColor: "{colors.protein-tint-ink}"
+    rounded: "{rounded.lg}"
+    size: "32px"
+  greeting:
+    textColor: "{colors.ink}"
+    typography: "{typography.title-lg}"
+  greeting-line:
+    textColor: "{colors.ink-soft}"
+    typography: "{typography.body-lg}"
   gauge-label:
     textColor: "{colors.ink-soft}"
     typography: "{typography.label-lg}"
@@ -173,12 +201,6 @@ components:
     typography: "{typography.headline-sm}"
     rounded: "{rounded.dialog}"
     padding: "{spacing.xl}"
-  water-sheet:
-    backgroundColor: "{colors.paper-dialog}"
-    textColor: "{colors.ink}"
-    typography: "{typography.title-lg}"
-    rounded: "{rounded.lg}"
-    padding: "{spacing.lg}"
   snackbar:
     backgroundColor: "{colors.inverse-surface}"
     textColor: "{colors.inverse-ink}"
@@ -204,18 +226,19 @@ components:
 
 Genki looks like the notebook kept in a gym bag: dense and useful first, nothing ornamental. Every pixel on the main screens carries a number the author needs now (water, calories, protein), a control that changes it, or a state that says whether it is saved. It is read at arm's length, one-handed, between sets and often with no network, so legibility and a one-tap reach come before expression.
 
-The interface is Material 3 through React Native Paper, used without decoration: tonal buttons for actions, soft cards for the day's lists, and one gauge pattern repeated down the Today screen. The voice is sober and utilitarian on purpose. Whatever warmth there is comes from plain French copy and from the paper: an ivory page, black ink, and one ballpoint blue. The app is light-only for now.
+The interface is Material 3 through React Native Paper, used without decoration: tonal buttons for actions, soft cards for the day's lists, and one gauge pattern repeated down the Today screen. The voice is calm and utilitarian, with warmth where it costs nothing: an ivory page, black ink and one ballpoint blue; a rounded type; an icon on a pastel disc for each measure; a greeting by first name and a sentence on what is left. The first version was drier, and the author found it too sober once it ran on a phone: the warmth was added on 2026-10-31 without turning the screen into decoration. The app is light-only for now.
 
 The palette was chosen on 2026-10-31, after the first critique found the Material baseline violet and the navigation library's iOS blue living side by side. It is a Material 3 scheme from a blue seed on warm neutrals, held in one file (`src/theme.ts`). The roles, not the hues, are what code depends on, so the palette can still change without touching a screen. Material governs structure, navigation and interaction; brand expresses itself through Material's theming.
 
 **Key Characteristics:**
-- One signature pattern: the gauge, a label, the day's figure in 24 sp, a 12 dp track with a tick for where the day should be by now, then the goal and what is left.
+- One signature pattern: the gauge, in a soft card: an icon disc and a label, the day's figure in 24 sp, a 12 dp track with a tick for where the day should be by now, then the goal and what is left.
 - Reading and acting are separate: the gauges scroll; the frequent actions stay pinned above the tab bar.
-- One accent, rare: ink blue on filled buttons, text buttons, focus and the pale selected tint.
+- One accent, rare: ink blue on filled buttons, text buttons, focus and the pale selected tint. Three pastel tints only mark the measures on their icon discs.
 - Tonal, never loud: actions are `contained-tonal`; a filled button is a screen's single committing action.
 - Depth is tonal: page, then the action bar and cards, then the tab bar, then dialogs. No custom shadow.
 - Light theme only, dark-content status bar, one theme for Paper and the navigation chrome.
 - 48 dp touch targets and a French accessibility name and hint on every control.
+- Nunito, rounded and warm, in two weights.
 
 ## Colors
 
@@ -239,11 +262,14 @@ Ink blue on ivory paper: a restrained Material 3 scheme with warm neutrals, plus
 - **Error Red** (rgb(186, 26, 26)): invalid input and the sign-in failure message. It is Material's error role, distinct from the pace red.
 - **Inverse Surface** (rgb(50, 48, 44)) with **Inverse Ink** (rgb(246, 240, 233)): the snackbars, whose action takes the inverse primary.
 
+### Measure tints (custom, outside the Material roles)
+- **Water Tint** (rgb(214, 227, 255)), **Calories Tint** (rgb(249, 216, 254)) and **Protein Tint** (rgb(178, 237, 235)), each with its dark icon color (rgb(0, 27, 60), rgb(40, 19, 47), rgb(0, 32, 31)): the 32 dp disc under the icon of a gauge (a drop, a flame, a flexed arm). They are pastel and keep clear of green, ochre and brick, so a disc is never read as a pace. They live in the theme as `colors.metric`.
+
 ### Pace trio (custom, outside the Material roles)
 - **Pace Green** (#007334), **Pace Orange** (#B56A00, an ochre) and **Pace Red** (#9E1910, a brick): the fill of a gauge, meaning « dans le rythme », « un peu en retard », « en retard ». On the calories gauge, orange and red also flag going over the goal (above 105 % and 110 %), which the line under the bar then states as « au-dessus de l'objectif ». Each is 3:1 or more against Sand, and they differ in lightness as well as hue, so red and green stay apart to eyes that confuse them. They live in the theme as `colors.pace`.
 
 ### Named Rules
-**The Rare Ink Rule.** Ink Blue is the only accent and it stays under a tenth of any screen. A new emphasis uses weight, size or the Ink Tint before it uses more blue.
+**The Rare Ink Rule.** Ink Blue is the only accent and it stays under a tenth of any screen. A new emphasis uses weight, size or the Ink Tint before it uses more blue. The measure tints are identity, not emphasis: one per measure, on its disc and nowhere else.
 
 **The Role-Not-Value Rule.** New code asks the theme for a role (primary, secondaryContainer, surface, `colors.pace`) and never writes a color value, so the palette stays a one-file change. `src/theme.test.ts` holds the contrast of every pair in use: 4.5:1 for text, 3:1 for controls and gauge fills.
 
@@ -254,20 +280,20 @@ Ink blue on ivory paper: a restrained Material 3 scheme with warm neutrals, plus
 ## Typography
 
 **Display Font:** none; no display face is used.
-**Body Font:** Roboto through Android's system `sans-serif` (`sans-serif-medium` for weight 500). No text font is bundled.
-**Label/Mono Font:** the same system face; the gauge figures use tabular numerals so digits do not shift as the day's total grows.
+**Body Font:** Nunito, in regular for reading and semi-bold for titles and labels, loaded before the first frame (about 460 KB). Android picks a font file per family, so in the theme the weight is in the family name (`Nunito_400Regular`, `Nunito_600SemiBold`) and no variant asks for a weight on top. The frontmatter writes the weight (400, 600) to say the intent.
+**Label/Mono Font:** the same face; the gauge figures ask for tabular numerals so digits do not shift as the day's total grows, where the face has them.
 
-**Character:** Plain system sans at Material 3's scale. Nothing competes with the numbers, which carry the screen. Type follows the system font size, so layouts must survive a larger scale: a figure sits on its own line and wraps instead of overflowing. Frontmatter sizes are written in px for portability; in React Native they are unitless sp.
+**Character:** A rounded, friendly sans at Material 3's scale. Nothing competes with the numbers, which carry the screen. Type follows the system font size, so layouts must survive a larger scale: a figure sits on its own line and wraps instead of overflowing. Frontmatter sizes are written in px for portability; in React Native they are unitless sp.
 
 ### Hierarchy
 - **Headline Medium** (400, 28 / 36): the product name on the sign-in screen, the only place it appears.
 - **Headline Small** (400, 24 / 32): the day's figure on a gauge (« 1,5 L », « 1 100 kcal »), and the title of every Paper dialog.
-- **Title Large** (400, 22 / 28): « Eau » on the water sheet and the food name on a food's fiche.
-- **Title Medium** (500, 16 / 24, letter-spacing 0.15): meal headings and the day totals on Repas.
-- **Body Large** (400, 16 / 24, letter-spacing 0.15): list titles and the macros line of a fiche.
+- **Title Large** (400, 22 / 28): the greeting on Today and the food name on a food's fiche.
+- **Title Medium** (600, 16 / 24, letter-spacing 0.15): meal headings and the day totals on Repas.
+- **Body Large** (400, 16 / 24, letter-spacing 0.15): the sentence under the greeting, list titles and the macros line of a fiche.
 - **Body Medium** (400, 14 / 20, letter-spacing 0.25): the line under a gauge (« sur 2,5 L · reste 1 L »), the per-meal kcal and the Glucides · Lipides line.
 - **Body Small** (400, 12 / 16, letter-spacing 0.4): the helper text under a field.
-- **Label Large** (500, 14 / 20, letter-spacing 0.1): every button, segment and chip label, and a gauge's label.
+- **Label Large** (600, 14 / 20, letter-spacing 0.1): every button, segment and chip label, and a gauge's label.
 
 ### Named Rules
 **The French Number Rule.** Numbers are formatted for fr-FR: comma decimal, grouped thousands, and the unit after the value (« 1 100 kcal », « 1,5 L »). Text is sentence case with French typographic apostrophes.
@@ -278,7 +304,7 @@ Ink blue on ivory paper: a restrained Material 3 scheme with warm neutrals, plus
 
 One column per screen on a phone in portrait. Screens use a 16 dp gutter and a 16 dp gap between blocks; inside a card the padding is 16 dp and the gap 8 dp; a gauge's touch area pads 12 dp with 4 dp between its rows; a form's fields stack with a 12 dp gap and wrapping rows of buttons or chips use 8 dp. The sign-in screen centers its content with 24 dp padding. There are no breakpoints and no tablet layout; the reference width is 360 dp.
 
-Today splits into two groups. The gauges scroll in the upper region. Below them, outside the scroll, the action bar holds the water amounts and « + Repas » on one row (wrapping on a large font); a take-back snackbar rests on the bar's top edge. The add-food screen opens as a modal with the header « Ajouter un aliment » and a bottom inset, and its four modes sit in two rows of two.
+Today splits into two groups. The upper region scrolls: a greeting (« Bonjour » until 18 h, « Bonsoir » after, then the first name from the Google account) with one sentence on what is left of the water and protein goals (or a bravo when they are reached; calories wait for the goal modes), then the gauge cards. Below them, outside the scroll, the action bar holds the water amounts and « + Repas » on one row (wrapping to two on a narrow phone or a large font); a take-back snackbar rests on the bar's top edge. The add-food screen opens as a modal with the header « Ajouter un aliment » and a bottom inset, and its four modes sit in two rows of two.
 
 Navigation is a two-tab bottom bar (Aujourd'hui, Repas) under a header whose right end holds the sync cloud. Every control is at least 48 × 48 dp, with at least 8 dp between neighbouring targets: Paper buttons get a 48 dp content height, icon buttons are sized to 48 × 48, and segment labels are padded to reach 48 dp.
 
@@ -293,7 +319,7 @@ Tonal layering, with Android's native elevation as a faint companion on cards. P
 
 ## Shapes
 
-Material 3's shape scale derived from Paper's base radius of 4 dp: text fields round 4 dp at the top, chips 8 dp (2×), buttons and segmented switches 20 dp (5×, a pill at 40 to 48 dp tall), dialogs 28 dp (7×), the snackbar 4 dp. The app adds three radii of its own: cards and the gauge's ripple area 12 dp, the water sheet 16 dp, and the gauge track 6 dp (half its 12 dp height, a full pill). The pace tick is a square-ended 2 dp bar. Icon buttons are 48 dp circles. The tab indicator is a 64 × 32 dp pill.
+Material 3's shape scale derived from Paper's base radius of 4 dp: text fields round 4 dp at the top, chips 8 dp (2×), buttons and segmented switches 20 dp (5×, a pill at 40 to 48 dp tall), dialogs 28 dp (7×), the snackbar 4 dp. The app adds three radii of its own: meal cards 12 dp, gauge cards 16 dp (the ripple is clipped to them), and the gauge track 6 dp (half its 12 dp height, a full pill). The pace tick is a square-ended 2 dp bar. Icon buttons are 48 dp circles. The measure discs are 32 dp circles. The tab indicator is a 64 × 32 dp pill.
 
 ## Components
 
@@ -301,16 +327,16 @@ Standard Paper components, restrained: a tonal button, a soft card, a flat field
 
 ### Buttons
 - **Shape:** near-pill, 20 dp radius, 48 dp tall (content height forced to 48).
-- **Tonal (default):** Ink Tint fill, Ink Tint Text label, an optional leading icon (plus, on « Ajouter » of each meal). The quick actions « +250 ml », « +500 ml » and « + Repas » carry none: their unit and their word name them, and three of them fit one row.
+- **Tonal (default):** Ink Tint fill, Ink Tint Text label, an optional leading icon: a glass on « +250 ml » and « +500 ml », a fork and knife on « + Repas », a plus on « Ajouter » of each meal.
 - **Filled:** Ink Blue fill, white label. Only a screen's committing action: « Se connecter avec Google » (with a loading state), « Ajouter à {repas} » on a fiche, « Enregistrer » on the custom-food form.
 - **Outlined:** Pencil border, blue label. Secondary actions on a custom food's fiche (« Modifier l'aliment », « Supprimer l'aliment »).
 - **Text:** blue label, no container. Dialog actions, « Retour », « Enregistrer comme favori » (star-outline).
 - **Disabled:** Paper's disabled colors (a faded fill and label); a filled button stays disabled until the quantity or the form is valid.
 
 ### Gauge (signature component)
-- **Structure:** a pressable block (12 dp radius, 12 dp padding, 48 dp minimum, 4 dp between rows). Row 1: the label in Label Large and Ink Soft, a 24 dp icon at the right (plus when the tap adds, chevron-right when it opens). Row 2: the day's figure in Headline Small, tabular. Row 3: the 12 dp track. Row 4: « sur {objectif} · reste {x} » in Body Medium and Ink Soft, or « objectif atteint », or « au-dessus de l'objectif » for calories.
-- **Fill:** one of the pace trio, drawn from the left up to the progress and full from 100 %, on a Sand track. The 2 dp Ink tick sits at the share of the active day (7 h to 23 h) already elapsed.
-- **Behavior:** the whole block is the target. Its accessibility label reads « Eau : 1,5 L, sur 2,5 L, reste 1 L », its value the pace words, its hint what the tap does (« Ouvre les verres du jour », « Ouvre le journal des repas »).
+- **Structure:** a Paper Card card (16 dp radius, 16 dp padding, 48 dp minimum, 4 dp between rows), pressable as a whole. Row 1: the measure's disc and the label in Label Large and Ink Soft, a 24 dp icon at the right (plus when the tap adds, chevron-right when it opens). Row 2: the day's figure in Headline Small, tabular. Row 3: the 12 dp track. Row 4: « sur {objectif} · reste {x} » in Body Medium and Ink Soft, or « objectif atteint », or « au-dessus de l'objectif » for calories.
+- **Fill:** one of the pace trio, drawn from the left up to the progress and full from 100 %, on a Sand track. It slides to its value over 450 ms when the screen opens or the total changes, and does not move when the phone asks for no animation. The 2 dp Ink tick sits at the share of the active day (7 h to 23 h) already elapsed.
+- **Behavior:** the whole block is the target. Its accessibility label reads « Eau : 1,5 L, sur 2,5 L, reste 1 L », its value the pace words, its hint what the tap does (« Ajoute une quantité d’eau de ton choix », « Ouvre le journal des repas »).
 
 ### Action bar
 - **Style:** a level-1 flat surface under the gauges, 16 dp padding and 8 dp gap, pinned above the tab bar. The water amounts and « + Repas » share one 48 dp row and grow to fill it; on a large font they wrap onto a second row.
@@ -335,7 +361,7 @@ Standard Paper components, restrained: a tonal button, a soft card, a flat field
 
 ### Dialogs and sheet
 - **Dialog:** Paper Dialog level 3, 28 dp corners, Headline Small title, text-button actions at the bottom right. For decisions that must interrupt: changing a journal line, naming a favorite, and confirming a delete that cannot be undone (« Supprimer {nom} du journal ? », « Supprimer l'aliment {nom} ? », « Supprimer le favori {nom} ? »), each with the same « Annuler » and « Supprimer ».
-- **Water sheet:** a level-3 16 dp panel with 16 dp margin and padding, a Title Large heading, a list capped at 360 dp and 48 dp icon buttons.
+- **Water amount:** « Quantité d'eau », a small dialog with one numeric field in ml (above 0, up to 5 000, comma or point) and « Annuler » / « Ajouter ». It opens from the Eau gauge and replaces the former sheet of the day's glasses, which returns in Suivi (M4).
 
 ### Snackbar
 - **Failure:** Inverse Surface, Inverse Ink, 4 dp radius, the message « L'enregistrement a échoué. », one « Réessayer » action and a close icon. No timeout; mounted only while a write has failed, never for pending or offline state.
@@ -360,7 +386,7 @@ Standard Paper components, restrained: a tonal button, a soft card, a flat field
 
 ### Don't:
 - **Don't** use green, orange or red for anything but pace; errors use Error Red.
-- **Don't** add ornament: no illustration, gradient, hero image or decorative color. Every pixel carries a number, a control or a state.
+- **Don't** add ornament beyond the icons and discs: no illustration, gradient, hero image or decorative color. Every pixel carries a number, a control, a state or a measure's identity.
 - **Don't** rely on color alone for pace: keep the tick and the accessibility words with every gauge.
 - **Don't** add a shadow, an elevation value or a divider to separate blocks; use the surface level or the spacing.
 - **Don't** write a color value in a screen, or add an accent beside Ink Blue and the pace trio.

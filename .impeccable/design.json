@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-10-31T12:09:57.153Z",
+  "generatedAt": "2026-10-31T19:01:40.997Z",
   "title": "Design System: Genki",
   "extensions": {
     "colorMeta": {
@@ -229,6 +229,96 @@
           "rgb(255, 255, 255)"
         ]
       },
+      "water-tint": {
+        "role": "custom",
+        "displayName": "Water Tint",
+        "canonical": "rgb(214, 227, 255)",
+        "tonalRamp": [
+          "rgb(0, 27, 60)",
+          "rgb(0, 48, 98)",
+          "rgb(0, 70, 138)",
+          "rgb(38, 94, 167)",
+          "rgb(96, 146, 221)",
+          "rgb(168, 200, 255)",
+          "rgb(214, 227, 255)",
+          "rgb(236, 240, 255)"
+        ]
+      },
+      "water-tint-ink": {
+        "role": "custom",
+        "displayName": "Water Tint Ink",
+        "canonical": "rgb(0, 27, 60)",
+        "tonalRamp": [
+          "rgb(0, 27, 60)",
+          "rgb(0, 48, 98)",
+          "rgb(0, 70, 138)",
+          "rgb(38, 94, 167)",
+          "rgb(68, 120, 193)",
+          "rgb(96, 146, 221)",
+          "rgb(123, 172, 250)",
+          "rgb(168, 200, 255)"
+        ]
+      },
+      "calories-tint": {
+        "role": "custom",
+        "displayName": "Calories Tint",
+        "canonical": "rgb(249, 216, 254)",
+        "tonalRamp": [
+          "rgb(40, 19, 47)",
+          "rgb(62, 40, 69)",
+          "rgb(86, 62, 93)",
+          "rgb(111, 86, 117)",
+          "rgb(164, 135, 170)",
+          "rgb(219, 188, 225)",
+          "rgb(249, 216, 254)",
+          "rgb(255, 235, 255)"
+        ]
+      },
+      "calories-tint-ink": {
+        "role": "custom",
+        "displayName": "Calories Tint Ink",
+        "canonical": "rgb(40, 19, 47)",
+        "tonalRamp": [
+          "rgb(40, 19, 47)",
+          "rgb(62, 40, 69)",
+          "rgb(86, 62, 93)",
+          "rgb(111, 86, 117)",
+          "rgb(137, 110, 143)",
+          "rgb(164, 135, 170)",
+          "rgb(191, 161, 197)",
+          "rgb(219, 188, 225)"
+        ]
+      },
+      "protein-tint": {
+        "role": "custom",
+        "displayName": "Protein Tint",
+        "canonical": "rgb(178, 237, 235)",
+        "tonalRamp": [
+          "rgb(0, 32, 31)",
+          "rgb(0, 55, 54)",
+          "rgb(11, 79, 78)",
+          "rgb(44, 103, 102)",
+          "rgb(97, 155, 153)",
+          "rgb(150, 209, 207)",
+          "rgb(178, 237, 235)",
+          "rgb(192, 252, 250)"
+        ]
+      },
+      "protein-tint-ink": {
+        "role": "custom",
+        "displayName": "Protein Tint Ink",
+        "canonical": "rgb(0, 32, 31)",
+        "tonalRamp": [
+          "rgb(0, 32, 31)",
+          "rgb(0, 55, 54)",
+          "rgb(11, 79, 78)",
+          "rgb(44, 103, 102)",
+          "rgb(71, 128, 127)",
+          "rgb(97, 155, 153)",
+          "rgb(123, 181, 180)",
+          "rgb(150, 209, 207)"
+        ]
+      },
       "pace-green": {
         "role": "custom",
         "displayName": "Pace Green",
@@ -327,9 +417,9 @@
       "name": "Tonal Button",
       "kind": "button",
       "refersTo": "button-tonal",
-      "description": "The default action: the quick adds (+250 ml, + Repas) and « Ajouter ». Near-pill, 48 dp tall, on Ink Tint; the quick adds carry no icon.",
-      "html": "<button class=\"ds-btn-tonal\">+250 ml</button>",
-      "css": ".ds-btn-tonal { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; padding: 0 24px; border: 0; border-radius: 20px; background: rgb(217, 227, 248); color: rgb(18, 28, 43); font: 500 14px/20px Roboto, 'Helvetica Neue', Arial, sans-serif; letter-spacing: 0.1px; cursor: pointer; }\n.ds-btn-tonal:hover { background: rgb(201, 211, 232); }\n.ds-btn-tonal:active { background: rgb(193, 203, 223); }\n.ds-btn-tonal:focus-visible { outline: 2px solid rgb(38, 94, 167); outline-offset: 2px; }"
+      "description": "The default action: the quick adds (+250 ml, + Repas) and « Ajouter ». Near-pill, 48 dp tall, on Ink Tint, with a leading icon.",
+      "html": "<button class=\"ds-btn-tonal\"><svg viewBox=\"0 0 24 24\" width=\"18\" height=\"18\" aria-hidden=\"true\"><path fill=\"currentColor\" d=\"M7 4h10l-1.2 15a1 1 0 0 1-1 .9H9.2a1 1 0 0 1-1-.9L7 4z\"/></svg>+250 ml</button>",
+      "css": ".ds-btn-tonal { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; padding: 0 24px 0 16px; border: 0; border-radius: 20px; background: rgb(217, 227, 248); color: rgb(18, 28, 43); font: 500 14px/20px Nunito, Roboto, 'Helvetica Neue', Arial, sans-serif; letter-spacing: 0.1px; cursor: pointer; }\n.ds-btn-tonal:hover { background: rgb(201, 211, 232); }\n.ds-btn-tonal:active { background: rgb(193, 203, 223); }\n.ds-btn-tonal:focus-visible { outline: 2px solid rgb(38, 94, 167); outline-offset: 2px; }"
     },
     {
       "name": "Filled Button",
@@ -337,23 +427,31 @@
       "refersTo": "button-filled",
       "description": "A screen’s single committing action: sign in, log the food, save the custom food. Ink Blue with a white label.",
       "html": "<button class=\"ds-btn-filled\">Ajouter à Déjeuner</button>",
-      "css": ".ds-btn-filled { display: inline-flex; align-items: center; justify-content: center; min-height: 48px; padding: 0 24px; border: 0; border-radius: 20px; background: rgb(38, 94, 167); color: rgb(255, 255, 255); font: 500 14px/20px Roboto, 'Helvetica Neue', Arial, sans-serif; letter-spacing: 0.1px; cursor: pointer; }\n.ds-btn-filled:hover { background: rgb(55, 107, 174); }\n.ds-btn-filled:active { background: rgb(64, 113, 178); }\n.ds-btn-filled:focus-visible { outline: 2px solid rgb(38, 94, 167); outline-offset: 2px; }"
+      "css": ".ds-btn-filled { display: inline-flex; align-items: center; justify-content: center; min-height: 48px; padding: 0 24px; border: 0; border-radius: 20px; background: rgb(38, 94, 167); color: rgb(255, 255, 255); font: 500 14px/20px Nunito, Roboto, 'Helvetica Neue', Arial, sans-serif; letter-spacing: 0.1px; cursor: pointer; }\n.ds-btn-filled:hover { background: rgb(55, 107, 174); }\n.ds-btn-filled:active { background: rgb(64, 113, 178); }\n.ds-btn-filled:focus-visible { outline: 2px solid rgb(38, 94, 167); outline-offset: 2px; }"
     },
     {
       "name": "Gauge",
       "kind": "custom",
       "refersTo": "gauge",
-      "description": "The signature pattern: label, the day’s figure in 24 sp, a 12 dp track with a pace-colored fill and a tick for the share of the active day elapsed, then the goal and what is left. Shown at 16 h: on pace, behind, far behind.",
-      "html": "<div class=\"ds-gauges\"><div class=\"ds-gauge\" role=\"button\" tabindex=\"0\"><div class=\"ds-gauge-row\"><span class=\"ds-gauge-label\">Eau</span><svg viewBox=\"0 0 24 24\" width=\"24\" height=\"24\" aria-hidden=\"true\"><path fill=\"currentColor\" d=\"M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z\"/></svg></div><div class=\"ds-gauge-value\">1,5 L</div><div class=\"ds-gauge-track\"><div class=\"ds-gauge-fill ds-green\" style=\"width:60%\"></div><div class=\"ds-gauge-tick\" style=\"left:56.25%\"></div></div><div class=\"ds-gauge-detail\">sur 2,5 L · reste 1 L</div></div><div class=\"ds-gauge\" role=\"button\" tabindex=\"0\"><div class=\"ds-gauge-row\"><span class=\"ds-gauge-label\">Calories</span><svg viewBox=\"0 0 24 24\" width=\"24\" height=\"24\" aria-hidden=\"true\"><path fill=\"currentColor\" d=\"M10 6 8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z\"/></svg></div><div class=\"ds-gauge-value\">1 100 kcal</div><div class=\"ds-gauge-track\"><div class=\"ds-gauge-fill ds-orange\" style=\"width:50%\"></div><div class=\"ds-gauge-tick\" style=\"left:56.25%\"></div></div><div class=\"ds-gauge-detail\">sur 2 200 kcal · reste 1 100 kcal</div></div><div class=\"ds-gauge\" role=\"button\" tabindex=\"0\"><div class=\"ds-gauge-row\"><span class=\"ds-gauge-label\">Protéines</span><svg viewBox=\"0 0 24 24\" width=\"24\" height=\"24\" aria-hidden=\"true\"><path fill=\"currentColor\" d=\"M10 6 8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z\"/></svg></div><div class=\"ds-gauge-value\">39 g</div><div class=\"ds-gauge-track\"><div class=\"ds-gauge-fill ds-red\" style=\"width:30%\"></div><div class=\"ds-gauge-tick\" style=\"left:56.25%\"></div></div><div class=\"ds-gauge-detail\">sur 130 g · reste 91 g</div></div></div>",
-      "css": ".ds-gauges { display: flex; flex-direction: column; gap: 16px; width: 100%; max-width: 360px; color: rgb(29, 27, 23); font-family: Roboto, 'Helvetica Neue', Arial, sans-serif; }\n.ds-gauge { display: flex; flex-direction: column; gap: 4px; min-height: 48px; padding: 12px; border-radius: 12px; cursor: pointer; }\n.ds-gauge:hover { background: rgba(29, 27, 23, 0.08); }\n.ds-gauge:active { background: rgba(29, 27, 23, 0.12); }\n.ds-gauge:focus-visible { outline: 2px solid rgb(38, 94, 167); outline-offset: 2px; }\n.ds-gauge-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }\n.ds-gauge-label { color: rgb(74, 70, 63); font-size: 14px; line-height: 20px; font-weight: 500; letter-spacing: 0.1px; }\n.ds-gauge-value { font-size: 24px; line-height: 32px; font-weight: 400; font-variant-numeric: tabular-nums; }\n.ds-gauge-track { position: relative; height: 12px; margin: 4px 0; border-radius: 6px; background: rgb(232, 226, 216); overflow: hidden; }\n.ds-gauge-fill { height: 100%; }\n.ds-green { background: #007334; }\n.ds-orange { background: #B56A00; }\n.ds-red { background: #9E1910; }\n.ds-gauge-tick { position: absolute; top: 0; bottom: 0; width: 2px; background: rgb(29, 27, 23); }\n.ds-gauge-detail { color: rgb(74, 70, 63); font-size: 14px; line-height: 20px; letter-spacing: 0.25px; }"
+      "description": "The signature pattern, in a soft 16 dp card: the measure’s icon disc and label, the day’s figure in 24 sp, a 12 dp track with a pace-colored fill and a tick for the share of the active day elapsed, then the goal and what is left. Shown at 16 h: on pace, behind, far behind.",
+      "html": "<div class=\"ds-gauges\"><div class=\"ds-gauge\" role=\"button\" tabindex=\"0\"><div class=\"ds-gauge-row\"><span class=\"ds-gauge-title\"><span class=\"ds-disc ds-disc-water\"><svg viewBox=\"0 0 24 24\" width=\"20\" height=\"20\" aria-hidden=\"true\"><path fill=\"currentColor\" d=\"M12 20a6 6 0 0 1-6-6c0-4 6-10.75 6-10.75S18 10 18 14a6 6 0 0 1-6 6z\"/></svg></span><span class=\"ds-gauge-label\">Eau</span></span><svg viewBox=\"0 0 24 24\" width=\"24\" height=\"24\" aria-hidden=\"true\"><path fill=\"currentColor\" d=\"M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z\"/></svg></div><div class=\"ds-gauge-value\">1,5 L</div><div class=\"ds-gauge-track\"><div class=\"ds-gauge-fill ds-green\" style=\"width:60%\"></div><div class=\"ds-gauge-tick\" style=\"left:56.25%\"></div></div><div class=\"ds-gauge-detail\">sur 2,5 L · reste 1 L</div></div><div class=\"ds-gauge\" role=\"button\" tabindex=\"0\"><div class=\"ds-gauge-row\"><span class=\"ds-gauge-title\"><span class=\"ds-disc ds-disc-calories\"><svg viewBox=\"0 0 24 24\" width=\"20\" height=\"20\" aria-hidden=\"true\"><path fill=\"currentColor\" d=\"M19.48 12.35c-1.57-4.08-7.16-4.3-5.81-10.23.1-.44-.37-.78-.75-.55C9.29 3.71 6.68 8 8.87 13.62c.18.46-.36.89-.75.59-1.81-1.37-2-3.34-1.84-4.75.06-.52-.62-.77-.91-.34C4.69 10.16 4 11.84 4 14.37c.38 5.6 5.11 7.32 6.81 7.54 2.43.31 5.06-.14 6.95-1.87 2.08-1.93 2.84-5.01 1.72-7.69z\"/></svg></span><span class=\"ds-gauge-label\">Calories</span></span><svg viewBox=\"0 0 24 24\" width=\"24\" height=\"24\" aria-hidden=\"true\"><path fill=\"currentColor\" d=\"M10 6 8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z\"/></svg></div><div class=\"ds-gauge-value\">1 100 kcal</div><div class=\"ds-gauge-track\"><div class=\"ds-gauge-fill ds-orange\" style=\"width:50%\"></div><div class=\"ds-gauge-tick\" style=\"left:56.25%\"></div></div><div class=\"ds-gauge-detail\">sur 2 200 kcal · reste 1 100 kcal</div></div><div class=\"ds-gauge\" role=\"button\" tabindex=\"0\"><div class=\"ds-gauge-row\"><span class=\"ds-gauge-title\"><span class=\"ds-disc ds-disc-protein\"><svg viewBox=\"0 0 24 24\" width=\"20\" height=\"20\" aria-hidden=\"true\"><path fill=\"currentColor\" d=\"M20.57 14.86L22 13.43 20.57 12 17 15.57 8.43 7 12 3.43 10.57 2 9.14 3.43 7.71 2 5.57 4.14 4.14 2.71 2.71 4.14l1.43 1.43L2 7.71l1.43 1.43L2 10.57 3.43 12 7 8.43 15.57 17 12 20.57 13.43 22l1.43-1.43L16.29 22l2.14-2.14 1.43 1.43 1.43-1.43-1.43-1.43L22 16.29z\"/></svg></span><span class=\"ds-gauge-label\">Protéines</span></span><svg viewBox=\"0 0 24 24\" width=\"24\" height=\"24\" aria-hidden=\"true\"><path fill=\"currentColor\" d=\"M10 6 8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z\"/></svg></div><div class=\"ds-gauge-value\">39 g</div><div class=\"ds-gauge-track\"><div class=\"ds-gauge-fill ds-red\" style=\"width:30%\"></div><div class=\"ds-gauge-tick\" style=\"left:56.25%\"></div></div><div class=\"ds-gauge-detail\">sur 130 g · reste 91 g</div></div></div>",
+      "css": ".ds-gauges { display: flex; flex-direction: column; gap: 16px; width: 100%; max-width: 360px; color: rgb(29, 27, 23); font-family: Nunito, Roboto, 'Helvetica Neue', Arial, sans-serif; }\n.ds-gauge { display: flex; flex-direction: column; gap: 4px; min-height: 48px; padding: 16px; border-radius: 16px; background: rgb(249, 243, 236); cursor: pointer; }\n.ds-gauge-title { display: flex; align-items: center; gap: 8px; }\n.ds-disc { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 16px; }\n.ds-disc-water { background: rgb(214, 227, 255); color: rgb(0, 27, 60); }\n.ds-disc-calories { background: rgb(249, 216, 254); color: rgb(40, 19, 47); }\n.ds-disc-protein { background: rgb(178, 237, 235); color: rgb(0, 32, 31); }\n.ds-gauge:hover { background: rgb(240, 234, 227); }\n.ds-gauge:active { background: rgb(234, 228, 221); }\n.ds-gauge:focus-visible { outline: 2px solid rgb(38, 94, 167); outline-offset: 2px; }\n.ds-gauge-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }\n.ds-gauge-label { color: rgb(74, 70, 63); font-size: 14px; line-height: 20px; font-weight: 500; letter-spacing: 0.1px; }\n.ds-gauge-value { font-size: 24px; line-height: 32px; font-weight: 400; font-variant-numeric: tabular-nums; }\n.ds-gauge-track { position: relative; height: 12px; margin: 4px 0; border-radius: 6px; background: rgb(232, 226, 216); overflow: hidden; }\n.ds-gauge-fill { height: 100%; }\n.ds-green { background: #007334; }\n.ds-orange { background: #B56A00; }\n.ds-red { background: #9E1910; }\n.ds-gauge-tick { position: absolute; top: 0; bottom: 0; width: 2px; background: rgb(29, 27, 23); }\n.ds-gauge-detail { color: rgb(74, 70, 63); font-size: 14px; line-height: 20px; letter-spacing: 0.25px; }"
+    },
+    {
+      "name": "Greeting",
+      "kind": "custom",
+      "refersTo": "greeting",
+      "description": "The top of Today: « Bonjour » until 18 h, « Bonsoir » after, then the first name from the Google account, and one sentence on what is left of the water and protein goals (a bravo when they are reached).",
+      "html": "<div class=\"ds-greeting\"><div class=\"ds-greeting-title\">Bonsoir Francis</div><div class=\"ds-greeting-line\">Encore 1 L d’eau et 130 g de protéines aujourd’hui.</div></div>",
+      "css": ".ds-greeting { display: flex; flex-direction: column; gap: 4px; padding: 0 4px; max-width: 360px; font-family: Nunito, Roboto, 'Helvetica Neue', Arial, sans-serif; color: rgb(29, 27, 23); }\n.ds-greeting-title { font-size: 22px; line-height: 28px; }\n.ds-greeting-line { color: rgb(74, 70, 63); font-size: 16px; line-height: 24px; letter-spacing: 0.15px; }"
     },
     {
       "name": "Action Bar",
       "kind": "custom",
       "refersTo": "actions-bar",
-      "description": "The frequent actions, pinned above the tab bar on a flat level-1 surface: the water amounts and « + Repas » share one 48 dp row and grow to fill it; on a large font they wrap.",
-      "html": "<div class=\"ds-actions\"><button class=\"ds-act\">+250 ml</button><button class=\"ds-act\">+500 ml</button><button class=\"ds-act\">+ Repas</button></div>",
-      "css": ".ds-actions { box-sizing: border-box; display: flex; flex-wrap: wrap; gap: 8px; width: 100%; max-width: 360px; padding: 16px; background: rgb(249, 243, 236); }\n.ds-actions .ds-act { flex: 1 1 auto; }\n.ds-act { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; padding: 0 16px; border: 0; border-radius: 20px; background: rgb(217, 227, 248); color: rgb(18, 28, 43); font: 500 14px/20px Roboto, 'Helvetica Neue', Arial, sans-serif; letter-spacing: 0.1px; cursor: pointer; }\n.ds-act:hover { background: rgb(201, 211, 232); }\n.ds-act:active { background: rgb(193, 203, 223); }\n.ds-act:focus-visible { outline: 2px solid rgb(38, 94, 167); outline-offset: 2px; }"
+      "description": "The frequent actions, pinned above the tab bar on a flat level-1 surface: the water amounts and « + Repas » share one 48 dp row and grow to fill it; on a narrow phone or a large font they wrap to two.",
+      "html": "<div class=\"ds-actions\"><button class=\"ds-act\"><svg viewBox=\"0 0 24 24\" width=\"18\" height=\"18\" aria-hidden=\"true\"><path fill=\"currentColor\" d=\"M7 4h10l-1.2 15a1 1 0 0 1-1 .9H9.2a1 1 0 0 1-1-.9L7 4z\"/></svg>+250 ml</button><button class=\"ds-act\"><svg viewBox=\"0 0 24 24\" width=\"18\" height=\"18\" aria-hidden=\"true\"><path fill=\"currentColor\" d=\"M7 4h10l-1.2 15a1 1 0 0 1-1 .9H9.2a1 1 0 0 1-1-.9L7 4z\"/></svg>+500 ml</button><button class=\"ds-act\"><svg viewBox=\"0 0 24 24\" width=\"18\" height=\"18\" aria-hidden=\"true\"><path fill=\"currentColor\" d=\"M11 9H9V2H7v7H5V2H3v7c0 2.12 1.66 3.84 3.75 3.97V22h2.5v-9.03C11.34 12.84 13 11.12 13 9V2h-2v7zm5-3v8h2.5v8H21V2c-2.76 0-5 2.24-5 4z\"/></svg>+ Repas</button></div>",
+      "css": ".ds-actions { box-sizing: border-box; display: flex; flex-wrap: wrap; gap: 8px; width: 100%; max-width: 360px; padding: 16px; background: rgb(249, 243, 236); }\n.ds-actions .ds-act { flex: 1 1 auto; }\n.ds-act { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; padding: 0 16px 0 12px; border: 0; border-radius: 20px; background: rgb(217, 227, 248); color: rgb(18, 28, 43); font: 500 14px/20px Nunito, Roboto, 'Helvetica Neue', Arial, sans-serif; letter-spacing: 0.1px; cursor: pointer; }\n.ds-act:hover { background: rgb(201, 211, 232); }\n.ds-act:active { background: rgb(193, 203, 223); }\n.ds-act:focus-visible { outline: 2px solid rgb(38, 94, 167); outline-offset: 2px; }"
     },
     {
       "name": "Meal Card",
@@ -361,7 +459,7 @@
       "refersTo": "card",
       "description": "A Paper surface at level 1 with 12 dp corners: heading and kcal, a tonal « Ajouter », the entries as chevron list items, and a text button to save the meal as a favorite.",
       "html": "<div class=\"ds-meal-card\"><div class=\"ds-meal-head\"><div><div class=\"ds-meal-title\">Déjeuner</div><div class=\"ds-meal-kcal\">640 kcal</div></div><button class=\"ds-meal-add\"><svg viewBox=\"0 0 24 24\" width=\"18\" height=\"18\" aria-hidden=\"true\"><path fill=\"currentColor\" d=\"M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z\"/></svg>Ajouter</button></div><div class=\"ds-meal-item\" role=\"button\" tabindex=\"0\"><div><div class=\"ds-item-title\">Riz basmati cuit</div><div class=\"ds-item-sub\">180 g · 230 kcal</div></div><svg viewBox=\"0 0 24 24\" width=\"24\" height=\"24\" aria-hidden=\"true\"><path fill=\"currentColor\" d=\"M10 6 8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z\"/></svg></div><div class=\"ds-meal-item\" role=\"button\" tabindex=\"0\"><div><div class=\"ds-item-title\">Poulet rôti, sans peau</div><div class=\"ds-item-sub\">150 g · 410 kcal</div></div><svg viewBox=\"0 0 24 24\" width=\"24\" height=\"24\" aria-hidden=\"true\"><path fill=\"currentColor\" d=\"M10 6 8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z\"/></svg></div><button class=\"ds-meal-fav\"><svg viewBox=\"0 0 24 24\" width=\"18\" height=\"18\" aria-hidden=\"true\"><path fill=\"currentColor\" d=\"M22 9.24l-7.19-.62L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21 12 17.27 18.18 21l-1.63-7.03L22 9.24zM12 15.4l-3.76 2.27 1-4.28-3.32-2.88 4.38-.38L12 6.1l1.71 4.04 4.38.38-3.32 2.88 1 4.28L12 15.4z\"/></svg>Enregistrer comme favori</button></div>",
-      "css": ".ds-meal-card { box-sizing: border-box; display: flex; flex-direction: column; gap: 8px; width: 100%; max-width: 360px; padding: 16px; border-radius: 12px; background: rgb(249, 243, 236); color: rgb(29, 27, 23); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2); font-family: Roboto, 'Helvetica Neue', Arial, sans-serif; }\n.ds-meal-head { display: flex; align-items: center; justify-content: space-between; }\n.ds-meal-title { font-size: 16px; line-height: 24px; font-weight: 500; letter-spacing: 0.15px; }\n.ds-meal-kcal { font-size: 14px; line-height: 20px; letter-spacing: 0.25px; }\n.ds-meal-add { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; padding: 0 24px 0 16px; border: 0; border-radius: 20px; background: rgb(217, 227, 248); color: rgb(18, 28, 43); font: 500 14px/20px Roboto, 'Helvetica Neue', Arial, sans-serif; letter-spacing: 0.1px; cursor: pointer; }\n.ds-meal-add:hover { background: rgb(201, 211, 232); }\n.ds-meal-add:active { background: rgb(193, 203, 223); }\n.ds-meal-add:focus-visible { outline: 2px solid rgb(38, 94, 167); outline-offset: 2px; }\n.ds-meal-fav:focus-visible { outline: 2px solid rgb(38, 94, 167); outline-offset: 2px; }\n.ds-meal-item { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 48px; padding: 8px 0; border-radius: 8px; cursor: pointer; }\n.ds-meal-item:hover { background: rgba(29, 27, 23, 0.08); }\n.ds-meal-item:focus-visible { outline: 2px solid rgb(38, 94, 167); outline-offset: 2px; }\n.ds-item-title { font-size: 16px; line-height: 24px; letter-spacing: 0.15px; }\n.ds-item-sub { color: rgb(74, 70, 63); font-size: 14px; line-height: 20px; letter-spacing: 0.25px; }\n.ds-meal-fav { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; padding: 0 12px; border: 0; border-radius: 20px; background: transparent; color: rgb(38, 94, 167); font: 500 14px/20px Roboto, 'Helvetica Neue', Arial, sans-serif; letter-spacing: 0.1px; cursor: pointer; }\n.ds-meal-fav:hover { background: rgba(38, 94, 167, 0.08); }"
+      "css": ".ds-meal-card { box-sizing: border-box; display: flex; flex-direction: column; gap: 8px; width: 100%; max-width: 360px; padding: 16px; border-radius: 12px; background: rgb(249, 243, 236); color: rgb(29, 27, 23); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2); font-family: Nunito, Roboto, 'Helvetica Neue', Arial, sans-serif; }\n.ds-meal-head { display: flex; align-items: center; justify-content: space-between; }\n.ds-meal-title { font-size: 16px; line-height: 24px; font-weight: 500; letter-spacing: 0.15px; }\n.ds-meal-kcal { font-size: 14px; line-height: 20px; letter-spacing: 0.25px; }\n.ds-meal-add { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; padding: 0 24px 0 16px; border: 0; border-radius: 20px; background: rgb(217, 227, 248); color: rgb(18, 28, 43); font: 500 14px/20px Nunito, Roboto, 'Helvetica Neue', Arial, sans-serif; letter-spacing: 0.1px; cursor: pointer; }\n.ds-meal-add:hover { background: rgb(201, 211, 232); }\n.ds-meal-add:active { background: rgb(193, 203, 223); }\n.ds-meal-add:focus-visible { outline: 2px solid rgb(38, 94, 167); outline-offset: 2px; }\n.ds-meal-fav:focus-visible { outline: 2px solid rgb(38, 94, 167); outline-offset: 2px; }\n.ds-meal-item { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 48px; padding: 8px 0; border-radius: 8px; cursor: pointer; }\n.ds-meal-item:hover { background: rgba(29, 27, 23, 0.08); }\n.ds-meal-item:focus-visible { outline: 2px solid rgb(38, 94, 167); outline-offset: 2px; }\n.ds-item-title { font-size: 16px; line-height: 24px; letter-spacing: 0.15px; }\n.ds-item-sub { color: rgb(74, 70, 63); font-size: 14px; line-height: 20px; letter-spacing: 0.25px; }\n.ds-meal-fav { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; padding: 0 12px; border: 0; border-radius: 20px; background: transparent; color: rgb(38, 94, 167); font: 500 14px/20px Nunito, Roboto, 'Helvetica Neue', Arial, sans-serif; letter-spacing: 0.1px; cursor: pointer; }\n.ds-meal-fav:hover { background: rgba(38, 94, 167, 0.08); }"
     },
     {
       "name": "Segmented Switch",
@@ -369,7 +467,7 @@
       "refersTo": "segmented-button",
       "description": "The add-food modes in two rows of two, Pencil borders and 20 dp outer corners; the chosen one takes Ink Tint and a check, so it is not told by its tint alone.",
       "html": "<div class=\"ds-segs\"><div class=\"ds-seg\" role=\"group\"><button class=\"ds-seg-btn\">Favoris</button><button class=\"ds-seg-btn\">Récents</button></div><div class=\"ds-seg\" role=\"group\"><button class=\"ds-seg-btn ds-seg-on\"><svg viewBox=\"0 0 24 24\" width=\"18\" height=\"18\" aria-hidden=\"true\"><path fill=\"currentColor\" d=\"M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z\"/></svg>Recherche</button><button class=\"ds-seg-btn\">Créer</button></div></div>",
-      "css": ".ds-segs { display: flex; flex-direction: column; gap: 8px; width: 100%; max-width: 360px; }\n.ds-seg { display: flex; }\n.ds-seg-btn { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; padding: 0 4px; border: 1px solid rgb(123, 119, 110); border-left-width: 0; background: transparent; color: rgb(29, 27, 23); font: 500 14px/20px Roboto, 'Helvetica Neue', Arial, sans-serif; letter-spacing: 0.1px; cursor: pointer; }\n.ds-seg-btn:first-child { border-left-width: 1px; border-radius: 20px 0 0 20px; }\n.ds-seg-btn:last-child { border-radius: 0 20px 20px 0; }\n.ds-seg-on { background: rgb(217, 227, 248); color: rgb(18, 28, 43); }\n.ds-seg-btn:hover { background: rgba(29, 27, 23, 0.08); }\n.ds-seg-on:hover { background: rgb(201, 211, 232); }\n.ds-seg-btn:focus-visible { outline: 2px solid rgb(38, 94, 167); outline-offset: -2px; }"
+      "css": ".ds-segs { display: flex; flex-direction: column; gap: 8px; width: 100%; max-width: 360px; }\n.ds-seg { display: flex; }\n.ds-seg-btn { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; padding: 0 4px; border: 1px solid rgb(123, 119, 110); border-left-width: 0; background: transparent; color: rgb(29, 27, 23); font: 500 14px/20px Nunito, Roboto, 'Helvetica Neue', Arial, sans-serif; letter-spacing: 0.1px; cursor: pointer; }\n.ds-seg-btn:first-child { border-left-width: 1px; border-radius: 20px 0 0 20px; }\n.ds-seg-btn:last-child { border-radius: 0 20px 20px 0; }\n.ds-seg-on { background: rgb(217, 227, 248); color: rgb(18, 28, 43); }\n.ds-seg-btn:hover { background: rgba(29, 27, 23, 0.08); }\n.ds-seg-on:hover { background: rgb(201, 211, 232); }\n.ds-seg-btn:focus-visible { outline: 2px solid rgb(38, 94, 167); outline-offset: -2px; }"
     },
     {
       "name": "Chips",
@@ -377,7 +475,7 @@
       "refersTo": "chip",
       "description": "The compact « cuit » / « cru » state chip beside a food’s name, and a tappable quantity chip that fills the quantity field.",
       "html": "<span class=\"ds-chip-row\"><span class=\"ds-chip ds-chip-compact\">cuit</span><button class=\"ds-chip\">150 g</button></span>",
-      "css": ".ds-chip-row { display: inline-flex; align-items: center; gap: 8px; font-family: Roboto, 'Helvetica Neue', Arial, sans-serif; }\n.ds-chip { display: inline-flex; align-items: center; height: 32px; padding: 0 16px; border: 0; border-radius: 8px; background: rgb(217, 227, 248); color: rgb(74, 70, 63); font: 500 14px/20px Roboto, 'Helvetica Neue', Arial, sans-serif; letter-spacing: 0.1px; }\n.ds-chip-compact { padding: 0 12px; }\nbutton.ds-chip { cursor: pointer; }\nbutton.ds-chip:hover { background: rgb(201, 211, 232); }\nbutton.ds-chip:active { background: rgb(193, 203, 223); }\nbutton.ds-chip:focus-visible { outline: 2px solid rgb(38, 94, 167); outline-offset: 2px; }"
+      "css": ".ds-chip-row { display: inline-flex; align-items: center; gap: 8px; font-family: Nunito, Roboto, 'Helvetica Neue', Arial, sans-serif; }\n.ds-chip { display: inline-flex; align-items: center; height: 32px; padding: 0 16px; border: 0; border-radius: 8px; background: rgb(217, 227, 248); color: rgb(74, 70, 63); font: 500 14px/20px Nunito, Roboto, 'Helvetica Neue', Arial, sans-serif; letter-spacing: 0.1px; }\n.ds-chip-compact { padding: 0 12px; }\nbutton.ds-chip { cursor: pointer; }\nbutton.ds-chip:hover { background: rgb(201, 211, 232); }\nbutton.ds-chip:active { background: rgb(193, 203, 223); }\nbutton.ds-chip:focus-visible { outline: 2px solid rgb(38, 94, 167); outline-offset: 2px; }"
     },
     {
       "name": "Text Field",
@@ -385,7 +483,7 @@
       "refersTo": "text-field",
       "description": "Paper’s flat field: Sand fill, 4 dp top corners, a floating French label, an Ink Blue underline on focus. Below it, the error state with its helper text.",
       "html": "<div class=\"ds-fields\"><label class=\"ds-field\"><span class=\"ds-field-label\">Quantité (g)</span><input class=\"ds-field-input\" value=\"150\" inputmode=\"decimal\"></label><div><label class=\"ds-field ds-field-error\"><span class=\"ds-field-label\">Quantité (g)</span><input class=\"ds-field-input\" value=\"6000\" inputmode=\"decimal\"></label><div class=\"ds-helper\">La quantité doit être comprise entre 0 et 5 000 g.</div></div></div>",
-      "css": ".ds-fields { display: flex; flex-direction: column; gap: 16px; width: 100%; max-width: 360px; font-family: Roboto, 'Helvetica Neue', Arial, sans-serif; }\n.ds-field { box-sizing: border-box; display: block; height: 56px; padding: 8px 16px 0; border-bottom: 1px solid rgb(74, 70, 63); border-radius: 4px 4px 0 0; background: rgb(232, 226, 216); }\n.ds-field:focus-within { border-bottom: 2px solid rgb(38, 94, 167); }\n.ds-field-label { display: block; color: rgb(74, 70, 63); font-size: 12px; line-height: 16px; letter-spacing: 0.4px; }\n.ds-field:focus-within .ds-field-label { color: rgb(38, 94, 167); }\n.ds-field-input { display: block; width: 100%; padding: 0; border: 0; outline: 0; background: transparent; color: rgb(29, 27, 23); font: 400 16px/24px Roboto, 'Helvetica Neue', Arial, sans-serif; letter-spacing: 0.15px; }\n.ds-field-error, .ds-field-error:focus-within { border-bottom: 2px solid rgb(186, 26, 26); }\n.ds-field-error .ds-field-label, .ds-field-error:focus-within .ds-field-label { color: rgb(186, 26, 26); }\n.ds-helper { padding: 4px 16px 0; color: rgb(186, 26, 26); font-size: 12px; line-height: 16px; letter-spacing: 0.4px; }"
+      "css": ".ds-fields { display: flex; flex-direction: column; gap: 16px; width: 100%; max-width: 360px; font-family: Nunito, Roboto, 'Helvetica Neue', Arial, sans-serif; }\n.ds-field { box-sizing: border-box; display: block; height: 56px; padding: 8px 16px 0; border-bottom: 1px solid rgb(74, 70, 63); border-radius: 4px 4px 0 0; background: rgb(232, 226, 216); }\n.ds-field:focus-within { border-bottom: 2px solid rgb(38, 94, 167); }\n.ds-field-label { display: block; color: rgb(74, 70, 63); font-size: 12px; line-height: 16px; letter-spacing: 0.4px; }\n.ds-field:focus-within .ds-field-label { color: rgb(38, 94, 167); }\n.ds-field-input { display: block; width: 100%; padding: 0; border: 0; outline: 0; background: transparent; color: rgb(29, 27, 23); font: 400 16px/24px Nunito, Roboto, 'Helvetica Neue', Arial, sans-serif; letter-spacing: 0.15px; }\n.ds-field-error, .ds-field-error:focus-within { border-bottom: 2px solid rgb(186, 26, 26); }\n.ds-field-error .ds-field-label, .ds-field-error:focus-within .ds-field-label { color: rgb(186, 26, 26); }\n.ds-helper { padding: 4px 16px 0; color: rgb(186, 26, 26); font-size: 12px; line-height: 16px; letter-spacing: 0.4px; }"
     },
     {
       "name": "Dialog",
@@ -393,7 +491,7 @@
       "refersTo": "dialog",
       "description": "A Paper dialog for decisions that must interrupt: Paper Dialog level 3, 28 dp corners, Headline Small title naming the object, text-button actions. Shown as the confirmation of a delete that cannot be undone.",
       "html": "<div class=\"ds-dialog\" role=\"dialog\" aria-label=\"Supprimer Riz basmati cuit du journal ?\"><h2 class=\"ds-dialog-title\">Supprimer Riz basmati cuit du journal ?</h2><div class=\"ds-dialog-actions\"><button class=\"ds-dialog-btn\">Annuler</button><button class=\"ds-dialog-btn\">Supprimer</button></div></div>",
-      "css": ".ds-dialog { box-sizing: border-box; width: 100%; max-width: 312px; padding: 24px 24px 16px; border-radius: 28px; background: rgb(237, 231, 224); color: rgb(29, 27, 23); font-family: Roboto, 'Helvetica Neue', Arial, sans-serif; }\n.ds-dialog-title { margin: 0 0 24px; font: 400 24px/32px Roboto, 'Helvetica Neue', Arial, sans-serif; }\n.ds-dialog-actions { display: flex; justify-content: flex-end; gap: 8px; }\n.ds-dialog-btn { min-height: 48px; padding: 0 12px; border: 0; border-radius: 20px; background: transparent; color: rgb(38, 94, 167); font: 500 14px/20px Roboto, 'Helvetica Neue', Arial, sans-serif; letter-spacing: 0.1px; cursor: pointer; }\n.ds-dialog-btn:hover { background: rgba(38, 94, 167, 0.08); }\n.ds-dialog-btn:active { background: rgba(38, 94, 167, 0.12); }\n.ds-dialog-btn:focus-visible { outline: 2px solid rgb(38, 94, 167); outline-offset: 2px; }"
+      "css": ".ds-dialog { box-sizing: border-box; width: 100%; max-width: 312px; padding: 24px 24px 16px; border-radius: 28px; background: rgb(237, 231, 224); color: rgb(29, 27, 23); font-family: Nunito, Roboto, 'Helvetica Neue', Arial, sans-serif; }\n.ds-dialog-title { margin: 0 0 24px; font: 400 24px/32px Nunito, Roboto, 'Helvetica Neue', Arial, sans-serif; }\n.ds-dialog-actions { display: flex; justify-content: flex-end; gap: 8px; }\n.ds-dialog-btn { min-height: 48px; padding: 0 12px; border: 0; border-radius: 20px; background: transparent; color: rgb(38, 94, 167); font: 500 14px/20px Nunito, Roboto, 'Helvetica Neue', Arial, sans-serif; letter-spacing: 0.1px; cursor: pointer; }\n.ds-dialog-btn:hover { background: rgba(38, 94, 167, 0.08); }\n.ds-dialog-btn:active { background: rgba(38, 94, 167, 0.12); }\n.ds-dialog-btn:focus-visible { outline: 2px solid rgb(38, 94, 167); outline-offset: 2px; }"
     },
     {
       "name": "Snackbar",
@@ -401,7 +499,7 @@
       "refersTo": "snackbar",
       "description": "Inverse Surface, 4 dp radius. Shown: the take-back after a quick water add (« Annuler », 4 seconds, above the action bar). The failure one reads « L’enregistrement a échoué. » with « Réessayer » and a close icon, and has no timeout.",
       "html": "<div class=\"ds-snackbar\" role=\"status\"><span class=\"ds-snackbar-text\">+250 ml ajoutés</span><button class=\"ds-snackbar-action\">Annuler</button></div>",
-      "css": ".ds-snackbar { box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; max-width: 360px; min-height: 48px; padding: 0 4px 0 16px; border-radius: 4px; background: rgb(50, 48, 44); color: rgb(246, 240, 233); box-shadow: 0 3px 6px rgba(0, 0, 0, 0.25); font: 400 14px/20px Roboto, 'Helvetica Neue', Arial, sans-serif; letter-spacing: 0.25px; }\n.ds-snackbar-action { min-height: 48px; padding: 0 12px; border: 0; border-radius: 20px; background: transparent; color: rgb(168, 200, 255); font: 500 14px/20px Roboto, 'Helvetica Neue', Arial, sans-serif; letter-spacing: 0.1px; cursor: pointer; }\n.ds-snackbar-action:hover { background: rgba(168, 200, 255, 0.08); }\n.ds-snackbar-action:focus-visible { outline: 2px solid rgb(168, 200, 255); outline-offset: 2px; }"
+      "css": ".ds-snackbar { box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; max-width: 360px; min-height: 48px; padding: 0 4px 0 16px; border-radius: 4px; background: rgb(50, 48, 44); color: rgb(246, 240, 233); box-shadow: 0 3px 6px rgba(0, 0, 0, 0.25); font: 400 14px/20px Nunito, Roboto, 'Helvetica Neue', Arial, sans-serif; letter-spacing: 0.25px; }\n.ds-snackbar-action { min-height: 48px; padding: 0 12px; border: 0; border-radius: 20px; background: transparent; color: rgb(168, 200, 255); font: 500 14px/20px Nunito, Roboto, 'Helvetica Neue', Arial, sans-serif; letter-spacing: 0.1px; cursor: pointer; }\n.ds-snackbar-action:hover { background: rgba(168, 200, 255, 0.08); }\n.ds-snackbar-action:focus-visible { outline: 2px solid rgb(168, 200, 255); outline-offset: 2px; }"
     },
     {
       "name": "Tab Bar",
@@ -409,25 +507,26 @@
       "refersTo": "tab-bar",
       "description": "Paper’s Material 3 navigation bar on Paper Bar: an icon with a label per destination, the open one in a 64 × 32 dp Ink Tint pill. Each tab is announced once, as a tab with its selected state.",
       "html": "<nav class=\"ds-tabbar\" aria-label=\"Navigation principale\"><button class=\"ds-tab ds-tab-on\" role=\"tab\" aria-selected=\"true\"><span class=\"ds-tab-pill\"><svg viewBox=\"0 0 24 24\" width=\"24\" height=\"24\" aria-hidden=\"true\"><path fill=\"currentColor\" d=\"M19 3h-1V1h-2v2H8V1H6v2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2zm0 16H5V9h14v10zM7 11h5v5H7z\"/></svg></span><span>Aujourd’hui</span></button><button class=\"ds-tab\" role=\"tab\" aria-selected=\"false\"><span class=\"ds-tab-pill\"><svg viewBox=\"0 0 24 24\" width=\"24\" height=\"24\" aria-hidden=\"true\"><path fill=\"currentColor\" d=\"M11 9H9V2H7v7H5V2H3v7c0 2.12 1.66 3.84 3.75 3.97V22h2.5v-9.03C11.34 12.84 13 11.12 13 9V2h-2v7zm5-3v8h2.5v8H21V2c-2.76 0-5 2.24-5 4z\"/></svg></span><span>Repas</span></button></nav>",
-      "css": ".ds-tabbar { box-sizing: border-box; display: flex; width: 100%; max-width: 360px; height: 80px; background: rgb(243, 237, 230); font-family: Roboto, 'Helvetica Neue', Arial, sans-serif; }\n.ds-tab { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 12px 0 16px; border: 0; background: transparent; color: rgb(74, 70, 63); font: 500 12px/16px Roboto, 'Helvetica Neue', Arial, sans-serif; letter-spacing: 0.5px; cursor: pointer; }\n.ds-tab-pill { display: flex; align-items: center; justify-content: center; width: 64px; height: 32px; border-radius: 16px; }\n.ds-tab-on { color: rgb(29, 27, 23); }\n.ds-tab-on .ds-tab-pill { background: rgb(217, 227, 248); color: rgb(18, 28, 43); }\n.ds-tab:hover .ds-tab-pill { background: rgba(29, 27, 23, 0.08); }\n.ds-tab-on:hover .ds-tab-pill { background: rgb(201, 211, 232); }\n.ds-tab:focus-visible { outline: 2px solid rgb(38, 94, 167); outline-offset: -2px; }"
+      "css": ".ds-tabbar { box-sizing: border-box; display: flex; width: 100%; max-width: 360px; height: 80px; background: rgb(243, 237, 230); font-family: Nunito, Roboto, 'Helvetica Neue', Arial, sans-serif; }\n.ds-tab { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 12px 0 16px; border: 0; background: transparent; color: rgb(74, 70, 63); font: 500 12px/16px Nunito, Roboto, 'Helvetica Neue', Arial, sans-serif; letter-spacing: 0.5px; cursor: pointer; }\n.ds-tab-pill { display: flex; align-items: center; justify-content: center; width: 64px; height: 32px; border-radius: 16px; }\n.ds-tab-on { color: rgb(29, 27, 23); }\n.ds-tab-on .ds-tab-pill { background: rgb(217, 227, 248); color: rgb(18, 28, 43); }\n.ds-tab:hover .ds-tab-pill { background: rgba(29, 27, 23, 0.08); }\n.ds-tab-on:hover .ds-tab-pill { background: rgb(201, 211, 232); }\n.ds-tab:focus-visible { outline: 2px solid rgb(38, 94, 167); outline-offset: -2px; }"
     }
   ],
   "narrative": {
     "northStar": "Le carnet de salle",
-    "overview": "Genki looks like the notebook kept in a gym bag: dense and useful first, nothing ornamental. Every pixel on the main screens carries a number the author needs now (water, calories, protein), a control that changes it, or a state that says whether it is saved. It is read at arm's length, one-handed, between sets and often with no network, so legibility and a one-tap reach come before expression.\n\nThe interface is Material 3 through React Native Paper, used without decoration: tonal buttons for actions, soft cards for the day's lists, and one gauge pattern repeated down the Today screen. The voice is sober and utilitarian on purpose. Whatever warmth there is comes from plain French copy and from the paper: an ivory page, black ink, and one ballpoint blue. The app is light-only for now.\n\nThe palette was chosen on 2026-10-31, after the first critique found the Material baseline violet and the navigation library's iOS blue living side by side. It is a Material 3 scheme from a blue seed on warm neutrals, held in one file (`src/theme.ts`). The roles, not the hues, are what code depends on, so the palette can still change without touching a screen. Material governs structure, navigation and interaction; brand expresses itself through Material's theming.",
+    "overview": "Genki looks like the notebook kept in a gym bag: dense and useful first, nothing ornamental. Every pixel on the main screens carries a number the author needs now (water, calories, protein), a control that changes it, or a state that says whether it is saved. It is read at arm's length, one-handed, between sets and often with no network, so legibility and a one-tap reach come before expression.\n\nThe interface is Material 3 through React Native Paper, used without decoration: tonal buttons for actions, soft cards for the day's lists, and one gauge pattern repeated down the Today screen. The voice is calm and utilitarian, with warmth where it costs nothing: an ivory page, black ink and one ballpoint blue; a rounded type; an icon on a pastel disc for each measure; a greeting by first name and a sentence on what is left. The first version was drier, and the author found it too sober once it ran on a phone: the warmth was added on 2026-10-31 without turning the screen into decoration. The app is light-only for now.\n\nThe palette was chosen on 2026-10-31, after the first critique found the Material baseline violet and the navigation library's iOS blue living side by side. It is a Material 3 scheme from a blue seed on warm neutrals, held in one file (`src/theme.ts`). The roles, not the hues, are what code depends on, so the palette can still change without touching a screen. Material governs structure, navigation and interaction; brand expresses itself through Material's theming.",
     "keyCharacteristics": [
-      "One signature pattern: the gauge, a label, the day's figure in 24 sp, a 12 dp track with a tick for where the day should be by now, then the goal and what is left.",
+      "One signature pattern: the gauge, in a soft card: an icon disc and a label, the day's figure in 24 sp, a 12 dp track with a tick for where the day should be by now, then the goal and what is left.",
       "Reading and acting are separate: the gauges scroll; the frequent actions stay pinned above the tab bar.",
-      "One accent, rare: ink blue on filled buttons, text buttons, focus and the pale selected tint.",
+      "One accent, rare: ink blue on filled buttons, text buttons, focus and the pale selected tint. Three pastel tints only mark the measures on their icon discs.",
       "Tonal, never loud: actions are `contained-tonal`; a filled button is a screen's single committing action.",
       "Depth is tonal: page, then the action bar and cards, then the tab bar, then dialogs. No custom shadow.",
       "Light theme only, dark-content status bar, one theme for Paper and the navigation chrome.",
-      "48 dp touch targets and a French accessibility name and hint on every control."
+      "48 dp touch targets and a French accessibility name and hint on every control.",
+      "Nunito, rounded and warm, in two weights."
     ],
     "rules": [
       {
         "name": "The Rare Ink Rule",
-        "body": "Ink Blue is the only accent and it stays under a tenth of any screen. A new emphasis uses weight, size or the Ink Tint before it uses more blue.",
+        "body": "Ink Blue is the only accent and it stays under a tenth of any screen. A new emphasis uses weight, size or the Ink Tint before it uses more blue. The measure tints are identity, not emphasis: one per measure, on its disc and nowhere else.",
         "section": "colors"
       },
       {
@@ -474,7 +573,7 @@
     ],
     "donts": [
       "**Don't** use green, orange or red for anything but pace; errors use Error Red.",
-      "**Don't** add ornament: no illustration, gradient, hero image or decorative color. Every pixel carries a number, a control or a state.",
+      "**Don't** add ornament beyond the icons and discs: no illustration, gradient, hero image or decorative color. Every pixel carries a number, a control, a state or a measure's identity.",
       "**Don't** rely on color alone for pace: keep the tick and the accessibility words with every gauge.",
       "**Don't** add a shadow, an elevation value or a divider to separate blocks; use the surface level or the spacing.",
       "**Don't** write a color value in a screen, or add an accent beside Ink Blue and the pace trio.",
