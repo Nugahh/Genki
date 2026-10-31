@@ -15,6 +15,8 @@ export default function AppLayout() {
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="workout" options={{ headerShown: true, title: 'Séance' }} />
+        <Stack.Screen name="plan" options={{ headerShown: true, title: 'Mon programme' }} />
+        <Stack.Screen name="exercise" options={{ headerShown: true, title: 'Historique' }} />
         <Stack.Screen name="add-food" options={{ presentation: 'modal', headerShown: true, title: 'Ajouter un aliment' }} />
       </Stack>
     </AppProvider>

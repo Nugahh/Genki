@@ -47,6 +47,15 @@ export function nextSession(phase: Phase, lastSessionName?: string): PlannedSess
 const isShort = (text: string) => text.trim().length > 0 && text.length <= 100;
 const isInt = (n: number, min: number, max: number) => Number.isInteger(n) && n >= min && n <= max;
 
+/** A French message for the first problem with an exercise, or null. */
+export function validateExercise(exercise: PlannedExercise): string | null {
+  if (!isShort(exercise.name)) return 'Le nom d’un exercice doit faire entre 1 et 100 caractères.';
+  if (!isInt(exercise.sets, 1, 20)) return 'Un exercice a entre 1 et 20 séries.';
+  if (!isInt(exercise.reps, 1, 1000)) return 'Un exercice a entre 1 et 1 000 répétitions.';
+  if (!(exercise.incrementKg >= 0 && exercise.incrementKg <= 50)) return 'L’incrément de charge est compris entre 0 et 50 kg.';
+  return null;
+}
+
 /** A French message for the first problem with a programme, or null. The bounds are those of the Firestore rules, which check the sizes of the lists. */
 export function validatePlan(plan: NewPlan): string | null {
   if (!isShort(plan.name)) return 'Le nom du programme doit faire entre 1 et 100 caractères.';
@@ -60,12 +69,31 @@ export function validatePlan(plan: NewPlan): string | null {
       if (!isShort(session.name)) return 'Le nom d’une séance doit faire entre 1 et 100 caractères.';
       if (session.exercises.length < 1 || session.exercises.length > 20) return 'Une séance a entre 1 et 20 exercices.';
       for (const exercise of session.exercises) {
-        if (!isShort(exercise.name)) return 'Le nom d’un exercice doit faire entre 1 et 100 caractères.';
-        if (!isInt(exercise.sets, 1, 20)) return 'Un exercice a entre 1 et 20 séries.';
-        if (!isInt(exercise.reps, 1, 1000)) return 'Un exercice a entre 1 et 1 000 répétitions.';
-        if (!(exercise.incrementKg >= 0 && exercise.incrementKg <= 50)) return 'L’incrément de charge est compris entre 0 et 50 kg.';
+        const problem = validateExercise(exercise);
+        if (problem) return problem;
       }
     }
   }
   return null;
 }
+
+/** Where an exercise sits: its phase, its session in that phase, and its place in the session. */
+export type ExerciseAt = { phase: number; session: number; exercise: number };
+
+const mapSession = (plan: Plan, at: { phase: number; session: number }, change: (exercises: PlannedExercise[]) => PlannedExercise[]): Plan => ({
+  ...plan,
+  phases: plan.phases.map((phase, p) =>
+    p !== at.phase ? phase : { ...phase, sessions: phase.sessions.map((session, s) => (s !== at.session ? session : { ...session, exercises: change(session.exercises) })) },
+  ),
+});
+
+/** The programme with one exercise changed. The programme it comes from is left alone. */
+export const replaceExercise = (plan: Plan, at: ExerciseAt, exercise: PlannedExercise): Plan => mapSession(plan, at, (list) => list.map((e, i) => (i === at.exercise ? exercise : e)));
+
+/** The programme with an exercise added at the end of a session. */
+export const withAddedExercise = (plan: Plan, at: { phase: number; session: number }, exercise: PlannedExercise): Plan => mapSession(plan, at, (list) => [...list, exercise]);
+
+/** The programme without one exercise; a session keeps at least one, so the last is never removed. */
+export const withoutExercise = (plan: Plan, at: ExerciseAt): Plan => mapSession(plan, at, (list) => (list.length > 1 ? list.filter((_, i) => i !== at.exercise) : list));
+
+export const renamed = (plan: Plan, name: string): Plan => ({ ...plan, name });

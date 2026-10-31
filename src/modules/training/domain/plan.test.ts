@@ -1,4 +1,4 @@
-import { exerciseIdOf, nextSession, planPosition, validatePlan, type NewPlan, type Phase, type Plan } from './plan';
+import { exerciseIdOf, nextSession, planPosition, renamed, validateExercise, validatePlan, withAddedExercise, replaceExercise, withoutExercise, type NewPlan, type Phase, type Plan } from './plan';
 
 const exercise = (name: string) => ({ exerciseId: exerciseIdOf(name), name, sets: 3, reps: 8, incrementKg: 2.5 });
 const session = (name: string) => ({ name, exercises: [exercise('Squat gobelet')] });
@@ -72,5 +72,39 @@ describe('validatePlan', () => {
     ['a start day that is not a day', { ...newPlan(), startDay: 'demain' }],
   ] as [string, NewPlan][])('refuses %s with a message', (_, invalid) => {
     expect(validatePlan(invalid)).toEqual(expect.stringMatching(/\S/));
+  });
+});
+
+describe('editing a programme', () => {
+  const at = { phase: 0, session: 0, exercise: 0 };
+
+  test('changes one exercise in place and leaves the programme it came from alone', () => {
+    const original = plan();
+    const edited = replaceExercise(original, at, { ...exercise('Squat gobelet'), sets: 4, reps: 12 });
+    expect(edited.phases[0].sessions[0].exercises[0]).toMatchObject({ sets: 4, reps: 12 });
+    expect(original.phases[0].sessions[0].exercises[0]).toMatchObject({ sets: 3, reps: 8 });
+    expect(edited.phases[1]).toBe(original.phases[1]);
+  });
+
+  test('adds an exercise at the end of a session', () => {
+    const edited = withAddedExercise(plan(), { phase: 0, session: 1 }, exercise('Pompes'));
+    expect(edited.phases[0].sessions[1].exercises.map((e) => e.name)).toEqual(['Squat gobelet', 'Pompes']);
+    expect(edited.phases[0].sessions[0].exercises).toHaveLength(1);
+  });
+
+  test('removes an exercise, but never the last one of a session', () => {
+    const two = withAddedExercise(plan(), { phase: 0, session: 0 }, exercise('Pompes'));
+    expect(withoutExercise(two, at).phases[0].sessions[0].exercises.map((e) => e.name)).toEqual(['Pompes']);
+    expect(withoutExercise(plan(), at)).toEqual(plan());
+  });
+
+  test('renames the programme', () => expect(renamed(plan(), 'Mon programme').name).toBe('Mon programme'));
+});
+
+describe('validateExercise', () => {
+  test('is null for a valid exercise and a message for each bound', () => {
+    expect(validateExercise(exercise('Squat gobelet'))).toBeNull();
+    expect(validateExercise({ ...exercise('Squat gobelet'), sets: 0 })).toEqual(expect.stringMatching(/\S/));
+    expect(validateExercise({ ...exercise('Squat gobelet'), name: '  ' })).toEqual(expect.stringMatching(/\S/));
   });
 });

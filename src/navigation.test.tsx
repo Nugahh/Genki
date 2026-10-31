@@ -121,6 +121,20 @@ test('starting a session opens the workout with its exercises', async () => {
   expect(await screen.findByText('Squat gobelet')).toBeTruthy();
 });
 
+test('« Modifier le programme » opens the editor, and an exercise opens its history', async () => {
+  signedInAs({ uid: 'alice' });
+  await renderRouter();
+  await pressTab('Sport');
+  await fireEvent.press(screen.getByText('Partir du modèle'));
+  await fireEvent.press(screen.getByText('Modifier le programme'));
+  expect(screen).toHavePathname('/plan');
+  await fireEvent.press(screen.getByTestId('exercise-0-0-1'));
+  await fireEvent.press(screen.getByText('Voir l’historique'));
+  expect(screen).toHavePathname('/exercise');
+  expect(screen).toHaveSearchParams({ id: 'rowing-haltere', name: 'Rowing haltère' });
+  expect(await screen.findByText('Aucune séance pour cet exercice.')).toBeTruthy();
+});
+
 test('the Repas tab opens the day journal', async () => {
   signedInAs({ uid: 'alice' });
   await renderRouter();
