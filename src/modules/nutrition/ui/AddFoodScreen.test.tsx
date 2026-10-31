@@ -268,6 +268,7 @@ test('« Récents » lists what was added with its quantity, opens it with that 
   await fireEvent.press(screen.getByText('Pain maison'));
 
   expect(await screen.findByText('Cet aliment n’existe plus.')).toBeTruthy();
+  expect(screen.queryByText('Recherche indisponible.')).toBeNull();
   expect(screen.queryByLabelText('Quantité (g)')).toBeNull();
 });
 
@@ -520,7 +521,7 @@ test('a favorite is logged once, however often it is touched before the screen i
   expect(onDone).toHaveBeenCalledTimes(1);
 });
 
-test('a recent whose lookup fails says the food is gone, instead of an unhandled rejection', async () => {
+test('a recent whose lookup fails says the search is unavailable, not that the food is gone', async () => {
   const warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
   const failing: FoodCatalog = { ...inMemoryFoodCatalog([rawRice]), get: () => Promise.reject(new Error('disk')) };
   const { meals } = await setup({ catalog: failing });
@@ -531,7 +532,9 @@ test('a recent whose lookup fails says the food is gone, instead of an unhandled
   await fireEvent.press(screen.getByText('Récents'));
   await fireEvent.press(screen.getByText('Riz blanc, cru'));
 
-  expect(await screen.findByText('Cet aliment n’existe plus.')).toBeTruthy();
+  expect(await screen.findByText('Recherche indisponible.')).toBeTruthy();
+  // « Cet aliment n’existe plus. » would be false: the food was not looked up.
+  expect(screen.queryByText('Cet aliment n’existe plus.')).toBeNull();
   expect(screen.queryByLabelText('Quantité (g)')).toBeNull();
   expect(warn).toHaveBeenCalledWith(new Error('disk'));
 });

@@ -19,7 +19,7 @@ type Props = {
 export function RecentsList({ meals, foods, custom, onPick }: Props) {
   // null until the first list arrives, so that « Aucun aliment récent. » is never a guess.
   const [recents, setRecents] = useState<RecentFood[] | null>(null);
-  const [gone, setGone] = useState(false);
+  const [problem, setProblem] = useState<string | null>(null);
   // Listener errors show on the SyncIcon, which watches the same user's data.
   useEffect(() => meals.observeRecent(setRecents, () => {}), [meals]);
 
@@ -27,15 +27,16 @@ export function RecentsList({ meals, foods, custom, onPick }: Props) {
     if (custom === null) return; // the rows are disabled until then
     const food = await foods.resolve(ref, custom).catch((error) => {
       console.warn(error);
+      return null; // the lookup failed (the Ciqual database did not open), which is not the same as a food that is gone
     });
     if (food) onPick(food, grams);
-    else setGone(true);
+    else setProblem(food === null ? 'Recherche indisponible.' : 'Cet aliment n’existe plus.');
   };
 
   return (
     <View>
       {recents?.length === 0 && <Text>Aucun aliment récent.</Text>}
-      {gone && <HelperText type="error">Cet aliment n’existe plus.</HelperText>}
+      {problem && <HelperText type="error">{problem}</HelperText>}
       {recents?.map((recent) => (
         <List.Item
           key={`${recent.ref.type}:${recent.ref.id}`}
