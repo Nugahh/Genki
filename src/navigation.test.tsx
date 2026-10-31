@@ -38,7 +38,12 @@ jest.mock('@/composition', () => {
         const milestones = inMemoryMilestoneRepository();
         return trainingUseCases({ plans: inMemoryPlanRepository(), workouts: inMemoryWorkoutRepository(milestones), milestones, clock, timezone: DEFAULT_PROFILE.timezone });
       })(),
-      settings: settingsUseCases(inMemoryProfileRepository()),
+      settings: (() => {
+        const repo = inMemoryProfileRepository();
+        // The profile was set up before, unless a test says it is a first launch.
+        if (!(globalThis as { firstLaunch?: boolean }).firstLaunch) void repo.saveProfile({ createdAt: new Date('2026-10-01T10:00:00Z') });
+        return settingsUseCases(repo);
+      })(),
       tracking: trackingUseCases({ sources: { days: inMemoryFactsSource(), training: inMemoryFactsSource() }, clock, timezone: DEFAULT_PROFILE.timezone }),
       nutrition: {
         meals: mealUseCases({
@@ -75,6 +80,21 @@ test('a failed Google sign-in shows why', async () => {
   await renderRouter();
   await fireEvent.press(screen.getByText('Se connecter avec Google'));
   expect(screen.getByText('La connexion a échoué. DEVELOPER_ERROR')).toBeTruthy();
+});
+
+test('a first launch goes to the setup, which can be skipped and is then not shown again', async () => {
+  (globalThis as { firstLaunch?: boolean }).firstLaunch = true;
+  try {
+    signedInAs({ uid: 'alice' });
+    await renderRouter();
+    expect(screen).toHavePathname('/setup');
+    expect(screen.getByText('Faisons connaissance')).toBeTruthy();
+    await fireEvent.press(screen.getByText('Passer'));
+    await waitFor(() => expect(screen).toHavePathname('/'));
+    expect(screen.getByLabelText(/^Eau : /)).toBeTruthy();
+  } finally {
+    delete (globalThis as { firstLaunch?: boolean }).firstLaunch;
+  }
 });
 
 test('a signed-in user lands on Today, with the sync icon in the top bar', async () => {
