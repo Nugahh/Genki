@@ -11,9 +11,13 @@ export type SyncOutcome =
   | { kind: 'update-needed' }
   | { kind: 'failed'; error: string };
 
+/** The days a sync reads: the last week (a day the app was not opened on still gets its total), or a month the first time on a phone. */
+const RECENT_DAYS = 7;
+const FIRST_SYNC_DAYS = 30;
+
 export function stepsUseCases(deps: { health: HealthDataSource; repo: StepsRepository; device: { id: string; name: string }; clock: Clock; timezone: string }) {
   const { health, repo, device, clock, timezone } = deps;
-  // The total last written for each day by this session: a total that has not changed is not written again.
+  // The total last handed to the server for each day by this session: a past day whose total has not changed is not written again.
   const written = new Map<string, number>();
 
   return {
@@ -21,34 +25,51 @@ export function stepsUseCases(deps: { health: HealthDataSource; repo: StepsRepos
     observeDevices: repo.observeDevices,
 
     /**
-     * Reads yesterday's steps and today's (the tracker syncs every 15 minutes or so, so yesterday's can come late) and writes the ones
-     * that changed. Only the phone that writes the steps does. The writes are in at once; `saved` settles once the server has them.
+     * Reads the steps of the last days and plans the writes of the ones that changed; today's is always written, so that the time of
+     * the last read is true. Only the phone that writes the steps reads them. Nothing is written here: `save` does it, and runs again
+     * from scratch on a retry (a failed save forgets what it had written, so the next sync sends it again).
      */
-    async sync(input: { isWriter: boolean }): Promise<{ outcome: SyncOutcome; saved: Promise<void> }> {
-      const nothing = Promise.resolve();
+    async sync(input: { isWriter: boolean; firstSync?: boolean }): Promise<{ outcome: SyncOutcome; save: () => Promise<void> }> {
+      const nothing = async () => {};
       try {
+        if (!input.isWriter) {
+          written.clear(); // if the role comes back, everything is sent again
+          return { outcome: { kind: 'not-writer' }, save: nothing };
+        }
         const status = await health.status();
-        if (status !== 'ready') return { outcome: { kind: status }, saved: nothing };
-        if (!input.isWriter) return { outcome: { kind: 'not-writer' }, saved: nothing };
-        if (!(await health.hasPermission())) return { outcome: { kind: 'no-permission' }, saved: nothing };
+        if (status !== 'ready') return { outcome: { kind: status }, save: nothing };
+        if (!(await health.hasPermission())) return { outcome: { kind: 'no-permission' }, save: nothing };
 
         const now = clock.now();
         const today = dayKey(now, timezone);
-        const saves: Promise<void>[] = [];
-        let latest: { steps: number; source: StoredSource } = { steps: 0, source: 'phone' };
-        for (const day of [addDays(today, -1), today]) {
+        const count = input.firstSync ? FIRST_SYNC_DAYS : RECENT_DAYS;
+        const days = Array.from({ length: count }, (_, i) => addDays(today, i - count + 1));
+
+        // Everything is read before anything is planned: a read that fails leaves no write behind.
+        const reads: { day: string; steps: number; source: StoredSource }[] = [];
+        for (const day of days) {
           const { steps, origins } = await health.daySteps(day, timezone);
-          const source = storedSource(origins);
-          if (day === today) latest = { steps, source };
-          if (stepsChanged(written.get(day), steps)) {
-            written.set(day, steps);
-            saves.push(repo.saveDay(day, { steps, source, syncedAt: now }));
-          }
+          reads.push({ day, steps, source: storedSource(origins) });
         }
-        saves.push(repo.touchDevice(device.id, device.name, now));
-        return { outcome: { kind: 'synced', ...latest, at: now }, saved: Promise.all(saves).then(() => undefined) };
+
+        const plan = reads.filter((r) => {
+          // A past day at 0 is a phone whose Health Connect has no history of it: it must not wipe a total another phone wrote.
+          if (r.day !== today && r.steps === 0) return false;
+          return r.day === today || stepsChanged(written.get(r.day), r.steps);
+        });
+        for (const r of plan) written.set(r.day, r.steps);
+        const save = async () => {
+          try {
+            await Promise.all([...plan.map((r) => repo.saveDay(r.day, { steps: r.steps, source: r.source, syncedAt: now })), repo.touchDevice(device.id, device.name, now)]);
+          } catch (error) {
+            for (const r of plan) written.delete(r.day);
+            throw error;
+          }
+        };
+        const latest = reads[reads.length - 1];
+        return { outcome: { kind: 'synced', steps: latest.steps, source: latest.source, at: now }, save };
       } catch (error) {
-        return { outcome: { kind: 'failed', error: error instanceof Error ? error.message : 'La lecture des pas a échoué.' }, saved: nothing };
+        return { outcome: { kind: 'failed', error: error instanceof Error ? error.message : 'La lecture des pas a échoué.' }, save: nothing };
       }
     },
 
@@ -74,7 +95,7 @@ export function stepsUseCases(deps: { health: HealthDataSource; repo: StepsRepos
     hasPermission: () => health.hasPermission(),
     requestPermission: () => health.requestPermission(),
     openHealthSettings: () => health.openSettings(),
-    /** The apps that wrote steps today, with the time of their last data. */
+    /** The apps that wrote steps since yesterday, with the time of their last data. */
     sources(): Promise<StepsSource[]> {
       return health.recentSources(dayKey(clock.now(), timezone), timezone);
     },

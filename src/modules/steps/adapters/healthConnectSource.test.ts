@@ -31,14 +31,19 @@ describe('status', () => {
     expect(hc.initialize).toHaveBeenCalledTimes(1);
   });
 
-  test('asks for an update when the provider is old, and says unavailable when it is absent or does not start', async () => {
+  test('asks for an update when the provider is old, and says unavailable when it is absent', async () => {
     hc.getSdkStatus.mockResolvedValueOnce(2);
     expect(await healthConnectSource().status()).toBe('update-needed');
     hc.getSdkStatus.mockResolvedValueOnce(1);
     expect(await healthConnectSource().status()).toBe('unavailable');
-    hc.getSdkStatus.mockResolvedValueOnce(3);
-    hc.initialize.mockResolvedValueOnce(false);
-    expect(await healthConnectSource().status()).toBe('unavailable');
+  });
+
+  test('a start that failed is tried again at the next call, not remembered', async () => {
+    hc.getSdkStatus.mockResolvedValue(3);
+    hc.initialize.mockRejectedValueOnce(new Error('ClientNotInitialized')).mockResolvedValueOnce(true);
+    const source = healthConnectSource();
+    await expect(source.status()).rejects.toThrow('ClientNotInitialized');
+    expect(await source.status()).toBe('ready');
   });
 });
 
@@ -84,7 +89,7 @@ describe('daySteps', () => {
   });
 });
 
-test('the sources are the apps of the records, each with the end of its last one', async () => {
+test('the sources are the apps of the records of yesterday and today, each with the end of its last one', async () => {
   hc.readRecords.mockResolvedValue({
     records: [
       { recordType: 'Steps', count: 10, startTime: 'a', endTime: '2026-11-03T09:00:00.000Z', metadata: { dataOrigin: 'com.fitbit.FitbitMobile' } },
@@ -93,7 +98,9 @@ test('the sources are the apps of the records, each with the end of its last one
       { recordType: 'Steps', count: 10, startTime: 'a', endTime: '2026-11-03T08:00:00.000Z' },
     ],
   } as never);
-  expect(await healthConnectSource().recentSources('2026-11-03', 'Europe/Paris')).toEqual([
+  const sources = await healthConnectSource().recentSources('2026-11-03', 'Europe/Paris');
+  expect(hc.readRecords).toHaveBeenCalledWith('Steps', expect.objectContaining({ timeRangeFilter: { operator: 'between', startTime: '2026-11-01T23:00:00.000Z', endTime: '2026-11-03T23:00:00.000Z' } }));
+  expect(sources).toEqual([
     { origin: 'com.fitbit.FitbitMobile', lastDataAt: new Date('2026-11-03T09:45:00.000Z') },
     { origin: 'com.google.android.apps.fitness', lastDataAt: new Date('2026-11-03T08:00:00.000Z') },
   ]);

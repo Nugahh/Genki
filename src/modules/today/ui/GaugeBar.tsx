@@ -51,7 +51,7 @@ export function GaugeBar({ label, value, goal, remaining, hint, metric, progress
       <TouchableRipple
         onPress={onPress}
         accessibilityRole="button"
-        accessibilityLabel={`${label} : ${value}, sur ${goal}, ${remaining}`}
+        accessibilityLabel={`${label} : ${value}, sur ${goal}, ${remaining}${note ? `, ${note}` : ''}`}
         accessibilityHint={hint}
         accessibilityValue={{ text: status }}
         style={styles.touch}

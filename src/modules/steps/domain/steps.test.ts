@@ -1,4 +1,4 @@
-import { FITBIT_PACKAGE, fitbitStatus, isFitbit, originName, sourceLabel, stepsChanged, storedSource } from './steps';
+import { FITBIT_PACKAGE, fitbitStatus, isFitbit, originName, stepsChanged, storedSource } from './steps';
 
 test('knows the Fitbit app by its package', () => {
   expect(isFitbit(FITBIT_PACKAGE)).toBe(true);
@@ -9,13 +9,6 @@ test('the source stored with a day is the Fitbit when it wrote some, else the ph
   expect(storedSource([FITBIT_PACKAGE, 'com.google.android.apps.fitness'])).toBe('fitbit');
   expect(storedSource(['com.google.android.apps.fitness'])).toBe('phone');
   expect(storedSource([])).toBe('phone');
-});
-
-test('says the source in French, and nothing for an unknown one', () => {
-  expect(sourceLabel('fitbit')).toBe('Fitbit');
-  expect(sourceLabel('phone')).toBe('Ce téléphone');
-  expect(sourceLabel(undefined)).toBeUndefined();
-  expect(sourceLabel('something-else')).toBeUndefined();
 });
 
 test('names the apps it knows, and shows the package of the others as it is', () => {

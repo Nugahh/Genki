@@ -8,7 +8,7 @@ import {
   requestPermission,
   SdkAvailabilityStatus,
 } from 'react-native-health-connect';
-import { dayBounds } from '@/shared/clock';
+import { addDays, dayBounds } from '@/shared/clock';
 import type { HealthDataSource } from '../application/ports';
 import type { StepsSource } from '../domain/steps';
 
@@ -25,14 +25,19 @@ const rangeOf = (day: string, timezone: string) => {
 export function healthConnectSource(): HealthDataSource {
   // initialize() binds the client to the provider once; later calls reuse it.
   let ready: Promise<boolean> | null = null;
-  const init = () => (ready ??= initialize());
+  const init = () =>
+    (ready ??= initialize().catch((error) => {
+      ready = null; // a start that failed is tried again, not remembered
+      throw error;
+    }));
 
   return {
     async status() {
       const status = await getSdkStatus();
       if (status === SdkAvailabilityStatus.SDK_UNAVAILABLE_PROVIDER_UPDATE_REQUIRED) return 'update-needed';
       if (status !== SdkAvailabilityStatus.SDK_AVAILABLE) return 'unavailable';
-      return (await init()) ? 'ready' : 'unavailable';
+      await init();
+      return 'ready';
     },
     async hasPermission() {
       return grantsSteps(await getGrantedPermissions());
@@ -44,8 +49,11 @@ export function healthConnectSource(): HealthDataSource {
       const total = await aggregateRecord({ recordType: 'Steps', timeRangeFilter: rangeOf(day, timezone) });
       return { steps: Math.round(total.COUNT_TOTAL ?? 0), origins: total.dataOrigins ?? [] };
     },
+    // Yesterday and today: before the first step of the day the apps that wrote yesterday are still the sources.
     async recentSources(day, timezone) {
-      const { records } = await readRecords('Steps', { timeRangeFilter: rangeOf(day, timezone), ascendingOrder: false, pageSize: 200 });
+      const { start } = dayBounds(addDays(day, -1), timezone);
+      const { end } = dayBounds(day, timezone);
+      const { records } = await readRecords('Steps', { timeRangeFilter: { operator: 'between', startTime: start.toISOString(), endTime: end.toISOString() }, ascendingOrder: false, pageSize: 200 });
       const latest = new Map<string, Date>();
       for (const record of records) {
         const origin = record.metadata?.dataOrigin;

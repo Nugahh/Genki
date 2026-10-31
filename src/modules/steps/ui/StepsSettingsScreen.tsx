@@ -38,12 +38,20 @@ export function StepsSettingsScreen({ steps, sync, timezone }: Props) {
     return () => {
       stale = true;
     };
-  }, [steps, reads]);
+  }, [steps, reads, sync.outcome]);
 
+  const [authorizing, setAuthorizing] = useState(false);
   const authorize = async () => {
-    await steps.requestPermission();
-    setReads((n) => n + 1);
-    void sync.sync();
+    setAuthorizing(true);
+    try {
+      await steps.requestPermission();
+      setReads((n) => n + 1);
+      void sync.sync();
+    } catch (error) {
+      setFailure(error instanceof Error ? error.message : 'La demande d’autorisation a échoué.');
+    } finally {
+      setAuthorizing(false);
+    }
   };
 
   const fitbit = reading ? fitbitStatus(reading.sources, reading.granted) : undefined;
@@ -51,6 +59,16 @@ export function StepsSettingsScreen({ steps, sync, timezone }: Props) {
   const problem = outcomeProblem(sync.outcome);
   const result = outcomeText(sync.outcome, timezone);
   const others = sync.devices.filter((d) => d.id !== steps.device.id);
+  const otherWriter = others.find((d) => d.stepsWriter);
+  // Only one phone writes the steps: this one can take the role unless it already has it alone. Two writers (two phones that started together) are put right here.
+  const canTakeRole = !sync.isWriter || otherWriter !== undefined;
+  const description = sync.isWriter
+    ? otherWriter
+      ? `${otherWriter.name} les envoie aussi : active l’interrupteur pour garder ce téléphone.`
+      : 'Un seul téléphone écrit les pas du compte.'
+    : otherWriter
+      ? `Actuellement : ${otherWriter.name}`
+      : 'Aucun téléphone ne les envoie.';
 
   return (
     <ScrollView contentContainerStyle={styles.content}>
@@ -74,7 +92,7 @@ export function StepsSettingsScreen({ steps, sync, timezone }: Props) {
               left={(props) => <List.Icon {...props} icon={reading.granted ? 'check-circle-outline' : 'alert-circle-outline'} />}
             />
             {!reading.granted && (
-              <Button mode="contained" contentStyle={styles.button} onPress={() => void authorize()}>
+              <Button mode="contained" contentStyle={styles.button} disabled={authorizing} onPress={() => void authorize()}>
                 Autoriser la lecture des pas
               </Button>
             )}
@@ -124,8 +142,9 @@ export function StepsSettingsScreen({ steps, sync, timezone }: Props) {
       <Divider />
       <List.Item
         title="Ce téléphone envoie les pas"
-        description={sync.isWriter ? 'Un seul téléphone écrit les pas du compte.' : others.some((d) => d.stepsWriter) ? `Aujourd’hui : ${others.find((d) => d.stepsWriter)?.name}` : 'Aucun téléphone ne les envoie.'}
-        right={() => <Switch value={sync.isWriter} disabled={sync.isWriter} onValueChange={() => void steps.makeWriter(sync.devices)} accessibilityLabel="Ce téléphone envoie les pas" />}
+        description={description}
+        onPress={canTakeRole ? sync.makeWriter : undefined}
+        right={() => <Switch value={sync.isWriter} disabled={!canTakeRole} onValueChange={sync.makeWriter} accessibilityLabel="Ce téléphone envoie les pas" />}
       />
 
       <Button mode="contained-tonal" icon="sync" contentStyle={styles.button} onPress={() => void sync.sync()}>

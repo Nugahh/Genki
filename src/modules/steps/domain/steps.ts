@@ -9,7 +9,6 @@ export const isFitbit = (origin: string) => origin === FITBIT_PACKAGE;
 /** The source stored with a day's steps: the Fitbit when it wrote some, else the phone (or whatever app counted). */
 export type StoredSource = 'fitbit' | 'phone';
 export const storedSource = (origins: string[]): StoredSource => (origins.some(isFitbit) ? 'fitbit' : 'phone');
-export const sourceLabel = (source: string | undefined) => (source === 'fitbit' ? 'Fitbit' : source === 'phone' ? 'Ce téléphone' : undefined);
 
 const KNOWN_APPS: Record<string, string> = {
   [FITBIT_PACKAGE]: 'Fitbit',

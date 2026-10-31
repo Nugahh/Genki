@@ -270,6 +270,11 @@ describe('the Steps gauge', () => {
     expect(screen.getByText('Fitbit · lu à 14:32')).toBeTruthy();
   });
 
+  test('reads the note aloud with the gauge: where the steps come from, or why they are missing', async () => {
+    await renderToday({ steps: 5000, stepsReading: { stepsSource: 'fitbit', stepsSyncedAt: new Date('2026-10-23T12:32:00Z') } });
+    expect(screen.getByLabelText(/^Pas : .*, Fitbit · lu à 14:32$/)).toBeTruthy();
+  });
+
   test('says they were not read yet, and how to read them', async () => {
     await renderToday();
     expect(screen.getByText('Pas encore lu : tire l’écran vers le bas pour synchroniser.')).toBeTruthy();

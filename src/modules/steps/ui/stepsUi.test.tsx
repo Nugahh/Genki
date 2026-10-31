@@ -13,6 +13,8 @@ import { useStepsSync } from './useStepsSync';
 
 const clock = { now: () => new Date('2026-11-03T10:00:00Z') }; // 11:00 in Paris
 const phone = { id: 'phone-a', name: 'Pixel' };
+afterEach(() => jest.restoreAllMocks());
+
 const draw = (ui: React.ReactElement) => render(<PaperProvider theme={theme}>{ui}</PaperProvider>);
 
 function setup(options: { health?: ReturnType<typeof inMemoryHealthSource>; repo?: ReturnType<typeof inMemoryStepsRepository> } = {}) {
@@ -48,6 +50,13 @@ describe('useStepsSync', () => {
     expect(repo.days.get('2026-11-03')).toMatchObject({ steps: 4200, source: 'fitbit' });
   });
 
+  test('one sync is not followed by another: writing the time of the sync on the device does not start it again', async () => {
+    const { health, repo, run, steps } = setup();
+    await renderHook(() => useStepsSync(steps, run));
+    expect(health.reads).toHaveLength(30); // the first time on this phone goes back a month, once
+    expect(repo.devices[0].lastStepsSyncAt).toEqual(new Date('2026-11-03T10:00:00Z'));
+  });
+
   test('a phone that is not the writer reads nothing', async () => {
     const repo = inMemoryStepsRepository({ devices: [{ id: 'phone-b', name: 'Galaxy', stepsWriter: true }] });
     const { health, run, steps } = setup({ repo });
@@ -80,6 +89,14 @@ describe('useStepsSync', () => {
     const { run, steps } = setup({ health: inMemoryHealthSource({ granted: false }) });
     const { result } = await renderHook(() => useStepsSync(steps, run));
     expect(result.current.outcome).toEqual({ kind: 'no-permission' });
+  });
+
+  test('says when the devices of the account cannot be read (the rules are not deployed)', async () => {
+    const repo = inMemoryStepsRepository();
+    repo.observeDevices = ((_onNext: unknown, onError: (e: Error) => void) => (onError(new Error('permission-denied')), () => {})) as never;
+    const { run, steps } = setup({ repo });
+    const { result } = await renderHook(() => useStepsSync(steps, run));
+    expect(result.current.outcome).toEqual({ kind: 'failed', error: 'les téléphones du compte ne se lisent pas' });
   });
 });
 
@@ -144,10 +161,36 @@ describe('StepsSettingsScreen', () => {
   test('another phone writes the steps: this one can take the role, and the other stops', async () => {
     const repo = inMemoryStepsRepository({ devices: [{ id: 'phone-b', name: 'Galaxy', stepsWriter: true }] });
     const { rerender } = await open({ repo });
-    expect(await screen.findByText('Aujourd’hui : Galaxy')).toBeTruthy();
+    expect(await screen.findByText('Actuellement : Galaxy')).toBeTruthy();
     await fireEvent(screen.getByLabelText('Ce téléphone envoie les pas'), 'valueChange', true);
     expect(repo.devices.map((d) => [d.id, d.stepsWriter]).sort()).toEqual([['phone-a', true], ['phone-b', false]]);
     await rerender();
+    expect(await screen.findByText('Un seul téléphone écrit les pas du compte.')).toBeTruthy();
+  });
+
+  test('two phones that started together both write: the switch is still there to keep this one', async () => {
+    const repo = inMemoryStepsRepository({ devices: [{ id: 'phone-a', name: 'Pixel', stepsWriter: true }, { id: 'phone-b', name: 'Galaxy', stepsWriter: true }] });
+    await open({ repo });
+    expect(await screen.findByText('Galaxy les envoie aussi : active l’interrupteur pour garder ce téléphone.')).toBeTruthy();
+    expect(screen.getByLabelText('Ce téléphone envoie les pas')).toBeEnabled();
+    await fireEvent(screen.getByLabelText('Ce téléphone envoie les pas'), 'valueChange', true);
+    expect(repo.devices.map((d) => [d.id, d.stepsWriter]).sort()).toEqual([['phone-a', true], ['phone-b', false]]);
+  });
+
+  test('taking the role goes through run, so that a refusal is offered again', async () => {
+    const repo = inMemoryStepsRepository({ devices: [{ id: 'phone-b', name: 'Galaxy', stepsWriter: true }] });
+    const { run } = await open({ repo });
+    const before = run.mock.calls.length;
+    await fireEvent(await screen.findByLabelText('Ce téléphone envoie les pas'), 'valueChange', true);
+    // The role change is a write of its own, and the phone that gets the role then syncs: both go through run.
+    expect(run.mock.calls.length).toBeGreaterThan(before);
+  });
+
+  test('does not read again by itself when Health Connect is opened and the user comes back', async () => {
+    const { health } = await open();
+    const before = health.reads.length;
+    await fireEvent.press(await screen.findByText('Ouvrir Health Connect'));
+    expect(health.reads.length).toBe(before);
   });
 
   test('syncs now and says what it read', async () => {
