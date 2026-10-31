@@ -317,6 +317,11 @@ describe('workoutLogs', () => {
     await assertFails(deleteDoc(ref));
   });
 
+  test('accepts the 400 sets of 20 exercises of 20 sets, and a day-long session', async () => {
+    const sets = Array.from({ length: 400 }, () => ({ exerciseId: 'squat', setNo: 1, reps: 8, kg: 20 }));
+    await assertSucceeds(setDoc(doc(db('alice'), 'users/alice/workoutLogs/w1'), { ...log(), sets, durationMin: 1440 }));
+  });
+
   test.each<[string, object]>([
     ['an extra field', { extra: 1 }],
     ['a day that is not a day', { day: 'hier' }],
@@ -324,7 +329,7 @@ describe('workoutLogs', () => {
     ['no exercise', { exerciseIds: [] }],
     ['21 exercises', { exerciseIds: Array.from({ length: 21 }, (_, i) => `e${i}`) }],
     ['no set', { sets: [] }],
-    ['201 sets', { sets: Array.from({ length: 201 }, () => ({ exerciseId: 'squat', setNo: 1, reps: 8, kg: 20 })) }],
+    ['401 sets', { sets: Array.from({ length: 401 }, () => ({ exerciseId: 'squat', setNo: 1, reps: 8, kg: 20 })) }],
     ['a duration of 0', { durationMin: 0 }],
     ['a duration above a day', { durationMin: 1441 }],
     ['a fractional duration', { durationMin: 45.5 }],
@@ -344,6 +349,12 @@ describe('milestones', () => {
     await assertFails(setDoc(doc(db('bob'), 'users/alice/milestones/m2'), milestone()));
     await assertFails(deleteDoc(doc(db('bob'), 'users/alice/milestones/m1')));
     await assertSucceeds(deleteDoc(ref));
+  });
+
+  test('accepts the longest metric an exercise name can make, and no longer', async () => {
+    const metric = (idLength: number) => `exercise:${'a'.repeat(idLength)}:kg`;
+    await assertSucceeds(setDoc(doc(db('alice'), 'users/alice/milestones/m1'), { ...milestone(), metric: metric(100) }));
+    await assertFails(setDoc(doc(db('alice'), 'users/alice/milestones/m2'), { ...milestone(), metric: metric(109) }));
   });
 
   test.each<[string, object]>([

@@ -31,14 +31,17 @@ const rowIsValid = (row: Row) => inRange(parseNumber(row.kg), false) && inRange(
 /** A session being done: the sets to fill in (the load to aim for already in), a rest timer, then what the workout earns. */
 export function WorkoutScreen({ profile, clock, training, sessionIndex, run, onDone, onDirtyChange }: Props) {
   const { colors } = useTheme();
-  const day = dayKey(clock.now(), profile.timezone);
+  const [startedAt] = useState(() => clock.now());
+  // The day of the start: the session must not change under the user's fingers when midnight passes.
+  const day = dayKey(startedAt, profile.timezone);
   // undefined while loading; null when there is no programme.
   const [plan, setPlan] = useState<Plan | null | undefined>(undefined);
   const [draft, setDraft] = useState<DraftExercise[] | null>(null);
   const [rows, setRows] = useState<Row[][]>([]);
   const [restSince, setRestSince] = useState<number | null>(null);
   const [summary, setSummary] = useState<Summary | null>(null);
-  const [startedAt] = useState(() => clock.now());
+  const [finishing, setFinishing] = useState(false);
+  const [failure, setFailure] = useState<string | null>(null);
 
   // The programme is read once: a later snapshot must not replace the sets being typed.
   useEffect(() => {
@@ -86,12 +89,19 @@ export function WorkoutScreen({ profile, clock, training, sessionIndex, run, onD
   const invalid = doneRows.some((row) => !rowIsValid(row));
 
   const finish = async () => {
+    setFinishing(true);
+    setFailure(null);
     const done: LoggedSet[] = draft.flatMap((d, i) =>
       rows[i].flatMap((row, j) => (row.done ? [{ exerciseId: d.exercise.exerciseId, setNo: j + 1, reps: parseNumber(row.reps), kg: parseNumber(row.kg) }] : [])),
     );
-    const { summary: earned, save } = await training.finishWorkout({ plan, session, done, startedAt });
-    run(save);
-    setSummary(earned);
+    try {
+      const { summary: earned, save } = await training.finishWorkout({ plan, session, done, startedAt });
+      run(save);
+      setSummary(earned);
+    } catch (error) {
+      setFinishing(false);
+      setFailure(error instanceof Error ? error.message : 'La séance n’a pas pu être terminée.');
+    }
   };
 
   return (
@@ -112,7 +122,7 @@ export function WorkoutScreen({ profile, clock, training, sessionIndex, run, onD
                 <TextInput
                   style={styles.field}
                   label="Charge (kg)"
-                  accessibilityLabel={`${exercise.name}, série ${j + 1}, charge (kg)`}
+                  accessibilityLabel={`Charge (kg), ${exercise.name} série ${j + 1}`}
                   value={row.kg}
                   onChangeText={(kg) => update(i, j, { kg })}
                   keyboardType="decimal-pad"
@@ -120,7 +130,7 @@ export function WorkoutScreen({ profile, clock, training, sessionIndex, run, onD
                 <TextInput
                   style={styles.field}
                   label="Répétitions"
-                  accessibilityLabel={`${exercise.name}, série ${j + 1}, répétitions`}
+                  accessibilityLabel={`Répétitions, ${exercise.name} série ${j + 1}`}
                   value={row.reps}
                   onChangeText={(reps) => update(i, j, { reps })}
                   keyboardType="number-pad"
@@ -149,7 +159,12 @@ export function WorkoutScreen({ profile, clock, training, sessionIndex, run, onD
             La charge et les répétitions sont comprises entre 0 et 1 000.
           </Text>
         )}
-        <Button mode="contained" contentStyle={styles.button} disabled={doneRows.length === 0 || invalid} onPress={() => void finish()}>
+        {failure && (
+          <Text variant="bodyMedium" accessibilityLiveRegion="polite" style={{ color: colors.error }}>
+            {failure}
+          </Text>
+        )}
+        <Button mode="contained" contentStyle={styles.button} loading={finishing} disabled={doneRows.length === 0 || invalid || finishing} onPress={() => void finish()}>
           Terminer
         </Button>
       </Surface>

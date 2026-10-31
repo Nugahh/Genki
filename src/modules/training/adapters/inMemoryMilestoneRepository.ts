@@ -1,8 +1,8 @@
 import type { MilestoneRepository } from '../application/ports';
 import type { Milestone, NewMilestone } from '../domain/milestone';
 
-/** MilestoneRepository kept in memory, for tests. */
-export function inMemoryMilestoneRepository(): MilestoneRepository & { milestones: Milestone[] } {
+/** MilestoneRepository kept in memory, for tests. `markAchieved` is what a recorded workout does to the milestones it reaches. */
+export function inMemoryMilestoneRepository(): MilestoneRepository & { milestones: Milestone[]; markAchieved(id: string, at: Date): Promise<void> } {
   let nextId = 1;
   const listeners = new Set<() => void>();
   const notify = () => listeners.forEach((listener) => listener());
@@ -18,6 +18,7 @@ export function inMemoryMilestoneRepository(): MilestoneRepository & { milestone
       notify();
     },
     async markAchieved(id: string, at: Date) {
+      if (!repo.milestones.some((m) => m.id === id)) throw new Error(`No milestone ${id}`);
       repo.milestones = repo.milestones.map((m) => (m.id === id ? { ...m, achievedAt: at } : m));
       notify();
     },

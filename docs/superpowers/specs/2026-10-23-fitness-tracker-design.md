@@ -96,7 +96,7 @@ Tout est rangé sous `users/{uid}`. Les identifiants sont des UUID générés pa
 | `favoriteMeals/{id}` | `name`, `items` (liste de `{ foodRef, foodName, grams }`), `updatedAt` |
 | `waterEntries/{id}` | `day`, `ml`, `createdAt`, `deletedAt` |
 | `days/{YYYY-MM-DD}` | `waterMl`, `kcal`, `proteinG`, `carbsG`, `fatG`, `steps`, `stepsSource`, `stepsSyncedAt`, `weightKg`, `waistCm`, `updatedAt` |
-| `plans/{id}` | `name`, `active`, `phases` (liste de `{ name, weeks, sessions: [{ name, exercises: [{ exerciseId, name, sets, reps, incrementKg }] }] }`) |
+| `plans/{id}` | `name`, `active`, `startDay` (premier jour du programme : la phase et la semaine en cours se comptent depuis), `phases` (liste de `{ name, weeks, sessions: [{ name, exercises: [{ exerciseId, name, sets, reps, incrementKg }] }] }`) |
 | `workoutLogs/{id}` | `day`, `planId`, `sessionName`, `exerciseIds` (liste), `sets` (liste de `{ exerciseId, setNo, reps, kg }`), `durationMin`, `createdAt`, `deletedAt` |
 | `milestones/{id}` | `metric`, `target`, `direction` (`up` ou `down`), `label`, `achievedAt` |
 | `cravings/{id}` | `day`, `createdAt`, `resisted` (booléen) |

@@ -8,6 +8,7 @@ import type { MilestoneRepository, PlanRepository, WorkoutRepository } from './p
 
 const HISTORY_SHOWN = 20;
 const MINUTE_MS = 60 * 1000;
+const DAY_MIN = 24 * 60;
 
 /** One exercise of a workout being started: what was done last time, and the sets to fill in. */
 export type DraftExercise = { exercise: PlannedExercise; last: LoggedSet[]; sets: DraftSet[] };
@@ -40,7 +41,11 @@ export function trainingUseCases(deps: { plans: PlanRepository; workouts: Workou
     async startWorkout(session: PlannedSession): Promise<DraftExercise[]> {
       return Promise.all(
         session.exercises.map(async (exercise) => {
-          const latest = await workouts.latestWithExercise(exercise.exerciseId);
+          // A failed read (index still building, say) must not keep the workout from starting: it is the first time.
+          const latest = await workouts.latestWithExercise(exercise.exerciseId).catch((error) => {
+            console.warn(`Could not read the last workout with ${exercise.exerciseId}`, error);
+            return undefined;
+          });
           const last = latest?.sets.filter((s) => s.exerciseId === exercise.exerciseId) ?? [];
           return { exercise, last, sets: prefillSets(exercise, last) };
         }),
@@ -59,17 +64,21 @@ export function trainingUseCases(deps: { plans: PlanRepository; workouts: Workou
         sessionName: input.session.name,
         exerciseIds: [...new Set(input.done.map((s) => s.exerciseId))],
         sets: input.done,
-        durationMin: Math.max(1, Math.round((now.getTime() - input.startedAt.getTime()) / MINUTE_MS)),
+        // A session left open for days is recorded as a day: the rules refuse more.
+        durationMin: Math.min(DAY_MIN, Math.max(1, Math.round((now.getTime() - input.startedAt.getTime()) / MINUTE_MS))),
         createdAt: now,
       };
       const problem = validateWorkout(log);
       if (problem) throw new Error(problem);
 
-      const achieved = reachedBy(await milestones.list(), input.done);
+      // shortcut: a milestone that cannot be read now is missed if the next workout does not reach it again; the read waits for the network, so a weak signal delays « Terminer ».
+      const achieved = reachedBy(await milestones.list().catch(() => []), input.done);
       const summary: WorkoutSummary = { durationMin: log.durationMin, suggestions: suggestionsFor(input.session.exercises, input.done), achieved };
-      const save = async () => {
-        await Promise.all([workouts.add(log), ...achieved.map((m) => milestones.markAchieved(m.id, now))]);
-      };
+      const save = () =>
+        workouts.add(
+          log,
+          achieved.map((m) => m.id),
+        );
       return { summary, save };
     },
 

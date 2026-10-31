@@ -3,8 +3,8 @@ import type { NewWorkoutLog, WorkoutLog } from '../domain/workout';
 
 const newestDayFirst = (a: WorkoutLog, b: WorkoutLog) => b.day.localeCompare(a.day) || b.createdAt.getTime() - a.createdAt.getTime();
 
-/** WorkoutRepository kept in memory, for tests. */
-export function inMemoryWorkoutRepository(): WorkoutRepository & { logs: WorkoutLog[] } {
+/** WorkoutRepository kept in memory, for tests. The milestones a workout reaches are marked on `milestones`, before the log is kept: a refused milestone leaves no log. */
+export function inMemoryWorkoutRepository(milestones?: { markAchieved(id: string, at: Date): Promise<void> }): WorkoutRepository & { logs: WorkoutLog[] } {
   let nextId = 1;
   const listeners = new Set<() => void>();
   const notify = () => listeners.forEach((listener) => listener());
@@ -12,7 +12,9 @@ export function inMemoryWorkoutRepository(): WorkoutRepository & { logs: Workout
 
   const repo = {
     logs: [] as WorkoutLog[],
-    async add(log: NewWorkoutLog) {
+    async add(log: NewWorkoutLog, reachedMilestoneIds: string[] = []) {
+      if (reachedMilestoneIds.length > 0 && !milestones) throw new Error('No milestones to mark');
+      for (const id of reachedMilestoneIds) await milestones?.markAchieved(id, log.createdAt);
       repo.logs = [...repo.logs, { ...log, id: String(nextId++) }];
       notify();
     },

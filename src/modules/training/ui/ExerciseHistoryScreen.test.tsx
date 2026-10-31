@@ -53,3 +53,17 @@ test('says so when the exercise has no workout yet', async () => {
   await setup([]);
   expect(await screen.findByText('Aucune séance pour cet exercice.')).toBeTruthy();
 });
+
+test('says the history could not be read, instead of staying blank', async () => {
+  const workouts = inMemoryWorkoutRepository();
+  workouts.history = async () => {
+    throw new Error('The query requires an index');
+  };
+  const training = trainingUseCases({ plans: inMemoryPlanRepository(), workouts, milestones: inMemoryMilestoneRepository(), clock, timezone: DEFAULT_PROFILE.timezone });
+  await render(
+    <PaperProvider theme={theme}>
+      <ExerciseHistoryScreen training={training} exerciseId="squat-gobelet" name="Squat gobelet" />
+    </PaperProvider>,
+  );
+  expect(await screen.findByText('L’historique n’a pas pu être chargé.')).toBeTruthy();
+});

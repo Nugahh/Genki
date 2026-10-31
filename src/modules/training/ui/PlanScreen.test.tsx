@@ -87,6 +87,29 @@ test('adds an exercise at the end of a session', async () => {
   expect(exercises[5]).toEqual({ exerciseId: 'fentes-sautees', name: 'Fentes sautées', sets: 3, reps: 10, incrementKg: 0 });
 });
 
+test('refuses a name that another exercise of the session already has, with a message', async () => {
+  await setup();
+  await fireEvent.press(screen.getByTestId('add-0-0'));
+  await type('Nom', 'rowing HALTERE');
+  expect(screen.getByText('Cette séance a déjà un exercice de ce nom.')).toBeTruthy();
+  expect(screen.getByText('Ajouter')).toBeDisabled();
+});
+
+test('keeps the name of the exercise being changed', async () => {
+  await setup();
+  await fireEvent.press(row(0, 0, 1));
+  await type('Séries', '4');
+  expect(screen.getByText('Enregistrer')).toBeEnabled();
+});
+
+test('stops offering to add exercises to a session that has 20', async () => {
+  const plan = starterPlan('2026-11-03');
+  plan.phases[0].sessions[0].exercises = Array.from({ length: 20 }, (_, i) => ({ exerciseId: `e${i}`, name: `E${i}`, sets: 3, reps: 8, incrementKg: 0 }));
+  await setup(plan);
+  expect(screen.getByTestId('add-0-0')).toBeDisabled();
+  expect(screen.getByTestId('add-0-1')).toBeEnabled();
+});
+
 test('removes an exercise after asking', async () => {
   const { plans } = await setup();
   await fireEvent.press(row(0, 0, 0));

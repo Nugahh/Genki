@@ -10,12 +10,14 @@ const pushups = { exerciseId: 'pompes', name: 'Pompes', sets: 3, reps: 8, increm
 const session: PlannedSession = { name: 'Séance A', exercises: [squat, pushups] };
 const plan: Plan = { id: 'p1', name: 'Reprise', active: true, startDay: '2026-11-02', phases: [{ name: 'Reprise', weeks: 4, sessions: [session] }] };
 
+afterEach(() => jest.restoreAllMocks());
+
 const sets = (exerciseId: string, reps: number[], kg: number): LoggedSet[] => reps.map((r, i) => ({ exerciseId, setNo: i + 1, reps: r, kg }));
 
 function setup() {
   const plans = inMemoryPlanRepository();
-  const workouts = inMemoryWorkoutRepository();
   const milestones = inMemoryMilestoneRepository();
+  const workouts = inMemoryWorkoutRepository(milestones);
   const clock = { now: () => new Date('2026-11-03T10:00:00Z') }; // 11:00 in Paris
   const training = trainingUseCases({ plans, workouts, milestones, clock, timezone: 'Europe/Paris' });
   const finish = async (done: LoggedSet[], startedAt = new Date('2026-11-03T09:15:00Z')) => {
@@ -66,6 +68,17 @@ describe('a workout', () => {
     const draft = await training.startWorkout(session);
     expect(draft.map((d) => d.exercise.exerciseId)).toEqual(['squat-gobelet', 'pompes']);
     expect(draft[0]).toMatchObject({ last: [], sets: Array(3).fill({ kg: 0, reps: 8 }) });
+  });
+
+  test('treats a failed read of the last workout as the first time, so that the workout can still start', async () => {
+    const { workouts, training } = setup();
+    jest.spyOn(console, 'warn').mockImplementation(() => {});
+    workouts.latestWithExercise = async () => {
+      throw new Error('The query requires an index');
+    };
+    const draft = await training.startWorkout(session);
+    expect(draft[0]).toMatchObject({ last: [], sets: Array(3).fill({ kg: 0, reps: 8 }) });
+    expect(console.warn).toHaveBeenCalled();
   });
 
   test('aims at the load plus the increment after a workout where every set reached the reps', async () => {
@@ -124,6 +137,30 @@ describe('a workout', () => {
   test('refuses a workout with no set done', async () => {
     const { training } = setup();
     await expect(training.finishWorkout({ plan, session, done: [], startedAt: new Date() })).rejects.toThrow('Une séance a au moins une série.');
+  });
+
+  test('lasts a day at most: a session left open is recorded as 24 hours, so that the rules accept it', async () => {
+    const { workouts, finish } = setup();
+    await finish(sets('squat-gobelet', [8], 20), new Date('2026-10-30T10:00:00Z'));
+    expect(workouts.logs[0].durationMin).toBe(1440);
+  });
+
+  test('is saved even when the milestones cannot be read: they are reached by a later workout', async () => {
+    const { workouts, milestones, finish } = setup();
+    milestones.list = async () => {
+      throw new Error('offline');
+    };
+    expect((await finish(sets('squat-gobelet', [8], 20))).achieved).toEqual([]);
+    expect(workouts.logs).toHaveLength(1);
+  });
+
+  test('records the log and the milestones it reaches together: a refused milestone leaves no log', async () => {
+    const { workouts, milestones, training } = setup();
+    await training.addMilestone({ metric: 'exercise:squat-gobelet:kg', target: 20, direction: 'up', label: 'Squat à 20 kg' });
+    const { save } = await training.finishWorkout({ plan, session, done: sets('squat-gobelet', [8], 20), startedAt: new Date('2026-11-03T09:15:00Z') });
+    await milestones.remove('1');
+    await expect(save()).rejects.toThrow();
+    expect(workouts.logs).toEqual([]);
   });
 
   test('lasts at least a minute', async () => {

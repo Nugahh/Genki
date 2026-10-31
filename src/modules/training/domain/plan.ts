@@ -50,6 +50,7 @@ const isInt = (n: number, min: number, max: number) => Number.isInteger(n) && n 
 /** A French message for the first problem with an exercise, or null. */
 export function validateExercise(exercise: PlannedExercise): string | null {
   if (!isShort(exercise.name)) return 'Le nom d’un exercice doit faire entre 1 et 100 caractères.';
+  if (!exercise.exerciseId) return 'Le nom d’un exercice doit contenir au moins une lettre ou un chiffre.';
   if (!isInt(exercise.sets, 1, 20)) return 'Un exercice a entre 1 et 20 séries.';
   if (!isInt(exercise.reps, 1, 1000)) return 'Un exercice a entre 1 et 1 000 répétitions.';
   if (!(exercise.incrementKg >= 0 && exercise.incrementKg <= 50)) return 'L’incrément de charge est compris entre 0 et 50 kg.';
@@ -72,6 +73,7 @@ export function validatePlan(plan: NewPlan): string | null {
         const problem = validateExercise(exercise);
         if (problem) return problem;
       }
+      if (new Set(session.exercises.map((e) => e.exerciseId)).size < session.exercises.length) return 'Deux exercices d’une séance ne peuvent pas porter le même nom.';
     }
   }
   return null;

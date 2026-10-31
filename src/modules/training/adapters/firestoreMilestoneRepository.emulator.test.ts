@@ -39,15 +39,6 @@ test('a created milestone is listed and observed with a generated id, not achiev
   expect(await observed(db)).toEqual([{ id: expect.any(String), ...pullups }]);
 });
 
-test('reaching a milestone sets its date once', async () => {
-  const db = phone();
-  await milestonesOn(db).create(pullups);
-  const [created] = await milestonesOn(db).list();
-  await milestonesOn(db).markAchieved(created.id, new Date('2026-11-03T10:00:00Z'));
-  expect((await milestonesOn(db).list())[0].achievedAt).toEqual(new Date('2026-11-03T10:00:00Z'));
-  await expect(milestonesOn(db).markAchieved(created.id, new Date('2026-11-09T10:00:00Z'))).rejects.toThrow();
-});
-
 test('a removed milestone leaves the list', async () => {
   const db = phone();
   await milestonesOn(db).create(pullups);

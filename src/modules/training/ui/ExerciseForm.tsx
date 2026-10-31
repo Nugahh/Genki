@@ -9,6 +9,8 @@ type Props = {
   initial?: PlannedExercise;
   /** Whether the session has another exercise: a session keeps at least one. */
   canRemove: boolean;
+  /** The ids of the other exercises of the session: two of them cannot share a name. */
+  takenIds: string[];
   onCancel: () => void;
   onSave: (exercise: PlannedExercise) => void;
   onRemove: () => void;
@@ -16,7 +18,7 @@ type Props = {
 };
 
 /** An exercise of a session: its name (its id follows it), its sets and reps, and the load added when every set is reached. The host mounts it while it is open. */
-export function ExerciseForm({ initial, canRemove, onCancel, onSave, onRemove, onHistory }: Props) {
+export function ExerciseForm({ initial, canRemove, takenIds, onCancel, onSave, onRemove, onHistory }: Props) {
   const [name, setName] = useState(initial?.name ?? '');
   const [sets, setSets] = useState(asText(initial?.sets ?? 3));
   const [reps, setReps] = useState(asText(initial?.reps ?? 10));
@@ -28,7 +30,7 @@ export function ExerciseForm({ initial, canRemove, onCancel, onSave, onRemove, o
   };
 
   const exercise: PlannedExercise = { exerciseId: exerciseIdOf(name), name: name.trim(), sets: parseNumber(sets), reps: parseNumber(reps), incrementKg: parseNumber(increment) };
-  const problem = validateExercise(exercise);
+  const problem = validateExercise(exercise) ?? (takenIds.includes(exercise.exerciseId) ? 'Cette séance a déjà un exercice de ce nom.' : null);
 
   return (
     <Portal>

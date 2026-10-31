@@ -12,7 +12,9 @@ export function WorkoutSummary({ summary, onDone }: Props) {
     <ScrollView contentContainerStyle={styles.content}>
       <View style={styles.title}>
         <Icon source="check-circle" size={32} color={colors.primary} />
-        <Text variant="titleLarge">Séance enregistrée, bravo !</Text>
+        <Text variant="titleLarge" accessibilityLiveRegion="polite">
+          Séance enregistrée, bravo !
+        </Text>
       </View>
       <Text variant="bodyLarge" style={{ color: colors.onSurfaceVariant }}>{`Durée : ${summary.durationMin} min`}</Text>
 

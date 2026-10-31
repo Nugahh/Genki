@@ -169,7 +169,7 @@ service cloud.firestore {
         && request.resource.data.exerciseIds.size() <= 20
         && request.resource.data.sets is list
         && request.resource.data.sets.size() >= 1
-        && request.resource.data.sets.size() <= 200
+        && request.resource.data.sets.size() <= 400
         && request.resource.data.durationMin is int
         && request.resource.data.durationMin >= 1
         && request.resource.data.durationMin <= 1440
@@ -180,7 +180,7 @@ service cloud.firestore {
     match /users/{uid}/milestones/{milestoneId} {
       allow create: if isOwner(uid)
         && request.resource.data.keys().hasOnly(['metric', 'target', 'direction', 'label'])
-        && isShortText(request.resource.data.metric, 100)
+        && isShortText(request.resource.data.metric, 120)
         && request.resource.data.target is number
         && request.resource.data.target >= 0
         && request.resource.data.target <= 100000

@@ -10,7 +10,11 @@ export interface PlanRepository {
 }
 
 export interface WorkoutRepository {
-  add(log: NewWorkoutLog): Promise<void>;
+  /**
+   * Records the workout and sets `achievedAt` (once: the rules refuse a second time) on the milestones it reached, in one batch:
+   * either all of it is written or none, so a retry never leaves a log without its milestones or the other way round.
+   */
+  add(log: NewWorkoutLog, reachedMilestoneIds?: string[]): Promise<void>;
   /** The latest workout that holds the exercise (by day, newest first), or undefined. Reads from the cache offline. */
   latestWithExercise(exerciseId: string): Promise<WorkoutLog | undefined>;
   /** The workouts that hold the exercise, newest first. */
@@ -22,8 +26,6 @@ export interface WorkoutRepository {
 export interface MilestoneRepository {
   create(milestone: NewMilestone): Promise<void>;
   remove(id: string): Promise<void>;
-  /** Sets `achievedAt` once: the rules refuse a second time. */
-  markAchieved(id: string, at: Date): Promise<void>;
   list(): Promise<Milestone[]>;
   observeAll(onNext: (milestones: Milestone[]) => void, onError: (error: Error) => void): () => void;
 }

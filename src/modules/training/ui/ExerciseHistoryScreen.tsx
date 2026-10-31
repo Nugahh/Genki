@@ -14,16 +14,29 @@ const dayText = (day: string) => new Date(`${day}T12:00:00Z`).toLocaleDateString
 export function ExerciseHistoryScreen({ training, exerciseId, name }: Props) {
   const { colors } = useTheme();
   const [logs, setLogs] = useState<WorkoutLog[] | null>(null);
+  const [failed, setFailed] = useState(false);
   useEffect(() => {
     let stale = false;
-    void training.exerciseHistory(exerciseId).then((found) => {
-      if (!stale) setLogs(found);
-    });
+    training.exerciseHistory(exerciseId).then(
+      (found) => {
+        if (!stale) setLogs(found);
+      },
+      () => {
+        if (!stale) setFailed(true);
+      },
+    );
     return () => {
       stale = true;
     };
   }, [training, exerciseId]);
 
+  if (failed) {
+    return (
+      <Text variant="bodyLarge" accessibilityLiveRegion="polite" style={[styles.content, { color: colors.error }]}>
+        L’historique n’a pas pu être chargé.
+      </Text>
+    );
+  }
   if (logs === null) return null;
   return (
     <ScrollView contentContainerStyle={styles.content}>

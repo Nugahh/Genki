@@ -14,6 +14,7 @@ type Props = {
 
 type Editing = { at: ExerciseAt } | { add: { phase: number; session: number } };
 
+const MAX_EXERCISES = 20; // a session holds 20 exercises at most, in the domain and in the rules
 const fr = (n: number) => n.toLocaleString('fr-FR', { maximumFractionDigits: 2 });
 const detail = (e: PlannedExercise) => `${e.sets} × ${e.reps}${e.incrementKg > 0 ? ` · +${fr(e.incrementKg)} kg` : ''}`;
 
@@ -32,6 +33,8 @@ export function PlanScreen({ training, run, onOpenHistory }: Props) {
   const save = (next: Plan) => run(() => training.savePlan(next));
   const exerciseAt = (at: ExerciseAt) => plan.phases[at.phase].sessions[at.session].exercises[at.exercise];
   const editedExercise = editing && 'at' in editing ? exerciseAt(editing.at) : undefined;
+  const place = editing && ('at' in editing ? editing.at : editing.add);
+  const takenIds = place ? plan.phases[place.phase].sessions[place.session].exercises.filter((e) => e !== editedExercise).map((e) => e.exerciseId) : [];
 
   return (
     <ScrollView contentContainerStyle={styles.content}>
@@ -62,7 +65,7 @@ export function PlanScreen({ training, run, onOpenHistory }: Props) {
                   onPress={() => setEditing({ at: { phase: p, session: s, exercise: e } })}
                 />
               ))}
-              <Button icon="plus" testID={`add-${p}-${s}`} accessibilityLabel={`Ajouter un exercice, ${phase.name}, ${session.name}`} contentStyle={styles.button} onPress={() => setEditing({ add: { phase: p, session: s } })}>
+              <Button icon="plus" testID={`add-${p}-${s}`} disabled={session.exercises.length >= MAX_EXERCISES} accessibilityLabel={`Ajouter un exercice, ${phase.name}, ${session.name}`} contentStyle={styles.button} onPress={() => setEditing({ add: { phase: p, session: s } })}>
                 Ajouter un exercice
               </Button>
             </View>
@@ -73,6 +76,7 @@ export function PlanScreen({ training, run, onOpenHistory }: Props) {
       {editing && (
         <ExerciseForm
           initial={editedExercise}
+          takenIds={takenIds}
           canRemove={'at' in editing && plan.phases[editing.at.phase].sessions[editing.at.session].exercises.length > 1}
           onCancel={() => setEditing(null)}
           onSave={(exercise) => {

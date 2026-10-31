@@ -9,12 +9,17 @@ import { trainingUseCases } from '../application/trainingUseCases';
 import { starterPlan } from '../domain/template';
 import { WorkoutScreen } from './WorkoutScreen';
 
-const clock = { now: () => new Date('2026-11-03T10:00:00Z') };
+const startOfTests = () => new Date('2026-11-03T10:00:00Z');
+const clock = { now: startOfTests };
+afterEach(() => {
+  clock.now = startOfTests;
+  jest.restoreAllMocks();
+});
 
 async function setup({ withPlan = true }: { withPlan?: boolean } = {}) {
   const plans = inMemoryPlanRepository();
-  const workouts = inMemoryWorkoutRepository();
   const milestones = inMemoryMilestoneRepository();
+  const workouts = inMemoryWorkoutRepository(milestones);
   const training = trainingUseCases({ plans, workouts, milestones, clock, timezone: DEFAULT_PROFILE.timezone });
   if (withPlan) await plans.create(starterPlan('2026-11-03'));
   const onDone = jest.fn();
@@ -29,8 +34,8 @@ async function setup({ withPlan = true }: { withPlan?: boolean } = {}) {
 
 // The first session of the starter programme: Pompes, Rowing haltère, Développé militaire haltères, Tractions assistées, Gainage planche (secondes).
 const set = (exercise: string, n: number) => ({
-  kg: () => screen.getByLabelText(`${exercise}, série ${n}, charge (kg)`),
-  reps: () => screen.getByLabelText(`${exercise}, série ${n}, répétitions`),
+  kg: () => screen.getByLabelText(`Charge (kg), ${exercise} série ${n}`),
+  reps: () => screen.getByLabelText(`Répétitions, ${exercise} série ${n}`),
   done: () => screen.getByLabelText(`${exercise}, série ${n} faite`),
 });
 
@@ -160,6 +165,59 @@ describe('finishing', () => {
 
     await fireEvent.press(screen.getByText('Retour'));
     expect(onDone).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('finishing, when things go wrong', () => {
+  const tickOne = async () => {
+    await screen.findByText('Pompes');
+    await fireEvent.press(set('Pompes', 1).done());
+  };
+
+  test('shows the summary while the write is still waiting for the server, as offline', async () => {
+    const { workouts } = await setup();
+    workouts.add = () => new Promise(() => {});
+    await tickOne();
+    await fireEvent.press(screen.getByText('Terminer'));
+    expect(await screen.findByText('Séance enregistrée, bravo !')).toBeTruthy();
+  });
+
+  test('records the workout once when « Terminer » is pressed twice while the milestones are being read', async () => {
+    const { workouts, milestones } = await setup();
+    let release: () => void = () => {};
+    const gate = new Promise<void>((resolve) => (release = resolve));
+    const list = milestones.list;
+    milestones.list = async () => {
+      await gate;
+      return list();
+    };
+    await tickOne();
+    await fireEvent.press(screen.getByText('Terminer'));
+    await fireEvent.press(screen.getByText('Terminer'));
+    await act(async () => release());
+    expect(await screen.findByText('Séance enregistrée, bravo !')).toBeTruthy();
+    expect(workouts.logs).toHaveLength(1);
+  });
+
+  test('says why it failed and lets the user try again', async () => {
+    const { training } = await setup();
+    jest.spyOn(training, 'finishWorkout').mockRejectedValueOnce(new Error('Une séance a au moins une série.'));
+    await tickOne();
+    await fireEvent.press(screen.getByText('Terminer'));
+    expect(await screen.findByText('Une séance a au moins une série.')).toBeTruthy();
+    expect(screen.getByText('Terminer')).toBeEnabled();
+    await fireEvent.press(screen.getByText('Terminer'));
+    expect(await screen.findByText('Séance enregistrée, bravo !')).toBeTruthy();
+  });
+
+  test('keeps the sets typed when the day changes during the workout', async () => {
+    await setup();
+    await tickOne();
+    await fireEvent.changeText(set('Pompes', 2).reps(), '12');
+    clock.now = () => new Date('2026-12-05T10:00:00Z'); // the programme has moved on to its next phase
+    await fireEvent.press(set('Pompes', 3).done());
+    expect(set('Pompes', 2).reps()).toHaveDisplayValue('12');
+    expect(set('Pompes', 1).done()).toBeTruthy();
   });
 });
 

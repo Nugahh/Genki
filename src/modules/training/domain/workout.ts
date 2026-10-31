@@ -12,9 +12,13 @@ export type WorkoutLog = {
 };
 export type NewWorkoutLog = Omit<WorkoutLog, 'id'>;
 
+/** The most a session can hold: 20 exercises of 20 sets (spec §4). */
+export const MAX_SETS = 400;
+
 /** A French message for the first problem with a workout, or null. The bounds are those of the Firestore rules, which check the sizes of the lists. */
 export function validateWorkout(log: NewWorkoutLog): string | null {
   if (log.sets.length < 1) return 'Une séance a au moins une série.';
+  if (log.sets.length > MAX_SETS) return `Une séance a au plus ${MAX_SETS} séries.`;
   for (const set of log.sets) {
     if (!Number.isInteger(set.setNo) || set.setNo < 1) return 'Le numéro d’une série commence à 1.';
     if (!Number.isInteger(set.reps) || set.reps < 0 || set.reps > 1000) return 'Les répétitions sont comprises entre 0 et 1 000.';

@@ -2,11 +2,11 @@ import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Button, Chip, Dialog, HelperText, Portal, SegmentedButtons, TextInput } from 'react-native-paper';
 import { exerciseMetric, validateMilestone, type NewMilestone } from '../domain/milestone';
+import { parseNumber } from './format';
 
 type Kind = 'reps' | 'kg';
 type Props = { exercises: { exerciseId: string; name: string }[]; onCancel: () => void; onAdd: (milestone: NewMilestone) => void };
 
-const parse = (text: string) => (text.trim() === '' ? NaN : Number(text.replace(',', '.')));
 const KINDS = [
   { value: 'reps', label: 'Répétitions', labelStyle: { paddingVertical: 4 }, showSelectedCheck: true },
   { value: 'kg', label: 'Charge (kg)', labelStyle: { paddingVertical: 4 }, showSelectedCheck: true },
@@ -19,7 +19,7 @@ export function MilestoneForm({ exercises, onCancel, onAdd }: Props) {
   const [exerciseId, setExerciseId] = useState<string | null>(null);
   const [kind, setKind] = useState<Kind>('reps');
   const [text, setText] = useState('');
-  const target = parse(text);
+  const target = parseNumber(text);
   const exercise = exercises.find((e) => e.exerciseId === exerciseId);
   const milestone: NewMilestone | null = exercise
     ? { metric: exerciseMetric(exercise.exerciseId, kind), target, direction: 'up', label: `${exercise.name} : ${target.toLocaleString('fr-FR')} ${kind === 'reps' ? 'répétitions' : 'kg'}` }

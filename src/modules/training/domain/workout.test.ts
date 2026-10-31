@@ -21,6 +21,11 @@ test.each([
   ['a negative load', { sets: [{ exerciseId: 'a', setNo: 1, reps: 8, kg: -2 }] }],
   ['a load of 1001 kg', { sets: [{ exerciseId: 'a', setNo: 1, reps: 8, kg: 1001 }] }],
   ['a load that is not a number', { sets: [{ exerciseId: 'a', setNo: 1, reps: 8, kg: NaN }] }],
+  ['401 sets', { sets: Array.from({ length: 401 }, () => ({ exerciseId: 'a', setNo: 1, reps: 8, kg: 20 })) }],
 ])('refuses %s with a message', (_, patch) => {
   expect(validateWorkout({ ...log(), ...patch })).toEqual(expect.stringMatching(/\S/));
+});
+
+test('accepts the 400 sets that 20 exercises of 20 sets make', () => {
+  expect(validateWorkout({ ...log(), sets: Array.from({ length: 400 }, () => ({ exerciseId: 'a', setNo: 1, reps: 8, kg: 20 })) })).toBeNull();
 });

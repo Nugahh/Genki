@@ -2,6 +2,7 @@ import { initializeTestEnvironment, type RulesTestEnvironment } from '@firebase/
 import { disableNetwork, enableNetwork, setLogLevel, type Firestore } from 'firebase/firestore';
 import { readFileSync } from 'node:fs';
 import type { NewWorkoutLog, WorkoutLog } from '../domain/workout';
+import { firestoreMilestoneRepository } from './firestoreMilestoneRepository';
 import { firestoreWorkoutRepository } from './firestoreWorkoutRepository';
 
 // Denials here are expected: without this the SDK logs each one as a warning.
@@ -67,6 +68,24 @@ test('the latest workout, whatever its exercises, is the last one created', asyn
   await workoutsOn(db).add(log('2026-11-02', ['pompes'], '2026-11-03T12:00:00Z'));
   expect((await latest(db))?.sessionName).toBe('Séance A');
   expect((await latest(db))?.exerciseIds).toEqual(['pompes']);
+});
+
+test('a workout sets the date of the milestones it reaches, once, in the same batch as its log', async () => {
+  const db = phone();
+  const milestones = firestoreMilestoneRepository(db as never, 'alice');
+  await milestones.create({ metric: 'exercise:squat:kg', target: 20, direction: 'up', label: 'Squat à 20 kg' });
+  const [created] = await milestones.list();
+  await workoutsOn(db).add(log('2026-11-03', ['squat']), [created.id]);
+  expect((await milestones.list())[0].achievedAt).toEqual(new Date('2026-11-03T10:00:00Z'));
+  // The rules set the date once: a second workout naming the milestone is refused as a whole, log included.
+  await expect(workoutsOn(db).add(log('2026-11-09', ['squat']), [created.id])).rejects.toThrow();
+  expect((await workoutsOn(db).history('squat', 10)).map((l) => l.day)).toEqual(['2026-11-03']);
+});
+
+test('a workout whose milestone is gone is not recorded: all or nothing', async () => {
+  const db = phone();
+  await expect(workoutsOn(db).add(log('2026-11-03', ['squat']), ['gone'])).rejects.toThrow();
+  expect(await workoutsOn(db).history('squat', 10)).toEqual([]);
 });
 
 test('a workout with no set is refused', async () => {
