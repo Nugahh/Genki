@@ -59,8 +59,33 @@ describe('ownership', () => {
   });
 
   test('documents without validation yet stay closed to writes', async () => {
-    await assertFails(setDoc(doc(db('alice'), 'users/alice'), { timezone: 'Europe/Paris' }));
+    await assertFails(setDoc(doc(db('alice'), 'users/alice'), { timezone: 'Europe/Paris' })); // the profile fields wait for M6
     await assertFails(setDoc(doc(db('alice'), 'users/alice/workoutLogs/w1'), { name: 'Séance' }));
+  });
+});
+
+describe('the profile document', () => {
+  const ui = () => ({ hubMetrics: ['calories', 'water'], period: 'week' });
+
+  test('the owner saves the display preferences by merge, another user cannot, nobody deletes', async () => {
+    const ref = doc(db('alice'), 'users/alice');
+    await assertSucceeds(setDoc(ref, { ui: ui() }, { merge: true }));
+    await assertSucceeds(setDoc(ref, { ui: { period: 'year' } }, { merge: true }));
+    await assertSucceeds(getDoc(ref));
+    await assertFails(getDoc(doc(db('bob'), 'users/alice')));
+    await assertFails(setDoc(doc(db('bob'), 'users/alice'), { ui: ui() }, { merge: true }));
+    await assertFails(deleteDoc(ref));
+  });
+
+  test.each<[string, object]>([
+    ['an unknown field of the document', { role: 'admin' }],
+    ['an unknown field of ui', { ui: { ...ui(), theme: 'dark' } }],
+    ['a period that is not one', { ui: { period: 'month' } }],
+    ['31 statistics', { ui: { hubMetrics: Array.from({ length: 31 }, (_, i) => `m${i}`) } }],
+    ['statistics that are not a list', { ui: { hubMetrics: 'calories' } }],
+    ['ui that is not a map', { ui: 'week' }],
+  ])('rejects %s', async (_, data) => {
+    await assertFails(setDoc(doc(db('alice'), 'users/alice'), data, { merge: true }));
   });
 });
 

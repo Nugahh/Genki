@@ -64,6 +64,22 @@ service cloud.firestore {
       allow read: if isOwner(uid);
     }
 
+    // How the Suivi screens are set up (spec §4): the statistics of the hub, in order, and the period.
+    function isUiPrefs(ui) {
+      return ui is map
+        && ui.keys().hasOnly(['hubMetrics', 'period'])
+        && (!('hubMetrics' in ui) || (ui.hubMetrics is list && ui.hubMetrics.size() <= 30))
+        && (!('period' in ui) || ui.period in ['day', 'week', 'year']);
+    }
+
+    // The profile document: its fields are those of spec §4. Only `ui` is validated so far; the others wait for the setup screen (M6).
+    match /users/{uid} {
+      allow read: if isOwner(uid);
+      allow create, update: if isOwner(uid)
+        && request.resource.data.keys().hasOnly(['ui'])
+        && (!('ui' in request.resource.data) || isUiPrefs(request.resource.data.ui));
+    }
+
     match /users/{uid}/waterEntries/{entryId} {
       allow create: if isOwner(uid)
         && request.resource.data.keys().hasOnly(['day', 'ml', 'createdAt', 'deletedAt'])
