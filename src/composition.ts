@@ -36,7 +36,7 @@ export function compose(uid: string) {
     dayTotals: firestoreDayTotals(db, uid),
     training,
     settings: settingsUseCases(firestoreProfileRepository(db, uid)),
-    tracking: trackingUseCases({ sources: { days: firestoreDaysSource(db, uid), training: trainingFactsSource(training) }, goals: profile.goals, clock: systemClock, timezone: profile.timezone }),
+    tracking: trackingUseCases({ sources: { days: firestoreDaysSource(db, uid), training: trainingFactsSource(training) }, clock: systemClock, timezone: profile.timezone }),
     nutrition: {
       meals: mealUseCases({
         entries: firestoreFoodEntryRepository(db, uid),

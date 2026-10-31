@@ -67,3 +67,8 @@ export function validateProfile(profile: Profile): string | null {
   }
   return null;
 }
+
+/** The stored fields over the defaults; the goals field by field. */
+export function withDefaults(stored: Partial<Profile>): Profile {
+  return { ...DEFAULT_PROFILE, ...stored, goals: { ...DEFAULT_PROFILE.goals, ...stored.goals } };
+}

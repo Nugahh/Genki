@@ -1,6 +1,7 @@
 import { initializeTestEnvironment, type RulesTestEnvironment } from '@firebase/rules-unit-testing';
 import { setLogLevel, type Firestore } from 'firebase/firestore';
 import { readFileSync } from 'node:fs';
+import type { StoredProfile } from '../application/ports';
 import type { UiPrefs } from '../domain/ui';
 import { firestoreProfileRepository } from './firestoreProfileRepository';
 
@@ -48,4 +49,44 @@ test('a second phone sees what the first saved', async () => {
 
 test('preferences the rules refuse are rejected', async () => {
   await expect(profileOn(phone()).saveUi({ period: 'month' as never })).rejects.toThrow();
+});
+
+const storedProfile = (db: Firestore) =>
+  new Promise<StoredProfile>((resolve, reject) => {
+    const stop = profileOn(db).observeProfile((stored) => {
+      stop();
+      resolve(stored);
+    }, reject);
+  });
+
+describe('the profile', () => {
+  test('nothing is stored until something is saved', async () => {
+    expect(await storedProfile(phone())).toEqual({});
+  });
+
+  test('saved fields come back, the goals merged field by field, and the creation time as a date', async () => {
+    const db = phone();
+    await profileOn(db).saveProfile({ heightCm: 182, goalMode: 'deficit', goals: { kcal: 2000 } as never });
+    await profileOn(db).saveProfile({ goals: { steps: 9000 } as never, createdAt: new Date('2026-11-01T10:00:00Z') });
+    expect(await storedProfile(db)).toEqual({ heightCm: 182, goalMode: 'deficit', goals: { kcal: 2000, steps: 9000 }, createdAt: new Date('2026-11-01T10:00:00Z') });
+  });
+
+  test('a field set to null is taken off', async () => {
+    const db = phone();
+    await profileOn(db).saveProfile({ quitDate: '2026-10-01', packPrice: 11 });
+    await profileOn(db).saveProfile({ quitDate: null });
+    expect(await storedProfile(db)).toEqual({ packPrice: 11, goals: {} });
+  });
+
+  test('the display preferences and the profile share one document without touching each other', async () => {
+    const db = phone();
+    await profileOn(db).saveUi({ period: 'year' });
+    await profileOn(db).saveProfile({ heightCm: 170 });
+    expect(await observed(db)).toEqual({ period: 'year' });
+    expect((await storedProfile(db)).heightCm).toBe(170);
+  });
+
+  test('a value the rules refuse is rejected', async () => {
+    await expect(profileOn(phone()).saveProfile({ heightCm: 90 })).rejects.toThrow();
+  });
 });

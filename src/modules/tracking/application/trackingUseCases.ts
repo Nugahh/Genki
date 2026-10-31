@@ -16,15 +16,15 @@ export type MetricView = {
   split?: ReturnType<typeof macroSplit>;
 };
 
-export function trackingUseCases(deps: { sources: Record<SourceId, FactsSource>; goals: Goals; clock: Clock; timezone: string }) {
-  const { sources, goals, clock, timezone } = deps;
+export function trackingUseCases(deps: { sources: Record<SourceId, FactsSource>; clock: Clock; timezone: string }) {
+  const { sources, clock, timezone } = deps;
 
   return {
     /**
-     * Calls `onNext` with the view of the metric over the period holding `anchor`, again whenever its source changes.
+     * Calls `onNext` with the view of the metric over the period holding `anchor`, measured against `goals`, again whenever its source changes.
      * The read is the period and the one before it. Only the source the metric names is listened to.
      */
-    observeMetric(def: MetricDefinition, period: Period, anchor: string, onNext: (view: MetricView) => void, onError: (error: Error) => void) {
+    observeMetric(def: MetricDefinition, goals: Goals, period: Period, anchor: string, onNext: (view: MetricView) => void, onError: (error: Error) => void) {
       const buckets = bucketsFor(period, anchor);
       const range = rangeOf(buckets);
       const previousRange = rangeOf(bucketsFor(period, shiftAnchor(period, anchor, -1)));

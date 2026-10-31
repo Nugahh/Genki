@@ -1,9 +1,18 @@
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
 import { Snackbar } from 'react-native-paper';
+import { useProfile, type Profile } from '@/modules/settings';
 import type { App } from './composition';
 
 type Write = () => Promise<void>;
-type AppContextValue = { app: App; run: (write: Write) => void; writeFailed: boolean };
+type AppContextValue = {
+  app: App;
+  /** The profile, live: what was stored over the defaults. `app.profile` is the default one, used at composition. */
+  profile: Profile;
+  /** False until the first read of the profile: « nothing stored yet » is only true after it. */
+  profileLoaded: boolean;
+  run: (write: Write) => void;
+  writeFailed: boolean;
+};
 
 const AppContext = createContext<AppContextValue | null>(null);
 
@@ -11,6 +20,7 @@ const AppContext = createContext<AppContextValue | null>(null);
 export function AppProvider({ app, children }: { app: App; children: ReactNode }) {
   // shortcut: only the last refused write is kept; keep a list if refusals stop being rare.
   const [failed, setFailed] = useState<Write | null>(null);
+  const { profile, loaded: profileLoaded } = useProfile(app.settings);
   // Not awaited: offline, a write only settles once the server has it.
   const run = useCallback((write: Write) => {
     write().catch((error) => {
@@ -18,7 +28,7 @@ export function AppProvider({ app, children }: { app: App; children: ReactNode }
       setFailed(() => write);
     });
   }, []);
-  const value = useMemo(() => ({ app, run, writeFailed: failed !== null }), [app, run, failed]);
+  const value = useMemo(() => ({ app, profile, profileLoaded, run, writeFailed: failed !== null }), [app, profile, profileLoaded, run, failed]);
 
   const retry = () => {
     const write = failed;

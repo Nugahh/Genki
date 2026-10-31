@@ -3,10 +3,10 @@ import { useApp } from '@/appContext';
 import { MealsScreen } from '@/modules/nutrition';
 
 export default function Meals() {
-  const { app, run } = useApp();
+  const { app, profile, run } = useApp();
   return (
     <MealsScreen
-      profile={app.profile}
+      profile={profile}
       clock={app.clock}
       meals={app.nutrition.meals}
       onAdd={(meal) => router.push({ pathname: '/add-food', params: { meal } })}

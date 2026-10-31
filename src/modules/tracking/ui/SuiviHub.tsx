@@ -5,7 +5,7 @@ import type { UiPrefs } from '@/modules/settings';
 import { dayKey, type Clock } from '@/shared/clock';
 import { useNow } from '@/shared/useNow';
 import type { TrackingUseCases } from '../application/trackingUseCases';
-import type { MetricDefinition, SectionId } from '../domain/metric';
+import type { Goals, MetricDefinition, SectionId } from '../domain/metric';
 import { metricById } from '../domain/metrics';
 import { periodTitle } from '../domain/period';
 import { HubEditor } from './HubEditor';
@@ -16,6 +16,7 @@ import { useMetricView } from './useMetricView';
 
 type Props = {
   tracking: TrackingUseCases;
+  goals: Goals;
   ui: UiPrefs;
   onUiChange: (next: UiPrefs) => void;
   clock: Clock;
@@ -24,13 +25,13 @@ type Props = {
 };
 
 // shortcut: each card listens on its own source; share one read if the hub grows beyond a handful of cards.
-function HubCard({ tracking, def, period, today, onOpen }: { tracking: TrackingUseCases; def: MetricDefinition; period: ReturnType<typeof resolveUi>['period']; today: string; onOpen: Props['onOpen'] }) {
-  const { view, failed } = useMetricView(tracking, def, period, today);
+function HubCard({ tracking, goals, def, period, today, onOpen }: { tracking: TrackingUseCases; goals: Goals; def: MetricDefinition; period: ReturnType<typeof resolveUi>['period']; today: string; onOpen: Props['onOpen'] }) {
+  const { view, failed } = useMetricView(tracking, def, goals, period, today);
   return <MetricCard def={def} period={period} view={view} failed={failed} onPress={() => onOpen(def.section, def.id)} />;
 }
 
 /** The Suivi hub: one card per statistic over the period, which is chosen here; « Modifier » changes which cards and in which order. */
-export function SuiviHub({ tracking, ui, onUiChange, clock, timezone, onOpen }: Props) {
+export function SuiviHub({ tracking, goals, ui, onUiChange, clock, timezone, onOpen }: Props) {
   const { colors } = useTheme();
   const today = dayKey(useNow(clock), timezone);
   const { hubMetrics, period } = resolveUi(ui);
@@ -50,7 +51,7 @@ export function SuiviHub({ tracking, ui, onUiChange, clock, timezone, onOpen }: 
         </Text>
       )}
       {hubMetrics.map((id) => (
-        <HubCard key={id} tracking={tracking} def={metricById(id)!} period={period} today={today} onOpen={onOpen} />
+        <HubCard key={id} tracking={tracking} goals={goals} def={metricById(id)!} period={period} today={today} onOpen={onOpen} />
       ))}
       {editing && <HubEditor shown={hubMetrics} onChange={(next) => onUiChange({ hubMetrics: next })} onClose={() => setEditing(false)} />}
     </ScrollView>

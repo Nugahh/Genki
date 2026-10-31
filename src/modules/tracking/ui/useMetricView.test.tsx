@@ -17,8 +17,8 @@ function slowSource() {
 
 test('never shows the answer for another period while this one is still loading', async () => {
   const { answers, source } = slowSource();
-  const tracking = trackingUseCases({ sources: { days: source, training: inMemoryFactsSource() }, goals, clock, timezone: 'Europe/Paris' });
-  const { result, rerender } = await renderHook((props: { period: Period }) => useMetricView(tracking, calories, props.period, '2026-10-31'), { initialProps: { period: 'week' as Period } });
+  const tracking = trackingUseCases({ sources: { days: source, training: inMemoryFactsSource() }, clock, timezone: 'Europe/Paris' });
+  const { result, rerender } = await renderHook((props: { period: Period }) => useMetricView(tracking, calories, goals, props.period, '2026-10-31'), { initialProps: { period: 'week' as Period } });
   expect(result.current).toEqual({ view: null, failed: false });
 
   await act(async () => answers[0].onNext(new Map()));
@@ -33,8 +33,8 @@ test('never shows the answer for another period while this one is still loading'
 
 test('says when the source refuses the read, and recovers on the next period', async () => {
   const { answers, source } = slowSource();
-  const tracking = trackingUseCases({ sources: { days: source, training: inMemoryFactsSource() }, goals, clock, timezone: 'Europe/Paris' });
-  const { result, rerender } = await renderHook((props: { period: Period }) => useMetricView(tracking, calories, props.period, '2026-10-31'), { initialProps: { period: 'week' as Period } });
+  const tracking = trackingUseCases({ sources: { days: source, training: inMemoryFactsSource() }, clock, timezone: 'Europe/Paris' });
+  const { result, rerender } = await renderHook((props: { period: Period }) => useMetricView(tracking, calories, goals, props.period, '2026-10-31'), { initialProps: { period: 'week' as Period } });
   await act(async () => answers[0].onError(new Error('denied')));
   expect(result.current).toEqual({ view: null, failed: true });
   await rerender({ period: 'year' });

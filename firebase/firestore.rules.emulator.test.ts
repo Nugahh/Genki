@@ -6,6 +6,7 @@ import {
 } from '@firebase/rules-unit-testing';
 import {
   deleteDoc,
+  deleteField,
   doc,
   getDoc,
   increment,
@@ -59,7 +60,7 @@ describe('ownership', () => {
   });
 
   test('documents without validation yet stay closed to writes', async () => {
-    await assertFails(setDoc(doc(db('alice'), 'users/alice'), { timezone: 'Europe/Paris' })); // the profile fields wait for M6
+    await assertFails(setDoc(doc(db('alice'), 'users/alice'), { role: 'admin' }));
     await assertFails(setDoc(doc(db('alice'), 'users/alice/workoutLogs/w1'), { name: 'Séance' }));
   });
 });
@@ -86,6 +87,60 @@ describe('the profile document', () => {
     ['ui that is not a map', { ui: 'week' }],
   ])('rejects %s', async (_, data) => {
     await assertFails(setDoc(doc(db('alice'), 'users/alice'), data, { merge: true }));
+  });
+});
+
+describe('the profile fields', () => {
+  const profile = () => ({
+    timezone: 'Europe/Paris',
+    sex: 'female',
+    birthYear: 1990,
+    heightCm: 168.5,
+    activityLevel: 'active',
+    goalMode: 'deficit',
+    weeklyLossKg: 0.5,
+    goals: { kcal: 1800, proteinG: 120, waterMl: 2500, steps: 9000 },
+    quitDate: '2026-10-01',
+    cigarettesPerDay: 15,
+    packSize: 20,
+    packPrice: 12.5,
+    waterContainers: [{ label: 'Verre', ml: 250 }],
+    createdAt: Timestamp.now(),
+  });
+  const save = (data: object) => setDoc(doc(db('alice'), 'users/alice'), data, { merge: true });
+
+  test('the owner saves every field at once, then one at a time, goals field by field', async () => {
+    await assertSucceeds(save(profile()));
+    await assertSucceeds(save({ goals: { kcal: 2000 } }));
+    await assertSucceeds(save({ heightCm: 170 }));
+  });
+
+  test.each<[string, object]>([
+    ['a height of 99', { heightCm: 99 }],
+    ['a birth year that is not whole', { birthYear: 1990.5 }],
+    ['a sex that is neither', { sex: 'x' }],
+    ['an unknown activity level', { activityLevel: 'extreme' }],
+    ['an unknown goal mode', { goalMode: 'bulk' }],
+    ['a weekly loss of 3 kg', { weeklyLossKg: 3 }],
+    ['799 kcal', { goals: { kcal: 799 } }],
+    ['an unknown goal', { goals: { carbsG: 200 } }],
+    ['a quit date that is not a day', { quitDate: 'hier' }],
+    ['201 cigarettes a day', { cigarettesPerDay: 201 }],
+    ['a pack of 0', { packSize: 0 }],
+    ['a pack at 101', { packPrice: 101 }],
+    ['no container', { waterContainers: [] }],
+    ['7 containers', { waterContainers: Array.from({ length: 7 }, () => ({ label: 'V', ml: 250 })) }],
+    ['a container of 0 ml', { waterContainers: [{ label: 'V', ml: 0 }] }],
+    ['a sixth container that is malformed', { waterContainers: [...Array.from({ length: 5 }, () => ({ label: 'V', ml: 250 })), { label: '', ml: 250 }] }],
+    ['a container with an extra field', { waterContainers: [{ label: 'V', ml: 250, color: 'red' }] }],
+    ['a creation time that is not a time', { createdAt: 'now' }],
+  ])('rejects %s', async (_, data) => {
+    await assertFails(save(data));
+  });
+
+  test('a field can be taken off by a merge', async () => {
+    await assertSucceeds(save({ quitDate: '2026-10-01' }));
+    await assertSucceeds(setDoc(doc(db('alice'), 'users/alice'), { quitDate: deleteField() }, { merge: true }));
   });
 });
 

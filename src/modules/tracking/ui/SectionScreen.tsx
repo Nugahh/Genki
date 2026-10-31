@@ -5,7 +5,7 @@ import type { UiPrefs } from '@/modules/settings';
 import { dayKey, type Clock } from '@/shared/clock';
 import { useNow } from '@/shared/useNow';
 import type { MetricView, TrackingUseCases } from '../application/trackingUseCases';
-import type { MetricDefinition, SectionId } from '../domain/metric';
+import type { Goals, MetricDefinition, SectionId } from '../domain/metric';
 import { metricsOf } from '../domain/metrics';
 import { bucketsFor, periodTitle, rangeOf, shiftAnchor, type Period } from '../domain/period';
 import { BEFORE, signed } from './changeText';
@@ -19,6 +19,7 @@ type Props = {
   /** The statistic to open on; the first of the section when missing or from another section. */
   metricId?: string;
   tracking: TrackingUseCases;
+  goals: Goals;
   ui: UiPrefs;
   onUiChange: (next: UiPrefs) => void;
   clock: Clock;
@@ -31,7 +32,7 @@ type Props = {
 const HIT_SLOP = { top: 8, bottom: 8 };
 
 /** One section of Suivi: the period and its arrows, the chips of its statistics, the chart with the goal, the summary, the extras of the section. */
-export function SectionScreen({ section, metricId, tracking, ui, onUiChange, clock, timezone, renderExtras }: Props) {
+export function SectionScreen({ section, metricId, tracking, goals, ui, onUiChange, clock, timezone, renderExtras }: Props) {
   const { colors } = useTheme();
   const today = dayKey(useNow(clock), timezone);
   const { period } = resolveUi(ui);
@@ -41,7 +42,7 @@ export function SectionScreen({ section, metricId, tracking, ui, onUiChange, clo
   const defs = metricsOf(section);
   const [selected, setSelected] = useState(metricId);
   const def = defs.find((d) => d.id === selected) ?? defs[0];
-  const { view, failed } = useMetricView(tracking, def, period, anchor);
+  const { view, failed } = useMetricView(tracking, def, goals, period, anchor);
 
   const canGoForward = rangeOf(bucketsFor(period, shiftAnchor(period, anchor, 1))).from <= today;
   const hasData = view?.points.some((p) => p.value !== undefined) ?? false;

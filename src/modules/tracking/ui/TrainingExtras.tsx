@@ -1,12 +1,14 @@
 import { StyleSheet } from 'react-native';
 import { Button, Surface, Text } from 'react-native-paper';
 import type { TrackingUseCases } from '../application/trackingUseCases';
+import type { Goals } from '../domain/metric';
 import { metricById } from '../domain/metrics';
 import type { Period } from '../domain/period';
 import { useMetricView } from './useMetricView';
 
 type Props = {
   tracking: TrackingUseCases;
+  goals: Goals;
   period: Period;
   /** A day of the period shown. */
   day: string;
@@ -15,8 +17,8 @@ type Props = {
   onOpenSport: () => void;
 };
 
-function WeekSessions({ tracking, day, planned }: Pick<Props, 'tracking' | 'day' | 'planned'>) {
-  const { view } = useMetricView(tracking, metricById('sessions')!, 'week', day);
+function WeekSessions({ tracking, goals, day, planned }: Pick<Props, 'tracking' | 'goals' | 'day' | 'planned'>) {
+  const { view } = useMetricView(tracking, metricById('sessions')!, goals, 'week', day);
   if (!view) return null;
   const done = view.points.reduce((sum, p) => sum + (p.value ?? 0), 0);
   return (
@@ -27,10 +29,10 @@ function WeekSessions({ tracking, day, planned }: Pick<Props, 'tracking' | 'day'
 }
 
 /** Sessions done against sessions planned (over a week), and the way to the programme and the milestones. */
-export function TrainingExtras({ tracking, period, day, planned, onOpenSport }: Props) {
+export function TrainingExtras({ tracking, goals, period, day, planned, onOpenSport }: Props) {
   return (
     <>
-      {period === 'week' && <WeekSessions tracking={tracking} day={day} planned={planned} />}
+      {period === 'week' && <WeekSessions tracking={tracking} goals={goals} day={day} planned={planned} />}
       <Button mode="outlined" icon="dumbbell" contentStyle={styles.button} onPress={onOpenSport}>
         Voir le programme et les paliers
       </Button>

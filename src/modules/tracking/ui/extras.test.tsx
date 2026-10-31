@@ -32,24 +32,23 @@ describe('NutritionExtras', () => {
 describe('TrainingExtras', () => {
   const tracking = trackingUseCases({
     sources: { days: inMemoryFactsSource(), training: inMemoryFactsSource({ '2026-10-26': { sessions: 1, volumeKg: 3000 }, '2026-10-28': { sessions: 1 }, '2026-10-31': { sessions: 1 }, '2026-10-20': { sessions: 1 } }) },
-    goals,
     clock,
     timezone: 'Europe/Paris',
   });
 
   test('counts the sessions of the week against the sessions planned, today included', async () => {
     const onOpenSport = jest.fn();
-    await draw(<TrainingExtras tracking={tracking} period="week" day="2026-10-31" planned={3} onOpenSport={onOpenSport} />);
+    await draw(<TrainingExtras tracking={tracking} goals={goals} period="week" day="2026-10-31" planned={3} onOpenSport={onOpenSport} />);
     expect(screen.getByText('Séances de la semaine : 3 sur 3')).toBeTruthy();
     await fireEvent.press(screen.getByText('Voir le programme et les paliers'));
     expect(onOpenSport).toHaveBeenCalled();
   });
 
   test('counts without a plan, and only over a week', async () => {
-    const { unmount } = await draw(<TrainingExtras tracking={tracking} period="week" day="2026-10-31" onOpenSport={() => {}} />);
+    const { unmount } = await draw(<TrainingExtras tracking={tracking} goals={goals} period="week" day="2026-10-31" onOpenSport={() => {}} />);
     expect(screen.getByText('Séances de la semaine : 3')).toBeTruthy();
     await unmount();
-    await draw(<TrainingExtras tracking={tracking} period="year" day="2026-10-31" planned={3} onOpenSport={() => {}} />);
+    await draw(<TrainingExtras tracking={tracking} goals={goals} period="year" day="2026-10-31" planned={3} onOpenSport={() => {}} />);
     expect(screen.queryByText(/Séances de la semaine/)).toBeNull();
   });
 });

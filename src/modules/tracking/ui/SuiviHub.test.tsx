@@ -16,12 +16,12 @@ const calories = metricById('calories')!;
 const refusing = { observeRange: (_from: string, _to: string, _next: unknown, onError: (e: Error) => void) => (onError(new Error('denied')), () => {}) };
 
 async function setup(ui: UiPrefs = { hubMetrics: ['calories', 'water', 'weight'] }, facts: Record<string, DayFacts> = {}, days: FactsSource = inMemoryFactsSource(facts)) {
-  const tracking = trackingUseCases({ sources: { days, training: inMemoryFactsSource() }, goals, clock, timezone: 'Europe/Paris' });
+  const tracking = trackingUseCases({ sources: { days, training: inMemoryFactsSource() }, clock, timezone: 'Europe/Paris' });
   const onUiChange = jest.fn();
   const onOpen = jest.fn();
   await render(
     <PaperProvider theme={theme}>
-      <SuiviHub tracking={tracking} ui={ui} onUiChange={onUiChange} clock={clock} timezone="Europe/Paris" onOpen={onOpen} />
+      <SuiviHub tracking={tracking} goals={goals} ui={ui} onUiChange={onUiChange} clock={clock} timezone="Europe/Paris" onOpen={onOpen} />
     </PaperProvider>,
   );
   return { onUiChange, onOpen };

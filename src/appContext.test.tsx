@@ -1,10 +1,13 @@
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import { Pressable, Text } from 'react-native';
 import { PaperProvider } from 'react-native-paper';
+import { inMemoryProfileRepository, settingsUseCases } from '@/modules/settings';
 import { AppProvider, useApp } from './appContext';
 
 const MESSAGE = 'L’enregistrement a échoué.';
 const denied = new Error('permission-denied');
+// The provider reads the profile through the settings use cases; the rest of the app is not needed here.
+const app = { settings: settingsUseCases(inMemoryProfileRepository()) } as never;
 
 // Runs `write` on press and shows whether a write failed.
 function Saver({ write }: { write: () => Promise<void> }) {
@@ -19,7 +22,7 @@ function Saver({ write }: { write: () => Promise<void> }) {
 const renderSaver = (write: () => Promise<void>) =>
   render(
     <PaperProvider>
-      <AppProvider app={{} as never}>
+      <AppProvider app={app}>
         <Saver write={write} />
       </AppProvider>
     </PaperProvider>,
@@ -83,4 +86,22 @@ test('« Fermer » drops the failed write without running it again', async () =>
   await fireEvent.press(await screen.findByLabelText('Fermer'));
   expect(write).toHaveBeenCalledTimes(1);
   expect(screen.getByText('ok')).toBeTruthy();
+});
+
+test('gives the screens the live profile, and says when it was read', async () => {
+  const settings = settingsUseCases(inMemoryProfileRepository());
+  function Goal() {
+    const { profile, profileLoaded } = useApp();
+    return <Text>{`${profile.goals.kcal} ${profileLoaded ? 'lu' : 'pas lu'}`}</Text>;
+  }
+  await render(
+    <PaperProvider>
+      <AppProvider app={{ settings } as never}>
+        <Goal />
+      </AppProvider>
+    </PaperProvider>,
+  );
+  expect(screen.getByText('2200 lu')).toBeTruthy();
+  await act(async () => settings.saveProfile({ goals: { kcal: 1900 } as never }));
+  expect(screen.getByText('1900 lu')).toBeTruthy();
 });

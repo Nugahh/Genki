@@ -2,20 +2,20 @@ import { Redirect, router, Stack, useLocalSearchParams } from 'expo-router';
 import { useApp } from '@/appContext';
 import { WaterDay } from '@/modules/hydration';
 import { useUiPrefs } from '@/modules/settings';
-import { NutritionExtras, sectionById, SectionScreen, TrainingExtras } from '@/modules/tracking';
+import { goalsOf, NutritionExtras, sectionById, SectionScreen, TrainingExtras } from '@/modules/tracking';
 import { useNextSession } from '@/modules/training';
 import type { Period } from '@/modules/tracking';
 
 /** The sessions of the week against the programme's: only this section reads the programme. */
 function TrainingSection({ period, day }: { period: Period; day: string }) {
-  const { app } = useApp();
+  const { app, profile } = useApp();
   const next = useNextSession(app.training, app.clock, app.profile.timezone);
-  return <TrainingExtras tracking={app.tracking} period={period} day={day} planned={next?.perWeek} onOpenSport={() => router.navigate('/sport')} />;
+  return <TrainingExtras tracking={app.tracking} goals={goalsOf(profile)} period={period} day={day} planned={next?.perWeek} onOpenSport={() => router.navigate('/sport')} />;
 }
 
 export default function SuiviSection() {
   const { section, metric } = useLocalSearchParams<{ section: string; metric?: string }>();
-  const { app, run } = useApp();
+  const { app, profile, run } = useApp();
   const [ui, changeUi] = useUiPrefs(app.settings, run);
   const info = sectionById(section);
   if (!info) return <Redirect href="/suivi" />;
@@ -30,6 +30,7 @@ export default function SuiviSection() {
         section={info.id}
         metricId={metric}
         tracking={app.tracking}
+        goals={goalsOf(profile)}
         ui={ui}
         onUiChange={changeUi}
         clock={app.clock}

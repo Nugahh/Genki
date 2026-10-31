@@ -26,7 +26,7 @@ test('follows what another phone wrote', async () => {
 });
 
 test('is null until the first snapshot', async () => {
-  const settings = settingsUseCases({ observeUi: () => () => {}, saveUi: async () => {} });
+  const settings = settingsUseCases({ ...inMemoryProfileRepository(), observeUi: () => () => {} });
   const { result } = await renderHook(() => useUiPrefs(settings, () => {}));
   expect(result.current[0]).toBeNull();
 });

@@ -7,8 +7,8 @@ import { useNextSession } from '@/modules/training';
 import { hourOfDay } from '@/shared/clock';
 
 export default function Today() {
-  const { app, run } = useApp();
-  const { clock, dayTotals, hydration, profile } = app;
+  const { app, profile, run } = useApp();
+  const { clock, dayTotals, hydration } = app;
   const userName = useAuthUser()?.displayName?.split(' ')[0];
   const next = useNextSession(app.training, clock, profile.timezone);
   return (

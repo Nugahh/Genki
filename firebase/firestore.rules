@@ -72,12 +72,58 @@ service cloud.firestore {
         && (!('period' in ui) || ui.period in ['day', 'week', 'year']);
     }
 
-    // The profile document: its fields are those of spec §4. Only `ui` is validated so far; the others wait for the setup screen (M6).
+    function isContainer(c) {
+      return c is map
+        && c.keys().hasOnly(['label', 'ml'])
+        && isShortText(c.label, 30)
+        && c.ml is number && c.ml >= 1 && c.ml <= 5000;
+    }
+
+    // The list is read item by item up to its cap of 6: rules cannot loop.
+    function isContainers(list) {
+      return list is list
+        && list.size() >= 1 && list.size() <= 6
+        && (list.size() < 1 || isContainer(list[0]))
+        && (list.size() < 2 || isContainer(list[1]))
+        && (list.size() < 3 || isContainer(list[2]))
+        && (list.size() < 4 || isContainer(list[3]))
+        && (list.size() < 5 || isContainer(list[4]))
+        && (list.size() < 6 || isContainer(list[5]));
+    }
+
+    // Each goal is optional (the merged document holds the ones that were ever chosen).
+    function isGoals(g) {
+      return g is map
+        && g.keys().hasOnly(['kcal', 'proteinG', 'waterMl', 'steps'])
+        && (!('kcal' in g) || (g.kcal is number && g.kcal >= 800 && g.kcal <= 10000))
+        && (!('proteinG' in g) || (g.proteinG is number && g.proteinG >= 0 && g.proteinG <= 500))
+        && (!('waterMl' in g) || (g.waterMl is number && g.waterMl >= 500 && g.waterMl <= 10000))
+        && (!('steps' in g) || (g.steps is number && g.steps >= 0 && g.steps <= 100000));
+    }
+
+    // The profile document (spec §4). Every field is optional: the app has a default for each. The merged document is what is checked.
+    function isProfile(d) {
+      return d.keys().hasOnly(['timezone', 'sex', 'birthYear', 'heightCm', 'activityLevel', 'goalMode', 'weeklyLossKg', 'goals', 'quitDate', 'cigarettesPerDay', 'packSize', 'packPrice', 'waterContainers', 'createdAt', 'ui'])
+        && (!('timezone' in d) || isShortText(d.timezone, 64))
+        && (!('sex' in d) || d.sex in ['male', 'female'])
+        && (!('birthYear' in d) || (d.birthYear is int && d.birthYear >= 1900 && d.birthYear <= 2100))
+        && (!('heightCm' in d) || (d.heightCm is number && d.heightCm >= 100 && d.heightCm <= 250))
+        && (!('activityLevel' in d) || d.activityLevel in ['sedentary', 'light', 'active'])
+        && (!('goalMode' in d) || d.goalMode in ['deficit', 'maintenance', 'surplus'])
+        && (!('weeklyLossKg' in d) || (d.weeklyLossKg is number && d.weeklyLossKg >= 0.1 && d.weeklyLossKg <= 2))
+        && (!('goals' in d) || isGoals(d.goals))
+        && (!('quitDate' in d) || isDayKey(d.quitDate))
+        && (!('cigarettesPerDay' in d) || (d.cigarettesPerDay is int && d.cigarettesPerDay >= 0 && d.cigarettesPerDay <= 200))
+        && (!('packSize' in d) || (d.packSize is int && d.packSize >= 1 && d.packSize <= 100))
+        && (!('packPrice' in d) || (d.packPrice is number && d.packPrice >= 0 && d.packPrice <= 100))
+        && (!('waterContainers' in d) || isContainers(d.waterContainers))
+        && (!('createdAt' in d) || d.createdAt is timestamp)
+        && (!('ui' in d) || isUiPrefs(d.ui));
+    }
+
     match /users/{uid} {
       allow read: if isOwner(uid);
-      allow create, update: if isOwner(uid)
-        && request.resource.data.keys().hasOnly(['ui'])
-        && (!('ui' in request.resource.data) || isUiPrefs(request.resource.data.ui));
+      allow create, update: if isOwner(uid) && isProfile(request.resource.data);
     }
 
     match /users/{uid}/waterEntries/{entryId} {

@@ -1,5 +1,8 @@
-export { DEFAULT_PROFILE, type Profile, type WaterContainer } from './domain/profile';
+export { proposeGoals, GUARDRAILS } from './domain/goals';
+export { DEFAULT_PROFILE, validateProfile, withDefaults, type ActivityLevel, type GoalMode, type Goals, type Profile, type Sex, type WaterContainer } from './domain/profile';
 export type { UiPrefs } from './domain/ui';
+export type { ProfilePatch } from './application/ports';
 export { settingsUseCases, type SettingsUseCases } from './application/settingsUseCases';
 export { inMemoryProfileRepository } from './adapters/inMemoryProfileRepository';
+export { useProfile } from './ui/useProfile';
 export { useUiPrefs } from './ui/useUiPrefs';
