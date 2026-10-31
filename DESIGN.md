@@ -304,9 +304,11 @@ Ink blue on ivory paper: a restrained Material 3 scheme with warm neutrals, plus
 
 One column per screen on a phone in portrait. Screens use a 16 dp gutter and a 16 dp gap between blocks; inside a card the padding is 16 dp and the gap 8 dp; a gauge's touch area pads 12 dp with 4 dp between its rows; a form's fields stack with a 12 dp gap and wrapping rows of buttons or chips use 8 dp. The sign-in screen centers its content with 24 dp padding. There are no breakpoints and no tablet layout; the reference width is 360 dp.
 
-Today splits into two groups. The upper region scrolls: a greeting (« Bonjour » until 18 h, « Bonsoir » after, then the first name from the Google account) with one sentence on what is left of the water and protein goals (or a bravo when they are reached; calories wait for the goal modes), then the gauge cards. Below them, outside the scroll, the action bar holds the water amounts and « + Repas » on one row (wrapping to two on a narrow phone or a large font); a take-back snackbar rests on the bar's top edge. The add-food screen opens as a modal with the header « Ajouter un aliment » and a bottom inset, and its four modes sit in two rows of two.
+Today splits into two groups. The upper region scrolls: a greeting (« Bonjour » until 18 h, « Bonsoir » after, then the first name from the Google account) with one sentence on what is left of the water and protein goals (or a bravo when they are reached; calories wait for the goal modes), then the gauge cards, then, with a programme in progress, the « Séance du jour » card (a dumbbell on a disc, the session name, its phase and week, and a tonal « Démarrer »). Below them, outside the scroll, the action bar holds the water amounts and « + Repas » on one row (wrapping to two on a narrow phone or a large font); a take-back snackbar rests on the bar's top edge. The add-food screen opens as a modal with the header « Ajouter un aliment » and a bottom inset, and its four modes sit in two rows of two.
 
-Navigation is a two-tab bottom bar (Aujourd'hui, Repas) under a header whose right end holds the sync cloud. Every control is at least 48 × 48 dp, with at least 8 dp between neighbouring targets: Paper buttons get a 48 dp content height, icon buttons are sized to 48 × 48, and segment labels are padded to reach 48 dp.
+Sport lists the programme in progress as cards, one per session of the phase (the next one marked « Prochaine », each with a tonal « Démarrer »), then « Modifier le programme », « Repartir du modèle » and the milestones. A workout is one column of exercises, each with its last result and one row per set (load and reps, prefilled), a rest timer under the thumb (« Repos 1:30 », « Passer ») and a summary at the end; leaving it asks « Abandonner la séance ? ». The editor opens an exercise in a form, and an exercise opens its history.
+
+Navigation is a three-tab bottom bar (Aujourd'hui, Repas, Sport) under a header whose right end holds the sync cloud. Every control is at least 48 × 48 dp, with at least 8 dp between neighbouring targets: Paper buttons get a 48 dp content height, icon buttons are sized to 48 × 48, and segment labels are padded to reach 48 dp.
 
 Frontmatter dimensions are written in px; in React Native they are unitless dp.
 
@@ -368,7 +370,7 @@ Standard Paper components, restrained: a tonal button, a soft card, a flat field
 - **Take-back:** the same shape with « +250 ml ajoutés » and « Annuler », 4 seconds, on Today only.
 
 ### Navigation
-- **Tab bar:** Paper's Material 3 navigation bar, 80 dp on Paper Bar: two destinations, each an icon with a label (calendar-today for Aujourd'hui, silverware-fork-knife for Repas), the open one in a 64 × 32 dp Ink Tint pill with Ink-toned icon and label, the other in Ink Soft. Each tab is announced once, as a tab with its selected state.
+- **Tab bar:** Paper's Material 3 navigation bar, 80 dp on Paper Bar: three destinations, each an icon with a label (calendar-today for Aujourd'hui, silverware-fork-knife for Repas, dumbbell for Sport), the open one in a 64 × 32 dp Ink Tint pill with Ink-toned icon and label, the other in Ink Soft. Each tab is announced once, as a tab with its selected state.
 - **Header:** the page color with a hairline, title at the left on Android. At the right, the sync cloud: 24 dp icon with 16 dp horizontal margin and a French label for each state (cloud-check-outline « Synchronisé », cloud-upload-outline « En attente d'envoi », cloud-off-outline « Hors-ligne », cloud-alert « Erreur de synchronisation »).
 
 ## Do's and Don'ts
