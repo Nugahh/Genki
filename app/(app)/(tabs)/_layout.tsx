@@ -27,6 +27,13 @@ export default function TabsLayout() {
           tabBarIcon: ({ color, size }) => <Icon source="silverware-fork-knife" color={color as string} size={size} />,
         }}
       />
+      <Tabs.Screen
+        name="sport"
+        options={{
+          title: 'Sport',
+          tabBarIcon: ({ color, size }) => <Icon source="dumbbell" color={color as string} size={size} />,
+        }}
+      />
     </Tabs>
   );
 }

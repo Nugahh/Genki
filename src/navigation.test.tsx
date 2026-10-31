@@ -17,6 +17,7 @@ jest.mock('@/composition', () => {
     inMemoryFoodRepository,
     mealUseCases,
   } = jest.requireActual('@/modules/nutrition');
+  const { inMemoryMilestoneRepository, inMemoryPlanRepository, inMemoryWorkoutRepository, trainingUseCases } = jest.requireActual('@/modules/training');
   const { DEFAULT_PROFILE } = jest.requireActual('@/modules/settings');
   const clock = { now: () => new Date('2026-10-23T10:00:00Z') }; // 12:00 in Paris: lunch
   const rice = { ref: { type: 'ciqual', id: '9100' }, name: 'Riz blanc, cru', state: 'raw', per100g: { kcal: 350, protein: 7, carbs: 78, fat: 0.6 }, portions: [] };
@@ -31,6 +32,13 @@ jest.mock('@/composition', () => {
           return () => {};
         },
       },
+      training: trainingUseCases({
+        plans: inMemoryPlanRepository(),
+        workouts: inMemoryWorkoutRepository(),
+        milestones: inMemoryMilestoneRepository(),
+        clock,
+        timezone: DEFAULT_PROFILE.timezone,
+      }),
       nutrition: {
         meals: mealUseCases({
           entries: inMemoryFoodEntryRepository(),
@@ -90,6 +98,16 @@ test('the tabs are Paper’s Material bar: the open tab is the selected one, and
   await pressTab('Repas');
   expect(screen.getByRole('button', { name: 'Repas' })).toBeSelected();
   expect(screen.getByRole('button', { name: 'Aujourd’hui' })).not.toBeSelected();
+});
+
+test('the Sport tab offers the starter programme, and creating it shows the sessions', async () => {
+  signedInAs({ uid: 'alice' });
+  await renderRouter();
+  await pressTab('Sport');
+  expect(screen).toHavePathname('/sport');
+  await fireEvent.press(screen.getByText('Partir du modèle'));
+  expect(screen.getByText('Reprise progressive')).toBeTruthy();
+  expect(screen.getAllByLabelText(/^Démarrer Séance /)).toHaveLength(3);
 });
 
 test('the Repas tab opens the day journal', async () => {

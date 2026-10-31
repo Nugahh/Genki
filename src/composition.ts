@@ -5,6 +5,10 @@ import { firestoreFavoriteMealRepository } from '@/modules/nutrition/adapters/fi
 import { firestoreFoodEntryRepository } from '@/modules/nutrition/adapters/firestoreFoodEntryRepository';
 import { firestoreFoodRepository } from '@/modules/nutrition/adapters/firestoreFoodRepository';
 import { foodUseCases, mealUseCases } from '@/modules/nutrition';
+import { firestoreMilestoneRepository } from '@/modules/training/adapters/firestoreMilestoneRepository';
+import { firestorePlanRepository } from '@/modules/training/adapters/firestorePlanRepository';
+import { firestoreWorkoutRepository } from '@/modules/training/adapters/firestoreWorkoutRepository';
+import { trainingUseCases } from '@/modules/training';
 import { DEFAULT_PROFILE } from '@/modules/settings';
 import { firestoreDayTotals } from '@/modules/today/adapters/firestoreDayTotals';
 import { openCiqual } from '@/platform/ciqual';
@@ -19,6 +23,13 @@ export function compose(uid: string) {
     clock: systemClock,
     hydration: waterUseCases(firestoreWaterRepository(db, uid), systemClock, profile.timezone),
     dayTotals: firestoreDayTotals(db, uid),
+    training: trainingUseCases({
+      plans: firestorePlanRepository(db, uid),
+      workouts: firestoreWorkoutRepository(db, uid),
+      milestones: firestoreMilestoneRepository(db, uid),
+      clock: systemClock,
+      timezone: profile.timezone,
+    }),
     nutrition: {
       meals: mealUseCases({
         entries: firestoreFoodEntryRepository(db, uid),
