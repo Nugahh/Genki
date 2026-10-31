@@ -7,6 +7,7 @@ import type { FavoriteMealRepository, FoodEntryRepository } from './ports';
 const RECENT_WINDOW = 50;
 const RECENT_SHOWN = 20;
 const oldestFirst = (a: FoodEntry, b: FoodEntry) => a.createdAt.getTime() - b.createdAt.getTime();
+const byName = (a: FavoriteMeal, b: FavoriteMeal) => a.name.localeCompare(b.name, 'fr');
 // A use case does not trust its caller (the UI and the Firestore rules bound these values too).
 const assertGrams = (grams: number) => {
   if (!isValidGrams(grams)) throw new Error('La quantité doit être comprise entre 0 et 5 000 g.');
@@ -54,7 +55,10 @@ export function mealUseCases(deps: { entries: FoodEntryRepository; favorites: Fa
         onError,
       );
     },
-    observeFavorites: favorites.observeAll,
+    /** The saved meals, by name. */
+    observeFavorites(onNext: (list: FavoriteMeal[]) => void, onError: (error: Error) => void) {
+      return favorites.observeAll((list) => onNext([...list].sort(byName)), onError);
+    },
     async saveFavorite(name: string, list: FoodEntry[]) {
       if (name.trim() === '' || list.length < 1 || list.length > 50) throw new Error('Un favori a un nom et 1 à 50 aliments.');
       return favorites.create({ name: name.trim(), items: list.map(({ foodRef, foodName, grams }) => ({ foodRef, foodName, grams })) });

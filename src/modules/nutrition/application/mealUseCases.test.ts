@@ -91,6 +91,15 @@ test('a saved favorite keeps the foods and quantities of the meal, and logs them
   ]);
 });
 
+test('favorites are listed by name in French collation, not in the order they were saved', async () => {
+  const { entries, meals } = setup();
+  await meals.logFood('lunch', rice, 100);
+  for (const name of ['Zèbre', 'éclair', 'Abricot', 'Épeautre']) await meals.saveFavorite(name, entries.entries);
+  let names: string[] = [];
+  meals.observeFavorites((list) => (names = list.map((f) => f.name)), () => {})();
+  expect(names).toEqual(['Abricot', 'éclair', 'Épeautre', 'Zèbre']);
+});
+
 test('logFavorite skips foods that no longer exist', async () => {
   const { entries, meals } = setup();
   await meals.logFood('lunch', rice, 100);
