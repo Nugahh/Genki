@@ -12,6 +12,7 @@ export function WaterButtons({ containers, onAdd }: Props) {
         <Button
           key={c.label}
           mode="contained-tonal"
+          icon="cup-water"
           onPress={() => onAdd(c.ml)}
           accessibilityLabel={`Ajouter ${c.ml} ml (${c.label})`}
           style={styles.grow}

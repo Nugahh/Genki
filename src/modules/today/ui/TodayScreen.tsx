@@ -63,6 +63,7 @@ export function TodayScreen({ profile, clock, dayTotals, hydration, run, onAddMe
         <ScrollView testID="gauges" contentContainerStyle={styles.content}>
           <GaugeBar
             label="Eau"
+            symbol="water"
             value={liters(totals.waterMl)}
             goal={liters(goals.waterMl)}
             remaining={remaining(totals.waterMl, goals.waterMl, liters)}
@@ -75,6 +76,7 @@ export function TodayScreen({ profile, clock, dayTotals, hydration, run, onAddMe
           />
           <GaugeBar
             label="Calories"
+            symbol="fire"
             value={kcal(totals.kcal)}
             goal={kcal(goals.kcal)}
             remaining={overGoal ? 'au-dessus de l’objectif' : remaining(totals.kcal, goals.kcal, kcal)}
@@ -88,6 +90,7 @@ export function TodayScreen({ profile, clock, dayTotals, hydration, run, onAddMe
           />
           <GaugeBar
             label="Protéines"
+            symbol="arm-flex"
             value={grams(totals.proteinG)}
             goal={grams(goals.proteinG)}
             remaining={remaining(totals.proteinG, goals.proteinG, grams)}
@@ -115,7 +118,7 @@ export function TodayScreen({ profile, clock, dayTotals, hydration, run, onAddMe
       {/* The frequent actions are pinned under the thumb, whatever the day holds above: the page, these actions, the tab bar are three tonal levels. */}
       <Surface mode="flat" elevation={1} style={styles.actions}>
         <WaterButtons containers={profile.waterContainers} onAdd={addWater} />
-        <Button mode="contained-tonal" accessibilityLabel="Ajouter un repas" style={styles.grow} contentStyle={styles.button} onPress={onAddMeal}>
+        <Button mode="contained-tonal" icon="silverware-fork-knife" accessibilityLabel="Ajouter un repas" style={styles.grow} contentStyle={styles.button} onPress={onAddMeal}>
           + Repas
         </Button>
       </Surface>

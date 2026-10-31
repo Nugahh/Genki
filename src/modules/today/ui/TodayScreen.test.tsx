@@ -2,6 +2,7 @@ import { fireEvent, render, screen, within } from '@testing-library/react-native
 import { PaperProvider } from 'react-native-paper';
 import { inMemoryWaterRepository, waterUseCases } from '@/modules/hydration';
 import { DEFAULT_PROFILE } from '@/modules/settings';
+import glyphs from '@expo/vector-icons/build/vendor/react-native-vector-icons/glyphmaps/MaterialCommunityIcons.json';
 import { theme } from '@/theme';
 import type { DayTotalsRepository } from '../application/ports';
 import { TodayScreen } from './TodayScreen';
@@ -58,6 +59,13 @@ test('the quick-add buttons stay outside the scrolling gauges, under the thumb w
   expect(scrolling.queryByText('+ Repas')).toBeNull();
   expect(screen.getByText('+250 ml')).toBeTruthy();
   expect(screen.getByText('+ Repas')).toBeTruthy();
+});
+
+test('the gauges and the quick actions wear their icons: a drop, a flame, a flexed arm; two cups and a fork and knife', async () => {
+  await renderToday();
+  const icon = (name: keyof typeof glyphs) => screen.queryAllByText(String.fromCodePoint(glyphs[name]), { includeHiddenElements: true }).length;
+  expect([icon('water'), icon('fire'), icon('arm-flex')]).toEqual([1, 1, 1]);
+  expect([icon('cup-water'), icon('silverware-fork-knife')]).toEqual([2, 1]);
 });
 
 test('a quick add offers to take the glass back, and « Annuler » does', async () => {

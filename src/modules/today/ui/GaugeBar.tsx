@@ -18,6 +18,8 @@ type Props = {
   /** Where the user should be by now, from 0 to 1. */
   expected: number;
   color: GaugeColor;
+  /** The icon of the metric (a drop, a flame): it wears the label, on a tinted disc. */
+  symbol: string;
   /** What a touch does, read by TalkBack after the label: the icon alone says it to the eye. */
   hint: string;
   /** What the color means, read by TalkBack: the pace wording unless the gauge has something else to say. */
@@ -27,7 +29,7 @@ type Props = {
   onPress: () => void;
 };
 
-export function GaugeBar({ label, value, goal, remaining, hint, progress, expected, color, status = PACE[color], icon, onPress }: Props) {
+export function GaugeBar({ label, value, goal, remaining, hint, symbol, progress, expected, color, status = PACE[color], icon, onPress }: Props) {
   const { colors } = useTheme<AppTheme>();
   return (
     <TouchableRipple
@@ -40,7 +42,12 @@ export function GaugeBar({ label, value, goal, remaining, hint, progress, expect
     >
       <View style={styles.content}>
         <View style={styles.row}>
-          <Text variant="labelLarge" style={[styles.label, { color: colors.onSurfaceVariant }]}>{label}</Text>
+          <View style={styles.title}>
+            <View style={[styles.badge, { backgroundColor: colors.secondaryContainer }]}>
+              <Icon source={symbol} size={20} color={colors.onSecondaryContainer} />
+            </View>
+            <Text variant="labelLarge" style={[styles.label, { color: colors.onSurfaceVariant }]}>{label}</Text>
+          </View>
           <Icon source={icon} size={24} />
         </View>
         <Text variant="headlineSmall" style={styles.value}>{value}</Text>
@@ -59,6 +66,8 @@ const styles = StyleSheet.create({
   touch: { minHeight: 48, borderRadius: 12, padding: 12 },
   content: { gap: 4 },
   row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
+  title: { flexDirection: 'row', alignItems: 'center', gap: 8, flexShrink: 1 },
+  badge: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
   label: { flexShrink: 1 },
   // Tabular figures: the digits do not shift as the day's total grows.
   value: { fontVariant: ['tabular-nums'] },
