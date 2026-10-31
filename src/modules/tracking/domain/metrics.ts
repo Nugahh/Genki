@@ -12,6 +12,7 @@ export const METRICS: MetricDefinition[] = [
   { id: 'steps', section: 'activite', label: 'Pas', unit: 'pas', tint: 'steps', kind: 'bars', value: (f) => f.steps, goal: (g) => g.steps, target: 'atLeast', format: (v) => `${fr(v)} pas`, emptyHint: 'Aucun pas enregistré : ils arriveront quand Health Connect ou ton Fitbit sera branché.' },
   { id: 'weight', section: 'corps', label: 'Poids', unit: 'kg', tint: 'weight', kind: 'line', value: (f) => f.weightKg, target: 'none', format: (v) => `${fr(v, 1)} kg`, emptyHint: 'Aucune pesée enregistrée pour l’instant.' },
   { id: 'waist', section: 'corps', label: 'Tour de taille', unit: 'cm', tint: 'waist', kind: 'line', value: (f) => f.waistCm, target: 'none', format: (v) => `${fr(v, 1)} cm`, emptyHint: 'Aucune mesure de tour de taille pour l’instant.' },
+  { id: 'sessions', section: 'entrainement', label: 'Séances', unit: '', tint: 'training', kind: 'bars', value: (f) => f.sessions, target: 'none', format: (v) => `${fr(v, 1)} séance${v >= 2 ? 's' : ''}`, emptyHint: 'Termine une séance pour la voir ici.' },
   { id: 'volume', section: 'entrainement', label: 'Volume', unit: 'kg', tint: 'training', kind: 'bars', value: (f) => f.volumeKg, target: 'none', format: (v) => `${fr(v)} kg`, emptyHint: 'Termine une séance pour voir ton volume.' },
 ];
 

@@ -25,7 +25,7 @@ test('is the first session of the phase in progress when none was done, with the
   const { plans, training } = setup();
   await plans.create(starterPlan('2026-11-03'));
   const { result } = await renderHook(() => useNextSession(training, clock, 'Europe/Paris'));
-  expect(result.current).toEqual({ title: 'Séance A — Haut du corps', subtitle: 'Phase 1 — Reprise · semaine 1 sur 4', index: 0 });
+  expect(result.current).toEqual({ title: 'Séance A — Haut du corps', subtitle: 'Phase 1 — Reprise · semaine 1 sur 4', index: 0, perWeek: 3 });
 });
 
 test('moves on to the next session once a workout is recorded', async () => {
