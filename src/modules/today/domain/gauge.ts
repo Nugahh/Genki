@@ -17,9 +17,16 @@ export function paceColor(value: number, goal: number, hour: number): GaugeColor
 /** Calories above 105 % of the goal (spec §9): the gauge then reports the overshoot, not the pace. */
 export const isOverGoal = (value: number, goal: number) => goal > 0 && value / goal > 1.05;
 
-/** Calories: above 110 % of the goal is red, above 105 % orange (spec §9); otherwise the pace decides. */
-export function calorieColor(value: number, goal: number, hour: number): GaugeColor {
+/** What the calories goal is for; it decides which way the gauge counts as late (the settings module's `GoalMode`, redeclared: a domain imports nothing). */
+export type CalorieMode = 'deficit' | 'maintenance' | 'surplus';
+
+/**
+ * Calories (spec §9, and the goal mode chosen in the settings). Maintenance: above 110 % of the goal is red, above 105 % orange,
+ * otherwise the pace decides. Deficit: eating less is not late, only going over counts. Surplus: the pace alone, going over is fine.
+ */
+export function calorieColor(value: number, goal: number, hour: number, mode: CalorieMode = 'maintenance'): GaugeColor {
+  if (mode === 'surplus') return paceColor(value, goal, hour);
   if (goal > 0 && value / goal > 1.1) return 'red';
   if (isOverGoal(value, goal)) return 'orange';
-  return paceColor(value, goal, hour);
+  return mode === 'deficit' ? 'green' : paceColor(value, goal, hour);
 }

@@ -45,6 +45,20 @@ describe('toneOf', () => {
   });
 });
 
+describe('toneOf calories by goal mode', () => {
+  test.each([
+    ['deficit', 0.7, 'warn'],
+    ['deficit', 0.85, 'good'],
+    ['deficit', 1.08, 'warn'],
+    ['deficit', 0.4, 'bad'],
+    ['surplus', 0.97, 'good'],
+    ['surplus', 1.3, 'good'],
+    ['surplus', 0.85, 'warn'],
+    ['surplus', 0.7, 'bad'],
+    ['maintenance', 0.85, 'warn'],
+  ] as const)('%s at %s of the goal is %s', (kcalMode, ratio, tone) => expect(toneOf(calories, { ...goals, kcalMode }, ratio * 2000)).toBe(tone));
+});
+
 describe('seriesFor', () => {
   const week = seriesFor(
     calories,

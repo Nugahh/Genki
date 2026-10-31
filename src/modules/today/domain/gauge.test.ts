@@ -67,3 +67,23 @@ describe('isOverGoal', () => {
     expect(isOverGoal(100, 0)).toBe(false);
   });
 });
+
+describe('calorieColor by goal mode', () => {
+  test('a deficit is not late for eating less: only going over counts', () => {
+    expect(calorieColor(400, 2000, 20, 'deficit')).toBe('green'); // 20 % at 20 h: far behind the pace
+    expect(calorieColor(2000, 2000, 20, 'deficit')).toBe('green');
+    expect(calorieColor(2110, 2000, 20, 'deficit')).toBe('orange');
+    expect(calorieColor(2230, 2000, 20, 'deficit')).toBe('red');
+  });
+
+  test('keeping the weight is the pace and the overshoot, as before', () => {
+    expect(calorieColor(400, 2000, 20, 'maintenance')).toBe('red');
+    expect(calorieColor(2110, 2000, 20, 'maintenance')).toBe('orange');
+    expect(calorieColor(400, 2000, 20)).toBe('red'); // no mode: maintenance
+  });
+
+  test('gaining is the pace alone: going over is fine', () => {
+    expect(calorieColor(400, 2000, 20, 'surplus')).toBe('red');
+    expect(calorieColor(2500, 2000, 20, 'surplus')).toBe('green');
+  });
+});

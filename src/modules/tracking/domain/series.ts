@@ -1,15 +1,26 @@
 import type { DayFacts, Goals, MetricDefinition, Point, Summary, Tone } from './metric';
 import { addDays, type Bucket, type Period } from './period';
 
+// Calories by goal mode. Keeping the weight is the spec's band (§9); a deficit may run well under the goal but not over it; a gain must reach it.
+function calorieTone(mode: Goals['kcalMode'], ratio: number): Tone {
+  if (mode === 'deficit') {
+    if (ratio >= 0.8 && ratio <= 1.05) return 'good';
+    return (ratio >= 0.5 && ratio < 0.8) || (ratio > 1.05 && ratio <= 1.1) ? 'warn' : 'bad';
+  }
+  if (mode === 'surplus') {
+    if (ratio >= 0.95) return 'good';
+    return ratio >= 0.8 ? 'warn' : 'bad';
+  }
+  if (ratio >= 0.9 && ratio <= 1.05) return 'good';
+  return (ratio >= 0.6 && ratio < 0.9) || (ratio > 1.05 && ratio <= 1.1) ? 'warn' : 'bad';
+}
+
 /** How a value compares with the goal of its metric (spec §9, "Couleur des graphiques"). */
 export function toneOf(def: MetricDefinition, goals: Goals, value: number): Tone {
   const goal = def.goal?.(goals);
   if (def.target === 'none' || !goal) return 'none';
   const ratio = value / goal;
-  if (def.target === 'calories') {
-    if (ratio >= 0.9 && ratio <= 1.05) return 'good';
-    return (ratio >= 0.6 && ratio < 0.9) || (ratio > 1.05 && ratio <= 1.1) ? 'warn' : 'bad';
-  }
+  if (def.target === 'calories') return calorieTone(goals.kcalMode, ratio);
   if (ratio >= 0.9) return 'good';
   return ratio >= 0.6 ? 'warn' : 'bad';
 }

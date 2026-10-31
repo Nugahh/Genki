@@ -16,7 +16,14 @@ export type DayFacts = {
 };
 
 /** The goals of the profile that the charts measure against. */
-export type Goals = { kcal: number; proteinG: number; waterMl: number; steps: number };
+export type Goals = {
+  kcal: number;
+  /** What the calories goal is for (the settings' goal mode, redeclared); missing is keeping the weight. */
+  kcalMode?: 'deficit' | 'maintenance' | 'surplus';
+  proteinG: number;
+  waterMl: number;
+  steps: number;
+};
 
 /** How a finished day compares with its goal (spec §9); `none` for a metric with no goal to hit. */
 export type Tone = 'good' | 'warn' | 'bad' | 'none';
