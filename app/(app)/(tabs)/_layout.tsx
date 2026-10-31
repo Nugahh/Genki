@@ -1,12 +1,12 @@
 import { Tabs } from 'expo-router/js-tabs';
 import { Icon } from 'react-native-paper';
-import { HeaderSync } from '@/HeaderSync';
+import { HeaderActions } from '@/HeaderActions';
 import { MaterialTabBar } from '@/MaterialTabBar';
 
 export default function TabsLayout() {
   return (
     // « history »: the back button of the phone goes back to the tab we came from (Suivi back to Today), not to the first tab.
-    <Tabs backBehavior="history" tabBar={(props) => <MaterialTabBar {...props} />} screenOptions={{ headerRight: () => <HeaderSync /> }}>
+    <Tabs backBehavior="history" tabBar={(props) => <MaterialTabBar {...props} />} screenOptions={{ headerRight: () => <HeaderActions /> }}>
       <Tabs.Screen
         name="index"
         options={{

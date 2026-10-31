@@ -6,3 +6,7 @@ export { settingsUseCases, type SettingsUseCases } from './application/settingsU
 export { inMemoryProfileRepository } from './adapters/inMemoryProfileRepository';
 export { useProfile } from './ui/useProfile';
 export { useUiPrefs } from './ui/useUiPrefs';
+export { GoalsScreen } from './ui/GoalsScreen';
+export { ProfileScreen } from './ui/ProfileScreen';
+export { SettingsScreen, type SettingsPage } from './ui/SettingsScreen';
+export { WaterContainersScreen } from './ui/WaterContainersScreen';

@@ -149,6 +149,30 @@ test('« Modifier le programme » opens the editor, and an exercise opens its hi
   expect(await screen.findByText('Aucune séance pour cet exercice.')).toBeTruthy();
 });
 
+test('the gear in the header opens the settings, and a page saves the goals and comes back', async () => {
+  signedInAs({ uid: 'alice' });
+  await renderRouter();
+  await fireEvent.press(screen.getByLabelText('Réglages'));
+  expect(screen).toHavePathname('/settings');
+  await fireEvent.press(screen.getByText('Objectifs'));
+  expect(screen).toHavePathname('/settings/goals');
+  await fireEvent.changeText(screen.getByLabelText('Calories (kcal par jour)'), '2000');
+  await fireEvent.press(screen.getByText('Enregistrer'));
+  expect(screen).toHavePathname('/settings');
+  // The settings list shows the new goal.
+  expect(await screen.findByLabelText(/^Objectifs, 2.000 kcal/)).toBeTruthy();
+});
+
+test('the settings reach the profile and the water containers', async () => {
+  signedInAs({ uid: 'alice' });
+  await renderRouter(undefined, { initialUrl: '/settings' });
+  await fireEvent.press(screen.getByText('Profil'));
+  expect(screen).toHavePathname('/settings/profile');
+  await act(async () => router.back());
+  await fireEvent.press(screen.getByText('Eau'));
+  expect(screen).toHavePathname('/settings/water');
+});
+
 test('the Repas tab opens the day journal', async () => {
   signedInAs({ uid: 'alice' });
   await renderRouter();

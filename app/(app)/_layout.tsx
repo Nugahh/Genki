@@ -14,6 +14,7 @@ export default function AppLayout() {
     <AppProvider app={app}>
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="settings" />
         <Stack.Screen name="workout" options={{ headerShown: true, title: 'Séance' }} />
         <Stack.Screen name="plan" options={{ headerShown: true, title: 'Mon programme' }} />
         <Stack.Screen name="exercise" options={{ headerShown: true, title: 'Historique' }} />
