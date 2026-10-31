@@ -1,0 +1,61 @@
+export type Period = 'day' | 'week' | 'year';
+/** A stretch of days (inclusive, `YYYY-MM-DD` keys) drawn as one bar or one point. */
+export type Bucket = { key: string; label: string; from: string; to: string };
+
+export const isPeriod = (value: unknown): value is Period => value === 'day' || value === 'week' || value === 'year';
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+// Day keys are calendar days: UTC arithmetic has no time-zone or clock-change drift.
+const toDate = (day: string) => new Date(`${day}T00:00:00Z`);
+const toKey = (date: Date) => date.toISOString().slice(0, 10);
+
+const WEEKDAYS = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
+const WEEKDAYS_SHORT = ['dim.', 'lun.', 'mar.', 'mer.', 'jeu.', 'ven.', 'sam.'];
+const MONTHS = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
+const MONTHS_SHORT = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
+
+export const addDays = (day: string, n: number) => toKey(new Date(toDate(day).getTime() + n * DAY_MS));
+
+/** The Monday of the calendar week that holds `day` (a Sunday belongs to the week before). */
+export const mondayOf = (day: string) => addDays(day, -((toDate(day).getUTCDay() + 6) % 7));
+
+const lastDayOfMonth = (year: number, month: number) => toKey(new Date(Date.UTC(year, month + 1, 0)));
+
+export function bucketsFor(period: Period, anchor: string): Bucket[] {
+  if (period === 'day') return [{ key: anchor, label: WEEKDAYS_SHORT[toDate(anchor).getUTCDay()], from: anchor, to: anchor }];
+  if (period === 'week') {
+    const monday = mondayOf(anchor);
+    return Array.from({ length: 7 }, (_, i) => {
+      const day = addDays(monday, i);
+      return { key: day, label: WEEKDAYS_SHORT[toDate(day).getUTCDay()], from: day, to: day };
+    });
+  }
+  const year = Number(anchor.slice(0, 4));
+  return MONTHS_SHORT.map((label, month) => {
+    const key = `${year}-${String(month + 1).padStart(2, '0')}`;
+    return { key, label, from: `${key}-01`, to: lastDayOfMonth(year, month) };
+  });
+}
+
+export const rangeOf = (buckets: Bucket[]) => ({ from: buckets[0].from, to: buckets[buckets.length - 1].to });
+
+/** The same place one period earlier (-1) or later (1): a day, a week, or a year. */
+export function shiftAnchor(period: Period, anchor: string, step: -1 | 1): string {
+  if (period === 'day') return addDays(anchor, step);
+  if (period === 'week') return addDays(anchor, 7 * step);
+  const year = Number(anchor.slice(0, 4)) + step;
+  const month = Number(anchor.slice(5, 7)) - 1;
+  const last = lastDayOfMonth(year, month);
+  return `${year}${anchor.slice(4, 8)}${String(Math.min(Number(anchor.slice(8, 10)), Number(last.slice(8, 10)))).padStart(2, '0')}`;
+}
+
+const shortDate = (day: string) => `${Number(day.slice(8, 10))} ${MONTHS_SHORT[Number(day.slice(5, 7)) - 1]}`;
+
+export function periodTitle(period: Period, anchor: string): string {
+  if (period === 'year') return anchor.slice(0, 4);
+  if (period === 'week') {
+    const monday = mondayOf(anchor);
+    return `Semaine du ${shortDate(monday)} au ${shortDate(addDays(monday, 6))}`;
+  }
+  return `${WEEKDAYS[toDate(anchor).getUTCDay()]} ${Number(anchor.slice(8, 10))} ${MONTHS[Number(anchor.slice(5, 7)) - 1]}`;
+}
