@@ -21,7 +21,8 @@ type Props = {
   /** « + Repas »: the host opens the add-food screen. */
   onAddMeal: () => void;
   /** The Calories and Protéines gauges: the host opens the day journal. */
-  onOpenMeals: () => void;
+  /** Opens the Suivi of a measure (spec §6, « Tout est touchable »). */
+  onOpenMetric: (metric: 'calories' | 'protein') => void;
   /** The session to do next, when there is a programme in progress: « Démarrer » opens it in the host. */
   session?: { title: string; subtitle: string; onStart: () => void };
 };
@@ -47,7 +48,7 @@ function encouragement(totals: DayTotals, goals: Profile['goals']) {
 /** A gauge with no goal is drawn full. */
 const progress = (value: number, goal: number) => (goal > 0 ? value / goal : 1);
 
-export function TodayScreen({ profile, userName, clock, dayTotals, hydration, run, onAddMeal, onOpenMeals, session }: Props) {
+export function TodayScreen({ profile, userName, clock, dayTotals, hydration, run, onAddMeal, onOpenMetric, session }: Props) {
   const now = useNow(clock);
   const day = dayKey(now, profile.timezone);
   const hour = hourOfDay(now, profile.timezone);
@@ -101,13 +102,13 @@ export function TodayScreen({ profile, userName, clock, dayTotals, hydration, ru
             value={kcal(totals.kcal)}
             goal={kcal(goals.kcal)}
             remaining={overGoal ? 'au-dessus de l’objectif' : remaining(totals.kcal, goals.kcal, kcal)}
-            hint="Ouvre le journal des repas"
+            hint="Ouvre le suivi des calories"
             progress={progress(totals.kcal, goals.kcal)}
             expected={expected}
             color={calorieColor(totals.kcal, goals.kcal, hour)}
             status={overGoal ? 'au-dessus de l’objectif' : undefined}
             icon="chevron-right"
-            onPress={onOpenMeals}
+            onPress={() => onOpenMetric('calories')}
           />
           <GaugeBar
             label="Protéines"
@@ -115,12 +116,12 @@ export function TodayScreen({ profile, userName, clock, dayTotals, hydration, ru
             value={grams(totals.proteinG)}
             goal={grams(goals.proteinG)}
             remaining={remaining(totals.proteinG, goals.proteinG, grams)}
-            hint="Ouvre le journal des repas"
+            hint="Ouvre le suivi des protéines"
             progress={progress(totals.proteinG, goals.proteinG)}
             expected={expected}
             color={paceColor(totals.proteinG, goals.proteinG, hour)}
             icon="chevron-right"
-            onPress={onOpenMeals}
+            onPress={() => onOpenMetric('protein')}
           />
           {session && (
             <Surface mode="flat" elevation={1} style={styles.session}>

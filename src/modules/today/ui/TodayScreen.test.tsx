@@ -29,7 +29,7 @@ async function renderToday({ kcal = 0, proteinG = 0, waterMl = 0, userName, cloc
       ),
   };
   const onAddMeal = jest.fn();
-  const onOpenMeals = jest.fn();
+  const onOpenMetric = jest.fn();
   await render(
     <PaperProvider theme={theme}>
       <TodayScreen
@@ -41,11 +41,11 @@ async function renderToday({ kcal = 0, proteinG = 0, waterMl = 0, userName, cloc
         hydration={waterUseCases(water, clock, DEFAULT_PROFILE.timezone)}
         run={(write) => void write()}
         onAddMeal={onAddMeal}
-        onOpenMeals={onOpenMeals}
+        onOpenMetric={onOpenMetric}
       />
     </PaperProvider>,
   );
-  return { onAddMeal, onOpenMeals, water };
+  return { onAddMeal, onOpenMetric, water };
 }
 
 test('a quick-add button fills the water gauge', async () => {
@@ -178,8 +178,8 @@ test('the Calories and Protéines gauges show the day against the goals', async 
 test('each gauge tells a screen reader what a touch does', async () => {
   await renderToday();
   expect(screen.getByLabelText(/^Eau : /).props.accessibilityHint).toBe('Ajoute une quantité d’eau de ton choix');
-  expect(screen.getByLabelText(/^Calories : /).props.accessibilityHint).toBe('Ouvre le journal des repas');
-  expect(screen.getByLabelText(/^Protéines : /).props.accessibilityHint).toBe('Ouvre le journal des repas');
+  expect(screen.getByLabelText(/^Calories : /).props.accessibilityHint).toBe('Ouvre le suivi des calories');
+  expect(screen.getByLabelText(/^Protéines : /).props.accessibilityHint).toBe('Ouvre le suivi des protéines');
 });
 
 test('a gauge shows the day in big, and beneath it the goal and what is left of it', async () => {
@@ -195,12 +195,12 @@ test('a gauge at its goal says so instead of a remainder, and Calories above it 
   expect(screen.getByText(`sur ${fr(2200)} kcal · au-dessus de l’objectif`)).toBeTruthy();
 });
 
-test('the Calories and Protéines gauges open the Meals tab', async () => {
-  const { onOpenMeals } = await renderToday();
+test('the Calories and Protéines gauges open their Suivi', async () => {
+  const { onOpenMetric } = await renderToday();
   await fireEvent.press(screen.getByLabelText(/^Calories : /));
-  expect(onOpenMeals).toHaveBeenCalledTimes(1);
+  expect(onOpenMetric).toHaveBeenLastCalledWith('calories');
   await fireEvent.press(screen.getByLabelText(/^Protéines : /));
-  expect(onOpenMeals).toHaveBeenCalledTimes(2);
+  expect(onOpenMetric).toHaveBeenLastCalledWith('protein');
 });
 
 test('« + Repas » adds a meal', async () => {

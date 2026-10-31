@@ -20,7 +20,7 @@ export default function Today() {
       hydration={hydration}
       run={run}
       onAddMeal={() => router.push({ pathname: '/add-food', params: { meal: defaultMeal(hourOfDay(clock.now(), profile.timezone)) } })}
-      onOpenMeals={() => router.navigate('/repas')}
+      onOpenMetric={(metric) => router.navigate({ pathname: '/suivi/[section]', params: { section: 'nutrition', metric } })}
       session={next && { title: next.title, subtitle: next.subtitle, onStart: () => router.push({ pathname: '/workout', params: { session: String(next.index) } }) }}
     />
   );

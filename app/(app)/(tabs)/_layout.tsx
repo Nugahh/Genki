@@ -1,17 +1,12 @@
 import { Tabs } from 'expo-router/js-tabs';
 import { Icon } from 'react-native-paper';
-import { useApp } from '@/appContext';
+import { HeaderSync } from '@/HeaderSync';
 import { MaterialTabBar } from '@/MaterialTabBar';
-import { SyncIcon } from '@/modules/today';
-
-function HeaderSync() {
-  const { app, writeFailed } = useApp();
-  return <SyncIcon dayTotals={app.dayTotals} clock={app.clock} timezone={app.profile.timezone} writeFailed={writeFailed} />;
-}
 
 export default function TabsLayout() {
   return (
-    <Tabs tabBar={(props) => <MaterialTabBar {...props} />} screenOptions={{ headerRight: () => <HeaderSync /> }}>
+    // « history »: the back button of the phone goes back to the tab we came from (Suivi back to Today), not to the first tab.
+    <Tabs backBehavior="history" tabBar={(props) => <MaterialTabBar {...props} />} screenOptions={{ headerRight: () => <HeaderSync /> }}>
       <Tabs.Screen
         name="index"
         options={{
@@ -32,6 +27,17 @@ export default function TabsLayout() {
         options={{
           title: 'Sport',
           tabBarIcon: ({ color, size }) => <Icon source="dumbbell" color={color as string} size={size} />,
+        }}
+      />
+      <Tabs.Screen
+        name="suivi"
+        options={{
+          title: 'Suivi',
+          // Its stack has the headers: the hub's, and a section's with its back arrow.
+          headerShown: false,
+          // Mounted from the start, so that a section opened from Today lands on top of the hub (back goes to the hub).
+          lazy: false,
+          tabBarIcon: ({ color, size }) => <Icon source="chart-line" color={color as string} size={size} />,
         }}
       />
     </Tabs>

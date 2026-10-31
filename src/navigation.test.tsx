@@ -1,4 +1,5 @@
-import { fireEvent, renderRouter, screen } from 'expo-router/testing-library';
+import { act, fireEvent, renderRouter, screen, waitFor } from 'expo-router/testing-library';
+import { router } from 'expo-router';
 import { Appearance } from 'react-native';
 import type { App } from '@/composition';
 import { signInWithGoogle, useAuthUser } from '@/platform/firebase';
@@ -156,12 +157,62 @@ test('the Repas tab opens the day journal', async () => {
   expect(screen.getByText('Petit-déjeuner')).toBeTruthy();
 });
 
-test('the Calories gauge on Today opens the day journal', async () => {
+test('the Calories and Protéines gauges on Today open their Suivi', async () => {
   signedInAs({ uid: 'alice' });
   await renderRouter();
   await fireEvent.press(screen.getByLabelText(/^Calories : /));
+  expect(screen).toHavePathname('/suivi/nutrition');
+  expect(screen).toHaveSearchParams({ section: 'nutrition', metric: 'calories' });
+  expect(screen.getByText('Ajoute un repas pour voir tes calories.')).toBeTruthy();
+  await act(async () => router.back()); // the hub, under the section
+  expect(screen).toHavePathname('/suivi');
+});
+
+test('the Protéines gauge opens the protein curve', async () => {
+  signedInAs({ uid: 'alice' });
+  await renderRouter();
+  await fireEvent.press(screen.getByLabelText(/^Protéines : /));
+  expect(screen).toHaveSearchParams({ section: 'nutrition', metric: 'protein' });
+  expect(screen.getByText('Ajoute un repas pour voir tes protéines.')).toBeTruthy();
+});
+
+test('the Suivi tab opens the hub, and a card opens its section', async () => {
+  signedInAs({ uid: 'alice' });
+  await renderRouter();
+  await pressTab('Suivi');
+  expect(screen).toHavePathname('/suivi');
+  expect(screen.getByText('Semaine du 19 oct. au 25 oct.')).toBeTruthy();
+  await fireEvent.press(screen.getByTestId('card-water'));
+  expect(screen).toHavePathname('/suivi/eau');
+  expect(screen).toHaveSearchParams({ section: 'eau', metric: 'water' });
+});
+
+test('an unknown Suivi section goes back to the hub', async () => {
+  jest.spyOn(console, 'warn').mockImplementation(() => {});
+  signedInAs({ uid: 'alice' });
+  await renderRouter(undefined, { initialUrl: '/suivi/bogus' });
+  expect(screen).toHavePathname('/suivi');
+});
+
+test('from Suivi the back button goes back to Today, not to the first tab of a list', async () => {
+  signedInAs({ uid: 'alice' });
+  await renderRouter();
+  await pressTab('Repas');
+  await pressTab('Suivi');
+  await act(async () => router.back());
   expect(screen).toHavePathname('/repas');
-  expect(screen.getByText('Petit-déjeuner')).toBeTruthy();
+  await act(async () => router.back());
+  expect(screen).toHavePathname('/');
+});
+
+test('touching the Suivi tab again, from a section, goes back to the hub', async () => {
+  signedInAs({ uid: 'alice' });
+  await renderRouter();
+  await pressTab('Suivi');
+  await fireEvent.press(screen.getByTestId('card-water'));
+  await pressTab('Suivi');
+  // The stack pops on the next frame.
+  await waitFor(() => expect(screen).toHavePathname('/suivi'));
 });
 
 test('« + Repas » opens the search for the meal of the hour, and adding the food comes back to Today', async () => {

@@ -50,8 +50,9 @@ export function MetricCard({ def, period, view, onPress }: Props) {
 }
 
 const styles = StyleSheet.create({
-  card: { borderRadius: 16, overflow: 'hidden' },
-  touch: { padding: 16, minHeight: 48 },
+  card: { borderRadius: 16 },
+  // The ripple is clipped to the card here: a Surface with overflow hidden loses its shadow.
+  touch: { padding: 16, minHeight: 48, borderRadius: 16, overflow: 'hidden' },
   row: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   text: { flex: 1, gap: 2 },
 });

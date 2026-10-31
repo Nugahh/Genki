@@ -1,0 +1,38 @@
+import { Redirect, router, Stack, useLocalSearchParams } from 'expo-router';
+import { useApp } from '@/appContext';
+import { WaterDay } from '@/modules/hydration';
+import { useUiPrefs } from '@/modules/settings';
+import { NutritionExtras, sectionById, SectionScreen, TrainingExtras } from '@/modules/tracking';
+import { useNextSession } from '@/modules/training';
+
+export default function SuiviSection() {
+  const { section, metric } = useLocalSearchParams<{ section: string; metric?: string }>();
+  const { app, run } = useApp();
+  const [ui, changeUi] = useUiPrefs(app.settings, run);
+  const next = useNextSession(app.training, app.clock, app.profile.timezone);
+  const info = sectionById(section);
+  if (!info) return <Redirect href="/suivi" />;
+
+  return (
+    <>
+      <Stack.Screen options={{ title: info.label }} />
+      <SectionScreen
+        // A new statistic asked for (from Today) starts a new screen: the chip chosen before must not win.
+        key={`${info.id}-${metric}`}
+        section={info.id}
+        metricId={metric}
+        tracking={app.tracking}
+        ui={ui}
+        onUiChange={changeUi}
+        clock={app.clock}
+        timezone={app.profile.timezone}
+        renderExtras={({ period, day, view }) => {
+          if (info.id === 'nutrition') return <NutritionExtras split={view?.split} onOpenJournal={() => router.navigate('/repas')} />;
+          if (info.id === 'eau') return period === 'day' ? <WaterDay hydration={app.hydration} day={day} timezone={app.profile.timezone} run={run} /> : null;
+          if (info.id === 'entrainement') return <TrainingExtras tracking={app.tracking} period={period} day={day} planned={next?.perWeek} onOpenSport={() => router.navigate('/sport')} />;
+          return null;
+        }}
+      />
+    </>
+  );
+}
