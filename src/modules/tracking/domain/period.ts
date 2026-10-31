@@ -1,8 +1,14 @@
 export type Period = 'day' | 'week' | 'year';
 /** A stretch of days (inclusive, `YYYY-MM-DD` keys) drawn as one bar or one point. */
-export type Bucket = { key: string; label: string; from: string; to: string };
-
-export const isPeriod = (value: unknown): value is Period => value === 'day' || value === 'week' || value === 'year';
+export type Bucket = {
+  key: string;
+  /** Short, for under a bar: « lun. », « janv. ». */
+  label: string;
+  /** Whole, for a screen reader: « lundi », « janvier ». */
+  spoken: string;
+  from: string;
+  to: string;
+};
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 // Day keys are calendar days: UTC arithmetic has no time-zone or clock-change drift.
@@ -21,19 +27,21 @@ export const mondayOf = (day: string) => addDays(day, -((toDate(day).getUTCDay()
 
 const lastDayOfMonth = (year: number, month: number) => toKey(new Date(Date.UTC(year, month + 1, 0)));
 
+const dayBucket = (day: string): Bucket => {
+  const weekday = toDate(day).getUTCDay();
+  return { key: day, label: WEEKDAYS_SHORT[weekday], spoken: WEEKDAYS[weekday], from: day, to: day };
+};
+
 export function bucketsFor(period: Period, anchor: string): Bucket[] {
-  if (period === 'day') return [{ key: anchor, label: WEEKDAYS_SHORT[toDate(anchor).getUTCDay()], from: anchor, to: anchor }];
+  if (period === 'day') return [dayBucket(anchor)];
   if (period === 'week') {
     const monday = mondayOf(anchor);
-    return Array.from({ length: 7 }, (_, i) => {
-      const day = addDays(monday, i);
-      return { key: day, label: WEEKDAYS_SHORT[toDate(day).getUTCDay()], from: day, to: day };
-    });
+    return Array.from({ length: 7 }, (_, i) => dayBucket(addDays(monday, i)));
   }
   const year = Number(anchor.slice(0, 4));
   return MONTHS_SHORT.map((label, month) => {
     const key = `${year}-${String(month + 1).padStart(2, '0')}`;
-    return { key, label, from: `${key}-01`, to: lastDayOfMonth(year, month) };
+    return { key, label, spoken: MONTHS[month], from: `${key}-01`, to: lastDayOfMonth(year, month) };
   });
 }
 

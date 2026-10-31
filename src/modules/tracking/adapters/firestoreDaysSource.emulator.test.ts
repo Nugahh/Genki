@@ -37,12 +37,17 @@ test('reads the days between two days, both included, with the facts they hold',
   const facts = await range('2026-11-01', '2026-11-08');
   expect([...facts.keys()]).toEqual(['2026-11-01', '2026-11-08']);
   expect(facts.get('2026-11-01')).toEqual({ kcal: 1800, proteinG: 90, carbsG: 200, fatG: 60, waterMl: 2000, steps: 7500, weightKg: 80.5, waistCm: 90 });
-  expect(facts.get('2026-11-08')).toMatchObject({ kcal: 2100, proteinG: undefined });
+  expect(facts.get('2026-11-08')).toEqual({ kcal: 2100 });
 });
 
 test('a total back at 0 is a day with no record, and a field that is not a number is ignored', async () => {
   await seed('2026-11-02', { kcal: 0, waterMl: 'lots', weightKg: 79 });
-  expect((await range('2026-11-01', '2026-11-08')).get('2026-11-02')).toMatchObject({ kcal: undefined, waterMl: undefined, weightKg: 79 });
+  expect((await range('2026-11-01', '2026-11-08')).get('2026-11-02')).toEqual({ weightKg: 79 });
+});
+
+test('the float residue of a sum taken back is a day with no record', async () => {
+  await seed('2026-11-02', { carbsG: 4e-16, kcal: -0.04, proteinG: 0.05 });
+  expect((await range('2026-11-01', '2026-11-08')).get('2026-11-02')).toEqual({ proteinG: 0.05 });
 });
 
 test('another user cannot read the days', async () => {

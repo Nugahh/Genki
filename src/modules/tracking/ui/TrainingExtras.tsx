@@ -16,7 +16,7 @@ type Props = {
 };
 
 function WeekSessions({ tracking, day, planned }: Pick<Props, 'tracking' | 'day' | 'planned'>) {
-  const view = useMetricView(tracking, metricById('sessions')!, 'week', day);
+  const { view } = useMetricView(tracking, metricById('sessions')!, 'week', day);
   if (!view) return null;
   const done = view.points.reduce((sum, p) => sum + (p.value ?? 0), 0);
   return (

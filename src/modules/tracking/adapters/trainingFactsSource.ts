@@ -13,7 +13,9 @@ export function trainingFactsSource(training: Pick<TrainingUseCases, 'observeWor
           const facts = new Map<string, DayFacts>();
           for (const log of logs) {
             const day = facts.get(log.day) ?? { volumeKg: 0, sessions: 0 };
-            facts.set(log.day, { volumeKg: (day.volumeKg ?? 0) + log.sets.reduce((sum, s) => sum + s.reps * s.kg, 0), sessions: (day.sessions ?? 0) + 1 });
+            // The rules check the size of the sets list, not its shape: a malformed set counts for nothing.
+            const lifted = log.sets.reduce((sum, s) => sum + (Number.isFinite(s.reps * s.kg) ? s.reps * s.kg : 0), 0);
+            facts.set(log.day, { volumeKg: (day.volumeKg ?? 0) + lifted, sessions: (day.sessions ?? 0) + 1 });
           }
           onNext(facts);
         },

@@ -6,6 +6,7 @@ import { SuiviHub } from '@/modules/tracking';
 export default function Suivi() {
   const { app, run } = useApp();
   const [ui, changeUi] = useUiPrefs(app.settings, run);
+  if (!ui) return null; // the first snapshot is from the cache: no flash of defaults
   return (
     <SuiviHub
       tracking={app.tracking}

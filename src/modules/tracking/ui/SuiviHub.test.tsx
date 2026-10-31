@@ -2,6 +2,7 @@ import { fireEvent, render, screen, within } from '@testing-library/react-native
 import { PaperProvider } from 'react-native-paper';
 import { theme } from '@/theme';
 import { inMemoryFactsSource } from '../adapters/inMemoryFactsSource';
+import type { FactsSource } from '../application/ports';
 import { trackingUseCases } from '../application/trackingUseCases';
 import type { DayFacts } from '../domain/metric';
 import { metricById } from '../domain/metrics';
@@ -12,8 +13,10 @@ const goals = { kcal: 2000, proteinG: 100, waterMl: 2500, steps: 8000 };
 const clock = { now: () => new Date('2026-10-31T10:00:00Z') }; // Saturday 31 October
 const calories = metricById('calories')!;
 
-async function setup(ui: UiPrefs = { hubMetrics: ['calories', 'water', 'weight'] }, facts: Record<string, DayFacts> = {}) {
-  const tracking = trackingUseCases({ sources: [inMemoryFactsSource(facts)], goals, clock, timezone: 'Europe/Paris' });
+const refusing = { observeRange: (_from: string, _to: string, _next: unknown, onError: (e: Error) => void) => (onError(new Error('denied')), () => {}) };
+
+async function setup(ui: UiPrefs = { hubMetrics: ['calories', 'water', 'weight'] }, facts: Record<string, DayFacts> = {}, days: FactsSource = inMemoryFactsSource(facts)) {
+  const tracking = trackingUseCases({ sources: { days, training: inMemoryFactsSource() }, goals, clock, timezone: 'Europe/Paris' });
   const onUiChange = jest.fn();
   const onOpen = jest.fn();
   await render(
@@ -40,6 +43,27 @@ test('a card says the average of the finished days of the week and how it moved 
 test('a card with nothing recorded says so', async () => {
   await setup();
   expect(within(screen.getByTestId('card-weight')).getByText('Pas encore de mesure')).toBeTruthy();
+});
+
+test('a card says when only today is recorded: there is no finished day to average yet', async () => {
+  await setup({ hubMetrics: ['calories'] }, { '2026-10-31': { kcal: 300 } });
+  expect(within(screen.getByTestId('card-calories')).getByText('Pas encore de jour terminé')).toBeTruthy();
+});
+
+test('a card says when its source refuses the read', async () => {
+  await setup({ hubMetrics: ['calories'] }, {}, refusing as never);
+  expect(within(screen.getByTestId('card-calories')).getByText('Impossible de charger')).toBeTruthy();
+});
+
+test('an empty hub says how to fill it', async () => {
+  await setup({ hubMetrics: [] });
+  expect(screen.getByText('Aucune statistique ici pour l’instant. Touche « Modifier » pour en ajouter.')).toBeTruthy();
+});
+
+test('in the year view, a card is the mean of the months', async () => {
+  await setup({ hubMetrics: ['calories'], period: 'year' }, { '2026-09-15': { kcal: 1800 }, '2026-10-01': { kcal: 2000 }, '2025-10-01': { kcal: 1000 } });
+  expect(screen.getByText('2026')).toBeTruthy();
+  expect(within(screen.getByTestId('card-calories')).getByText(calories.format(1900))).toBeTruthy();
 });
 
 test('touching a card opens its section on that statistic', async () => {
@@ -87,6 +111,7 @@ describe('the editor', () => {
 
   test('closes', async () => {
     await open();
+    expect(screen.getByText('Ajouter une statistique')).toBeTruthy();
     await fireEvent.press(screen.getByText('Terminé'));
     expect(screen.queryByText('Ajouter une statistique')).toBeNull();
   });

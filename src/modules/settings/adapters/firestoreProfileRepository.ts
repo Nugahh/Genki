@@ -2,6 +2,8 @@ import { doc, onSnapshot, setDoc, type Firestore } from '@react-native-firebase/
 import type { ProfileRepository } from '../application/ports';
 import type { UiPrefs } from '../domain/ui';
 
+const PERIODS = ['day', 'week', 'year'];
+
 /** The profile document `users/{uid}`; so far it holds the display preferences, in `ui`. */
 export function firestoreProfileRepository(db: Firestore, uid: string): ProfileRepository {
   const profile = doc(db, 'users', uid);
@@ -12,12 +14,12 @@ export function firestoreProfileRepository(db: Firestore, uid: string): ProfileR
         profile,
         (snapshot) => {
           const ui = snapshot.data()?.ui;
-          onNext({ ...(Array.isArray(ui?.hubMetrics) && { hubMetrics: ui.hubMetrics }), ...(typeof ui?.period === 'string' && { period: ui.period }) });
+          onNext({ ...(Array.isArray(ui?.hubMetrics) && { hubMetrics: ui.hubMetrics }), ...(PERIODS.includes(ui?.period) && { period: ui.period }) });
         },
         onError,
       );
     },
-    // Firestore refuses undefined values, and a merge keeps the fields that are not given.
-    saveUi: (ui: UiPrefs) => setDoc(profile, { ui: Object.fromEntries(Object.entries(ui).filter(([, value]) => value !== undefined)) }, { merge: true }),
+    // A merge keeps the fields that are not given.
+    saveUi: (ui: UiPrefs) => setDoc(profile, { ui }, { merge: true }),
   };
 }

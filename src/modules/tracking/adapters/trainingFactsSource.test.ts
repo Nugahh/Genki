@@ -20,8 +20,12 @@ test('sums reps × kg and counts the workouts of each day, within the range', as
   await workouts.add(log('2026-11-02', [{ reps: 8, kg: 20 }, { reps: 8, kg: 20 }]));
   await workouts.add(log('2026-11-02', [{ reps: 10, kg: 0 }])); // body weight: no volume
   await workouts.add(log('2026-11-09', [{ reps: 8, kg: 50 }])); // out of the range
+  await workouts.add(log('2026-11-05', [{ reps: 8, kg: NaN }])); // a malformed set lifts nothing
 
   let seen = new Map<string, DayFacts>();
   trainingFactsSource(training).observeRange('2026-11-01', '2026-11-08', (facts) => (seen = facts), () => {});
-  expect([...seen]).toEqual([['2026-11-02', { volumeKg: 320, sessions: 2 }]]);
+  expect([...seen]).toEqual([
+    ['2026-11-02', { volumeKg: 320, sessions: 2 }],
+    ['2026-11-05', { volumeKg: 0, sessions: 1 }],
+  ]);
 });

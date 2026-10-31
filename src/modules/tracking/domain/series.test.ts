@@ -1,5 +1,5 @@
 import type { DayFacts, Goals } from './metric';
-import { DEFAULT_HUB, METRICS, SECTIONS, metricById, metricsOf } from './metrics';
+import { DEFAULT_HUB, METRICS, metricById, sectionById } from './metrics';
 import { bucketsFor, rangeOf } from './period';
 import { headline, inTarget, macroSplit, seriesFor, summarize, toneOf, variation } from './series';
 
@@ -15,7 +15,7 @@ describe('the registry', () => {
   test('has unique ids, a section for each metric, and a hub made of known metrics', () => {
     expect(new Set(METRICS.map((m) => m.id)).size).toBe(METRICS.length);
     expect(DEFAULT_HUB.every((id) => metricById(id))).toBe(true);
-    expect(SECTIONS.every((s) => metricsOf(s.id).length > 0)).toBe(true);
+    expect(METRICS.every((m) => sectionById(m.section))).toBe(true);
   });
 });
 

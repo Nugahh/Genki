@@ -21,6 +21,9 @@ export type Goals = { kcal: number; proteinG: number; waterMl: number; steps: nu
 /** How a finished day compares with its goal (spec §9); `none` for a metric with no goal to hit. */
 export type Tone = 'good' | 'warn' | 'bad' | 'none';
 
+/** Where a metric's facts are read: each metric listens to one source only. */
+export type SourceId = 'days' | 'training';
+
 export type SectionId = 'nutrition' | 'activite' | 'corps' | 'entrainement' | 'eau';
 export type Tint = 'water' | 'calories' | 'protein' | 'carbs' | 'fat' | 'steps' | 'weight' | 'waist' | 'training';
 
@@ -29,8 +32,8 @@ export type MetricDefinition = {
   id: string;
   section: SectionId;
   label: string;
-  unit: string;
   tint: Tint;
+  source: SourceId;
   /** Bars for what adds up over a day, a line for a measure. */
   kind: 'bars' | 'line';
   value: (facts: DayFacts) => number | undefined;
@@ -38,6 +41,8 @@ export type MetricDefinition = {
   /** `atLeast`: at 90 % of the goal or more is on target; `calories`: from 90 % to 105 %; `none`: no target. */
   target: 'atLeast' | 'calories' | 'none';
   format: (value: number) => string;
+  /** Whether the day view compares the day with the day before: only for what one measure a day gives (spec §6), not for a total that is still adding up. */
+  dayCompare: boolean;
   /** What to say when nothing was recorded in the period. */
   emptyHint: string;
 };

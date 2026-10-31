@@ -3,22 +3,24 @@ import { Icon, Surface, Text, TouchableRipple, useTheme } from 'react-native-pap
 import type { MetricView } from '../application/trackingUseCases';
 import type { MetricDefinition } from '../domain/metric';
 import type { Period } from '../domain/period';
+import { BEFORE, signed } from './changeText';
 import { MiniCurve } from './MiniCurve';
 
-const BEFORE: Record<Period, string> = { day: 'la veille', week: 'la semaine précédente', year: 'l’année précédente' };
-
-type Props = { def: MetricDefinition; period: Period; view: MetricView | null; onPress: () => void };
+type Props = { def: MetricDefinition; period: Period; view: MetricView | null; failed?: boolean; onPress: () => void };
 
 /** A statistic on the hub: its number over the period, how it moved since the one before, its shape. Touch to open it. */
-export function MetricCard({ def, period, view, onPress }: Props) {
+export function MetricCard({ def, period, view, failed = false, onPress }: Props) {
   const { colors } = useTheme();
   const value = view?.headline;
   const change = view?.change;
   const valueText = value === undefined ? undefined : def.format(value);
-  const changeText = change === undefined ? undefined : change === 0 ? 'Inchangé' : `${change > 0 ? '+' : '−'}${def.format(Math.abs(change))}`;
+  const changeText = change === undefined ? undefined : signed(def, change);
+  // Only today has a value: the week has no finished day to average yet.
+  const emptyText = view?.points.some((p) => p.value !== undefined) ? 'Pas encore de jour terminé' : 'Pas encore de mesure';
+  const noValue = failed ? 'Impossible de charger' : emptyText;
   const spoken = [
     def.label,
-    valueText ?? (view ? 'pas encore de mesure' : 'chargement'),
+    valueText ?? (failed ? 'impossible de charger' : view ? emptyText.toLowerCase() : 'chargement'),
     change === undefined ? undefined : change === 0 ? `inchangé par rapport à ${BEFORE[period]}` : `${change > 0 ? 'plus' : 'moins'} ${def.format(Math.abs(change))} par rapport à ${BEFORE[period]}`,
   ]
     .filter(Boolean)
@@ -30,9 +32,9 @@ export function MetricCard({ def, period, view, onPress }: Props) {
         <View style={styles.row}>
           <View style={styles.text}>
             <Text variant="titleMedium">{def.label}</Text>
-            {view && (
+            {(view || failed) && (
               <Text variant="headlineSmall" style={valueText === undefined && { color: colors.onSurfaceVariant }}>
-                {valueText ?? 'Pas encore de mesure'}
+                {valueText ?? noValue}
               </Text>
             )}
             {changeText && (

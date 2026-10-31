@@ -39,7 +39,7 @@ jest.mock('@/composition', () => {
         return trainingUseCases({ plans: inMemoryPlanRepository(), workouts: inMemoryWorkoutRepository(milestones), milestones, clock, timezone: DEFAULT_PROFILE.timezone });
       })(),
       settings: settingsUseCases(inMemoryProfileRepository()),
-      tracking: trackingUseCases({ sources: [inMemoryFactsSource()], goals: DEFAULT_PROFILE.goals, clock, timezone: DEFAULT_PROFILE.timezone }),
+      tracking: trackingUseCases({ sources: { days: inMemoryFactsSource(), training: inMemoryFactsSource() }, goals: DEFAULT_PROFILE.goals, clock, timezone: DEFAULT_PROFILE.timezone }),
       nutrition: {
         meals: mealUseCases({
           entries: inMemoryFoodEntryRepository(),

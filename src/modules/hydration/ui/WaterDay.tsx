@@ -15,10 +15,12 @@ type Props = {
 /** The glasses of a day, newest first, each with its time and a way to take it back. */
 export function WaterDay({ hydration, day, timezone, run }: Props) {
   const { colors } = useTheme();
-  const [glasses, setGlasses] = useState<WaterEntry[] | null>(null);
+  // The list keeps its day, so that the glasses of another day are never shown while this one loads.
+  const [loaded, setLoaded] = useState<{ day: string; glasses: WaterEntry[] } | null>(null);
   // Listener errors show on the SyncIcon, which watches the same user's data.
-  useEffect(() => hydration.observeDay(day, setGlasses, () => {}), [hydration, day]);
-  if (glasses === null) return null;
+  useEffect(() => hydration.observeDay(day, (glasses) => setLoaded({ day, glasses }), () => {}), [hydration, day]);
+  if (loaded?.day !== day) return null;
+  const { glasses } = loaded;
 
   const time = (entry: WaterEntry) => entry.createdAt.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', timeZone: timezone });
   return (

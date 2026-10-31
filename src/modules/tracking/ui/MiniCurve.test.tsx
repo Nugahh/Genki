@@ -23,7 +23,17 @@ test('draws the curve in the tint of its metric, and hides it from screen reader
   expect(screen.getByTestId('mini-curve-box', hidden)).toHaveProp('importantForAccessibility', 'no-hide-descendants');
 });
 
-test('draws nothing for a lone value or none', async () => {
+test('draws nothing for a lone value', async () => {
   await draw([point(0, 1)]);
   expect(screen.queryByTestId('mini-curve', hidden)).toBeNull();
+});
+
+test('draws nothing when nothing was recorded', async () => {
+  await draw([point(0), point(1)]);
+  expect(screen.queryByTestId('mini-curve', hidden)).toBeNull();
+});
+
+test('leaves today so far out: a morning at 0 is not a dive', async () => {
+  await draw([point(0, 5), point(1, 6), { ...point(2, 0), partial: true }]);
+  expect(screen.getByTestId('mini-curve', hidden).props.d.match(/[ML]/g)).toHaveLength(2);
 });

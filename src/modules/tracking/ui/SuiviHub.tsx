@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
-import { Button } from 'react-native-paper';
+import { Button, Text, useTheme } from 'react-native-paper';
 import type { UiPrefs } from '@/modules/settings';
 import { dayKey, type Clock } from '@/shared/clock';
 import { useNow } from '@/shared/useNow';
@@ -23,14 +23,15 @@ type Props = {
   onOpen: (section: SectionId, metricId: string) => void;
 };
 
-// shortcut: each card listens on its own; share one read if the hub grows beyond a handful of cards.
+// shortcut: each card listens on its own source; share one read if the hub grows beyond a handful of cards.
 function HubCard({ tracking, def, period, today, onOpen }: { tracking: TrackingUseCases; def: MetricDefinition; period: ReturnType<typeof resolveUi>['period']; today: string; onOpen: Props['onOpen'] }) {
-  const view = useMetricView(tracking, def, period, today);
-  return <MetricCard def={def} period={period} view={view} onPress={() => onOpen(def.section, def.id)} />;
+  const { view, failed } = useMetricView(tracking, def, period, today);
+  return <MetricCard def={def} period={period} view={view} failed={failed} onPress={() => onOpen(def.section, def.id)} />;
 }
 
 /** The Suivi hub: one card per statistic over the period, which is chosen here; « Modifier » changes which cards and in which order. */
 export function SuiviHub({ tracking, ui, onUiChange, clock, timezone, onOpen }: Props) {
+  const { colors } = useTheme();
   const today = dayKey(useNow(clock), timezone);
   const { hubMetrics, period } = resolveUi(ui);
   const [editing, setEditing] = useState(false);
@@ -43,6 +44,11 @@ export function SuiviHub({ tracking, ui, onUiChange, clock, timezone, onOpen }: 
           Modifier
         </Button>
       </View>
+      {hubMetrics.length === 0 && (
+        <Text variant="bodyLarge" style={{ color: colors.onSurfaceVariant }}>
+          Aucune statistique ici pour l’instant. Touche « Modifier » pour en ajouter.
+        </Text>
+      )}
       {hubMetrics.map((id) => (
         <HubCard key={id} tracking={tracking} def={metricById(id)!} period={period} today={today} onOpen={onOpen} />
       ))}

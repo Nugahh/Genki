@@ -52,7 +52,7 @@ describe('bars', () => {
   test('says the same as the picture to a screen reader', async () => {
     await draw(<SeriesChart def={calories} points={points} goal={2000} />);
     const chart = screen.getByRole('image');
-    expect(chart.props.accessibilityLabel).toContain('Calories : lun. 1');
+    expect(chart.props.accessibilityLabel).toContain('Calories : lundi, ');
     expect(chart.props.accessibilityLabel).toContain('Objectif');
   });
 });
@@ -65,6 +65,16 @@ describe('a line', () => {
     await draw(<SeriesChart def={weight} points={points} />);
     expect(screen.getAllByTestId(/^line-/)).toHaveLength(1); // one run of two values; the lone value is a marker only
     expect(screen.getAllByTestId(/^dot-/)).toHaveLength(3);
+  });
+
+  test('draws today so far as a hollow dot of the line, and dashes the last stretch', async () => {
+    const points = [point(0, { value: 80 }), point(1, { value: 79.5 }), point(2, { value: 79, partial: true })];
+    await draw(<SeriesChart def={weight} points={points} />);
+    expect(screen.getByTestId('line-0')).toBeTruthy();
+    expect(screen.getByTestId('line-0-open')).toHaveProp('strokeDasharray', [4, 3]);
+    const today = screen.getByTestId(`dot-${week[2].key}`);
+    expect(today).toHaveProp('stroke', native(theme.colors.chart.weight));
+    expect(today).toHaveProp('strokeWidth', 2);
   });
 
   test('says there is no data when nothing was recorded', async () => {
