@@ -1,5 +1,5 @@
 import { DefaultTheme } from 'expo-router';
-import { MD3LightTheme } from 'react-native-paper';
+import { configureFonts, MD3LightTheme, type MD3TypescaleKey } from 'react-native-paper';
 
 /**
  * The palette: ink blue on ivory paper. Material 3 light scheme from the seed hue 262 / chroma 44 (HCT), with warm neutrals (hue 95, chroma 3),
@@ -55,8 +55,20 @@ const colors = {
   pace: { green: '#007334', orange: '#B56A00', red: '#9E1910' },
 };
 
+// Nunito, rounder and warmer than the system face. Android picks a font file per family, so the weight is in the name: the titles and labels
+// (the 500 of the type scale) take the semi-bold, the rest the regular, and no variant asks for a weight on top.
+const SEMI_BOLD = ['titleMedium', 'titleSmall', 'labelLarge', 'labelMedium', 'labelSmall'];
+const fonts = configureFonts({
+  config: Object.fromEntries(
+    Object.keys(MD3LightTheme.fonts).map((variant) => [
+      variant,
+      { fontFamily: SEMI_BOLD.includes(variant) ? 'Nunito_600SemiBold' : 'Nunito_400Regular', fontWeight: '400' as const },
+    ]),
+  ) as Partial<Record<MD3TypescaleKey, { fontFamily: string; fontWeight: '400' }>>,
+});
+
 /** The app is light-only: without a theme of its own, Paper and the navigation chrome follow the phone's dark mode. */
-export const theme = { ...MD3LightTheme, colors };
+export const theme = { ...MD3LightTheme, fonts, colors };
 export type AppTheme = typeof theme;
 
 /** The header and the canvas behind the screens, painted from the Paper theme instead of the navigation library's own (iOS blue, gray canvas). */

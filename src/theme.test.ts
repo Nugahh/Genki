@@ -66,6 +66,14 @@ test('the three discs are three different tints, none of them a pace color', () 
   for (const tint of tints) expect(Object.values(colors.pace)).not.toContain(tint);
 });
 
+test('the text is set in Nunito: regular for reading, semi-bold for titles and labels, with no synthetic weight', () => {
+  const medium = ['titleMedium', 'titleSmall', 'labelLarge', 'labelMedium', 'labelSmall'];
+  for (const [variant, font] of Object.entries(theme.fonts)) {
+    expect(font.fontFamily).toBe(medium.includes(variant) ? 'Nunito_600SemiBold' : 'Nunito_400Regular');
+    expect(font.fontWeight).toBe('400');
+  }
+});
+
 test('the three paces differ in lightness too, not only in hue (red and green look alike to some eyes)', () => {
   const { green, orange, red } = colors.pace;
   expect(contrast(green, red)).toBeGreaterThanOrEqual(1.3);
