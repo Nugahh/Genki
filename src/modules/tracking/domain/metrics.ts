@@ -13,6 +13,8 @@ export const METRICS: MetricDefinition[] = [
   { id: 'weight', section: 'corps', label: 'Poids', source: 'days', tint: 'weight', kind: 'line', value: (f) => f.weightKg, target: 'none', format: (v) => `${fr(v, 1)} kg`, dayCompare: true, emptyHint: 'Aucune pesée enregistrée pour l’instant.' },
   { id: 'waist', section: 'corps', label: 'Tour de taille', source: 'days', tint: 'waist', kind: 'line', value: (f) => f.waistCm, target: 'none', format: (v) => `${fr(v, 1)} cm`, dayCompare: true, emptyHint: 'Aucune mesure de tour de taille pour l’instant.' },
   { id: 'sessions', section: 'entrainement', label: 'Séances', source: 'training', tint: 'training', kind: 'bars', value: (f) => f.sessions, target: 'none', format: (v) => `${fr(v, 1)} séance${v >= 2 ? 's' : ''}`, dayCompare: false, emptyHint: 'Termine une séance pour la voir ici.' },
+  { id: 'cravings', section: 'tabac', label: 'Envies', source: 'tobacco', tint: 'tobacco', kind: 'bars', value: (f) => f.cravings, target: 'none', format: (v) => `${fr(v)} envie${v >= 2 ? 's' : ''}`, dayCompare: false, emptyHint: 'Aucune envie notée : touche « Envie résistée » quand elle arrive.' },
+  { id: 'smoked', section: 'tabac', label: 'Cigarettes fumées', source: 'tobacco', tint: 'tobacco', kind: 'bars', value: (f) => f.smoked, target: 'none', format: (v) => `${fr(v)} cigarette${v >= 2 ? 's' : ''}`, dayCompare: false, emptyHint: 'Aucune cigarette notée.' },
   { id: 'volume', section: 'entrainement', label: 'Volume', source: 'training', tint: 'training', kind: 'bars', value: (f) => f.volumeKg, target: 'none', format: (v) => `${fr(v)} kg`, dayCompare: false, emptyHint: 'Termine une séance pour voir ton volume.' },
 ];
 
@@ -25,6 +27,7 @@ const SECTIONS: { id: SectionId; label: string }[] = [
   { id: 'corps', label: 'Corps' },
   { id: 'entrainement', label: 'Entraînement' },
   { id: 'eau', label: 'Eau' },
+  { id: 'tabac', label: 'Tabac' },
 ];
 export const sectionById = (id: string) => SECTIONS.find((s) => s.id === id);
 

@@ -13,6 +13,9 @@ export type DayFacts = {
   /** Σ reps × kg over the day's workouts. */
   volumeKg?: number;
   sessions?: number;
+  /** Cravings noted, and the cigarettes smoked among them. */
+  cravings?: number;
+  smoked?: number;
 };
 
 /** The goals of the profile that the charts measure against. */
@@ -29,10 +32,10 @@ export type Goals = {
 export type Tone = 'good' | 'warn' | 'bad' | 'none';
 
 /** Where a metric's facts are read: each metric listens to one source only. */
-export type SourceId = 'days' | 'training';
+export type SourceId = 'days' | 'training' | 'tobacco';
 
-export type SectionId = 'nutrition' | 'activite' | 'corps' | 'entrainement' | 'eau';
-export type Tint = 'water' | 'calories' | 'protein' | 'carbs' | 'fat' | 'steps' | 'weight' | 'waist' | 'training';
+export type SectionId = 'nutrition' | 'activite' | 'corps' | 'entrainement' | 'eau' | 'tabac';
+export type Tint = 'water' | 'calories' | 'protein' | 'carbs' | 'fat' | 'steps' | 'weight' | 'waist' | 'training' | 'tobacco';
 
 /** One thing the Suivi screens can chart (spec §6): adding a statistic is adding one of these to the registry. */
 export type MetricDefinition = {

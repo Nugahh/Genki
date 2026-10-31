@@ -21,7 +21,7 @@ const WEEK_FACTS: Record<string, DayFacts> = {
 };
 
 async function setup(props: { section?: SectionId; metricId?: string; ui?: UiPrefs; facts?: Record<string, DayFacts>; renderExtras?: React.ComponentProps<typeof SectionScreen>['renderExtras'] } = {}) {
-  const tracking = trackingUseCases({ sources: { days: inMemoryFactsSource(props.facts ?? WEEK_FACTS), training: inMemoryFactsSource() }, clock, timezone: 'Europe/Paris' });
+  const tracking = trackingUseCases({ sources: { days: inMemoryFactsSource(props.facts ?? WEEK_FACTS), training: inMemoryFactsSource(), tobacco: inMemoryFactsSource() }, clock, timezone: 'Europe/Paris' });
   const onUiChange = jest.fn();
   await render(
     <PaperProvider theme={theme}>
@@ -121,7 +121,7 @@ test('keeps following the clock: left open overnight, a section opens on the new
   try {
     let now = new Date('2026-10-31T10:00:00Z');
     const moving = { now: () => now };
-    const tracking = trackingUseCases({ sources: { days: inMemoryFactsSource(WEEK_FACTS), training: inMemoryFactsSource() }, clock: moving, timezone: 'Europe/Paris' });
+    const tracking = trackingUseCases({ sources: { days: inMemoryFactsSource(WEEK_FACTS), training: inMemoryFactsSource(), tobacco: inMemoryFactsSource() }, clock: moving, timezone: 'Europe/Paris' });
     await render(
       <PaperProvider theme={theme}>
         <SectionScreen section="nutrition" tracking={tracking} goals={goals} ui={{ period: 'day' }} onUiChange={() => {}} clock={moving} timezone="Europe/Paris" />

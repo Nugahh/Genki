@@ -22,6 +22,7 @@ jest.mock('@/composition', () => {
   const { DEFAULT_PROFILE, inMemoryProfileRepository, settingsUseCases } = jest.requireActual('@/modules/settings');
   const { inMemoryFactsSource, trackingUseCases } = jest.requireActual('@/modules/tracking');
   const { bodyUseCases, inMemoryBodyRepository } = jest.requireActual('@/modules/body');
+  const { inMemoryCravingRepository, tobaccoUseCases } = jest.requireActual('@/modules/tobacco');
   const clock = { now: () => new Date('2026-10-23T10:00:00Z') }; // 12:00 in Paris: lunch
   const rice = { ref: { type: 'ciqual', id: '9100' }, name: 'Riz blanc, cru', state: 'raw', per100g: { kcal: 350, protein: 7, carbs: 78, fat: 0.6 }, portions: [] };
   return {
@@ -47,7 +48,8 @@ jest.mock('@/composition', () => {
         if (!(globalThis as { firstLaunch?: boolean }).firstLaunch) void repo.saveProfile({ createdAt: new Date('2026-10-01T10:00:00Z') });
         return settingsUseCases(repo);
       })(),
-      tracking: trackingUseCases({ sources: { days: inMemoryFactsSource(), training: inMemoryFactsSource() }, clock, timezone: DEFAULT_PROFILE.timezone }),
+      tobacco: tobaccoUseCases({ repo: inMemoryCravingRepository(), clock, timezone: DEFAULT_PROFILE.timezone }),
+      tracking: trackingUseCases({ sources: { days: inMemoryFactsSource(), training: inMemoryFactsSource(), tobacco: inMemoryFactsSource() }, clock, timezone: DEFAULT_PROFILE.timezone }),
       nutrition: {
         meals: mealUseCases({
           entries: inMemoryFoodEntryRepository(),
@@ -219,6 +221,24 @@ test('the goals start the proposal from the weight entered', async () => {
   await fireEvent.press(screen.getByLabelText('Réglages'));
   await fireEvent.press(screen.getByText('Objectifs'));
   expect(await screen.findByLabelText('Poids (kg)')).toHaveDisplayValue('80');
+});
+
+test('Today shows the days without tobacco once the quit date is set, and opens the tobacco section', async () => {
+  signedInAs({ uid: 'alice' });
+  await renderRouter();
+  expect(screen.queryByText('Sans tabac')).toBeNull();
+  await fireEvent.press(screen.getByLabelText('Réglages'));
+  await fireEvent.press(screen.getByText('Tabac'));
+  expect(screen).toHavePathname('/settings/tobacco');
+  await fireEvent.changeText(screen.getByLabelText('Date d’arrêt (AAAA-MM-JJ)'), '2026-10-13');
+  await fireEvent.press(screen.getByText('Enregistrer'));
+  await act(async () => router.back()); // back to Today
+  expect(await screen.findByText('10 jours')).toBeTruthy();
+  await fireEvent.press(screen.getByText('Sans tabac'));
+  expect(screen).toHavePathname('/suivi/tabac');
+  expect(screen).toHaveSearchParams({ section: 'tabac', metric: 'cravings' });
+  await fireEvent.press(screen.getByText('Envie résistée'));
+  expect(await screen.findByText('Envie résistée notée.')).toBeTruthy();
 });
 
 test('the Repas tab opens the day journal', async () => {

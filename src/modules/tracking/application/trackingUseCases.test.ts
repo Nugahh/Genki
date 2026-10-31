@@ -11,7 +11,7 @@ const weight = metricById('weight')!;
 function setup(days = {}, training = {}) {
   const daysSource = inMemoryFactsSource(days);
   const trainingSource = inMemoryFactsSource(training);
-  const tracking = trackingUseCases({ sources: { days: daysSource, training: trainingSource }, clock, timezone: 'Europe/Paris' });
+  const tracking = trackingUseCases({ sources: { days: daysSource, training: trainingSource, tobacco: inMemoryFactsSource() }, clock, timezone: 'Europe/Paris' });
   const views: MetricView[] = [];
   return { daysSource, trainingSource, tracking, views };
 }
@@ -74,7 +74,7 @@ test('shares the energy of the nutrition metrics only', () => {
 
 test('passes a source error on', () => {
   const failing = { observeRange: (_from: string, _to: string, _next: unknown, onError: (e: Error) => void) => (onError(new Error('denied')), () => {}) };
-  const tracking = trackingUseCases({ sources: { days: failing as never, training: failing as never }, clock, timezone: 'Europe/Paris' });
+  const tracking = trackingUseCases({ sources: { days: failing as never, training: failing as never, tobacco: failing as never }, clock, timezone: 'Europe/Paris' });
   const errors: string[] = [];
   tracking.observeMetric(calories, goals, 'week', '2026-10-31', () => {}, (e) => errors.push(e.message));
   expect(errors).toEqual(['denied']);

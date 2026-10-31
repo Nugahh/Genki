@@ -17,6 +17,9 @@ import { trackingUseCases } from '@/modules/tracking';
 import { firestoreDayTotals } from '@/modules/today/adapters/firestoreDayTotals';
 import { firestoreBodyRepository } from '@/modules/body/adapters/firestoreBodyRepository';
 import { bodyUseCases } from '@/modules/body';
+import { firestoreCravingRepository } from '@/modules/tobacco/adapters/firestoreCravingRepository';
+import { tobaccoUseCases } from '@/modules/tobacco';
+import { tobaccoFactsSource } from '@/modules/tracking/adapters/tobaccoFactsSource';
 import { openCiqual } from '@/platform/ciqual';
 import { db } from '@/platform/firebase';
 import { systemClock } from '@/shared/clock';
@@ -31,15 +34,17 @@ export function compose(uid: string) {
     clock: systemClock,
     timezone: profile.timezone,
   });
+  const tobacco = tobaccoUseCases({ repo: firestoreCravingRepository(db, uid), clock: systemClock, timezone: profile.timezone });
   return {
     profile,
     clock: systemClock,
     hydration: waterUseCases(firestoreWaterRepository(db, uid), systemClock, profile.timezone),
     dayTotals: firestoreDayTotals(db, uid),
     training,
+    tobacco,
     body: bodyUseCases({ repo: firestoreBodyRepository(db, uid), milestones: training.listMilestones, clock: systemClock, timezone: profile.timezone }),
     settings: settingsUseCases(firestoreProfileRepository(db, uid)),
-    tracking: trackingUseCases({ sources: { days: firestoreDaysSource(db, uid), training: trainingFactsSource(training) }, clock: systemClock, timezone: profile.timezone }),
+    tracking: trackingUseCases({ sources: { days: firestoreDaysSource(db, uid), training: trainingFactsSource(training), tobacco: tobaccoFactsSource(tobacco) }, clock: systemClock, timezone: profile.timezone }),
     nutrition: {
       meals: mealUseCases({
         entries: firestoreFoodEntryRepository(db, uid),

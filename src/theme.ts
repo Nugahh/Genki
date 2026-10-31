@@ -62,6 +62,7 @@ const colors = {
     weight: 'rgb(70, 80, 150)',
     waist: 'rgb(110, 100, 60)',
     training: 'rgb(40, 110, 150)',
+    tobacco: 'rgb(120, 85, 70)',
   },
   // The pace of a gauge (spec §9), outside the Material roles. Each is 3:1 or more on the gauge track (surfaceVariant) and they differ in lightness.
   pace: { green: '#007334', orange: '#B56A00', red: '#9E1910' },

@@ -5,6 +5,7 @@ import { DEFAULT_PROFILE, type Profile } from '../domain/profile';
 import { GoalsScreen } from './GoalsScreen';
 import { ProfileScreen } from './ProfileScreen';
 import { SettingsScreen } from './SettingsScreen';
+import { TobaccoSettingsScreen } from './TobaccoSettingsScreen';
 import { WaterContainersScreen } from './WaterContainersScreen';
 
 const draw = (ui: React.ReactElement) => render(<PaperProvider theme={theme}>{ui}</PaperProvider>);
@@ -15,7 +16,7 @@ describe('SettingsScreen', () => {
     const onOpen = jest.fn();
     await draw(<SettingsScreen profile={{ ...DEFAULT_PROFILE, quitDate: '2026-10-01' }} onOpen={onOpen} />);
     expect(screen.getByLabelText(/^Objectifs, 2.200 kcal · maintien/)).toBeTruthy();
-    expect(screen.getByLabelText('Tabac, Arrêt le 2026-10-01')).toBeTruthy();
+    expect(screen.getByLabelText('Tabac, Arrêt le 1 octobre 2026')).toBeTruthy();
     expect(screen.getByText('Europe/Paris')).toBeTruthy();
     await fireEvent.press(screen.getByText('Eau'));
     expect(onOpen).toHaveBeenCalledWith('water');
@@ -152,6 +153,40 @@ describe('WaterContainersScreen', () => {
     await setup();
     await type('Nom du contenant 1', ' ');
     expect(screen.getByText('Le nom d’un contenant fait entre 1 et 30 caractères.')).toBeTruthy();
+    expect(screen.getByText('Enregistrer')).toBeDisabled();
+  });
+});
+
+describe('TobaccoSettingsScreen', () => {
+  const setup = async (profile: Profile = DEFAULT_PROFILE) => {
+    const onSave = jest.fn();
+    await draw(<TobaccoSettingsScreen profile={profile} today="2026-11-03" onSave={onSave} />);
+    return { onSave };
+  };
+
+  test('saves the quit date and what a cigarette costs', async () => {
+    const { onSave } = await setup();
+    await fireEvent.press(screen.getByText('Aujourd’hui'));
+    expect(screen.getByLabelText('Date d’arrêt (AAAA-MM-JJ)')).toHaveDisplayValue('2026-11-03');
+    await type('Cigarettes par jour (avant l’arrêt)', '15');
+    await type('Prix du paquet (€)', '12,5');
+    await fireEvent.press(screen.getByText('Enregistrer'));
+    expect(onSave).toHaveBeenCalledWith({ quitDate: '2026-11-03', cigarettesPerDay: 15, packSize: 20, packPrice: 12.5 });
+  });
+
+  test('takes the fields off when they are emptied', async () => {
+    const { onSave } = await setup({ ...DEFAULT_PROFILE, quitDate: '2026-10-01', cigarettesPerDay: 10, packPrice: 11 });
+    await type('Date d’arrêt (AAAA-MM-JJ)', '');
+    await type('Cigarettes par jour (avant l’arrêt)', '');
+    await type('Prix du paquet (€)', '');
+    await fireEvent.press(screen.getByText('Enregistrer'));
+    expect(onSave).toHaveBeenCalledWith({ quitDate: null, cigarettesPerDay: null, packSize: 20, packPrice: null });
+  });
+
+  test('refuses a date that is not a day', async () => {
+    await setup();
+    await type('Date d’arrêt (AAAA-MM-JJ)', 'demain');
+    expect(screen.getByText('La date d’arrêt du tabac n’est pas valide.')).toBeTruthy();
     expect(screen.getByText('Enregistrer')).toBeDisabled();
   });
 });

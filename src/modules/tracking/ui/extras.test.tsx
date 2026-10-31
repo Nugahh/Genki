@@ -31,7 +31,7 @@ describe('NutritionExtras', () => {
 
 describe('TrainingExtras', () => {
   const tracking = trackingUseCases({
-    sources: { days: inMemoryFactsSource(), training: inMemoryFactsSource({ '2026-10-26': { sessions: 1, volumeKg: 3000 }, '2026-10-28': { sessions: 1 }, '2026-10-31': { sessions: 1 }, '2026-10-20': { sessions: 1 } }) },
+    sources: { days: inMemoryFactsSource(), training: inMemoryFactsSource({ '2026-10-26': { sessions: 1, volumeKg: 3000 }, '2026-10-28': { sessions: 1 }, '2026-10-31': { sessions: 1 }, '2026-10-20': { sessions: 1 } }), tobacco: inMemoryFactsSource() },
     clock,
     timezone: 'Europe/Paris',
   });

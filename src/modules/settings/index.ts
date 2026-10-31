@@ -11,3 +11,4 @@ export { ProfileScreen } from './ui/ProfileScreen';
 export { SettingsScreen, type SettingsPage } from './ui/SettingsScreen';
 export { WaterContainersScreen } from './ui/WaterContainersScreen';
 export { SetupScreen } from './ui/SetupScreen';
+export { TobaccoSettingsScreen } from './ui/TobaccoSettingsScreen';
