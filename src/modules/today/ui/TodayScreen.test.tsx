@@ -45,25 +45,38 @@ async function renderToday({ kcal = 0, proteinG = 0 }: { kcal?: number; proteinG
 
 test('a quick-add button fills the water gauge', async () => {
   await renderToday();
-  expect(screen.getByLabelText('Eau : 0 / 2,5 L')).toHaveAccessibilityValue({ text: 'en retard' });
+  expect(screen.getByLabelText('Eau : 0 L, sur 2,5 L, reste 2,5 L')).toHaveAccessibilityValue({ text: 'en retard' });
   await fireEvent.press(screen.getByText('+500 ml'));
-  expect(screen.getByLabelText('Eau : 0,5 / 2,5 L')).toBeTruthy();
+  expect(screen.getByLabelText('Eau : 0,5 L, sur 2,5 L, reste 2 L')).toBeTruthy();
 });
 
 test('the water gauge opens the day sheet, where a glass can be removed', async () => {
   await renderToday();
   await fireEvent.press(screen.getByText('+250 ml'));
-  await fireEvent.press(screen.getByLabelText('Eau : 0,25 / 2,5 L'));
+  await fireEvent.press(screen.getByLabelText('Eau : 0,25 L, sur 2,5 L, reste 2,25 L'));
   await fireEvent.press(screen.getByLabelText('Supprimer 250 ml de 15:00'));
   expect(screen.getByText('Aucun verre aujourd’hui.')).toBeTruthy();
   // The gauge sits behind the open sheet.
-  expect(screen.getByLabelText('Eau : 0 / 2,5 L', { includeHiddenElements: true })).toBeTruthy();
+  expect(screen.getByLabelText('Eau : 0 L, sur 2,5 L, reste 2,5 L', { includeHiddenElements: true })).toBeTruthy();
 });
 
 test('the Calories and Protéines gauges show the day against the goals', async () => {
   await renderToday({ kcal: 1500, proteinG: 52.3 });
-  expect(screen.getByLabelText(`Calories : ${fr(1500)} / ${fr(2200)} kcal`)).toBeTruthy();
-  expect(screen.getByLabelText(`Protéines : ${fr(52.3)} / ${fr(130)} g`)).toBeTruthy();
+  expect(screen.getByLabelText(`Calories : ${fr(1500)} kcal, sur ${fr(2200)} kcal, reste ${fr(700)} kcal`)).toBeTruthy();
+  expect(screen.getByLabelText(`Protéines : ${fr(52.3)} g, sur ${fr(130)} g, reste ${fr(77.7)} g`)).toBeTruthy();
+});
+
+test('a gauge shows the day in big, and beneath it the goal and what is left of it', async () => {
+  await renderToday({ kcal: 1500, proteinG: 52.3 });
+  expect(screen.getByText(`${fr(1500)} kcal`)).toBeTruthy();
+  expect(screen.getByText(`sur ${fr(2200)} kcal · reste ${fr(700)} kcal`)).toBeTruthy();
+  expect(screen.getByText('sur 2,5 L · reste 2,5 L')).toBeTruthy();
+});
+
+test('a gauge at its goal says so instead of a remainder, and Calories above it says that', async () => {
+  await renderToday({ kcal: 2400, proteinG: 130 });
+  expect(screen.getByText(`sur ${fr(130)} g · objectif atteint`)).toBeTruthy();
+  expect(screen.getByText(`sur ${fr(2200)} kcal · au-dessus de l’objectif`)).toBeTruthy();
 });
 
 test('the Calories and Protéines gauges open the Meals tab', async () => {

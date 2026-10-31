@@ -24,7 +24,11 @@ type Props = {
 
 const NO_TOTALS: DayTotals = { waterMl: 0, kcal: 0, proteinG: 0, carbsG: 0, fatG: 0 };
 const fr = (n: number, maximumFractionDigits: number) => n.toLocaleString('fr-FR', { maximumFractionDigits });
-const liters = (ml: number) => fr(ml / 1000, 2);
+const liters = (ml: number) => `${fr(ml / 1000, 2)} L`;
+const kcal = (n: number) => `${fr(n, 0)} kcal`;
+const grams = (n: number) => `${fr(n, 1)} g`;
+/** What is left of a goal: a gauge is never read from the goal alone. */
+const remaining = (value: number, goal: number, format: (n: number) => string) => (value < goal ? `reste ${format(goal - value)}` : 'objectif atteint');
 /** A gauge with no goal is drawn full. */
 const progress = (value: number, goal: number) => (goal > 0 ? value / goal : 1);
 
@@ -40,12 +44,15 @@ export function TodayScreen({ profile, clock, dayTotals, hydration, run, onAddMe
   const { goals } = profile;
   const expected = expectedProgress(hour);
   const addWater = (ml: number) => run(() => hydration.addWater(ml));
+  const overGoal = isOverGoal(totals.kcal, goals.kcal);
 
   return (
     <ScrollView contentContainerStyle={styles.content}>
       <GaugeBar
         label="Eau"
-        text={`${liters(totals.waterMl)} / ${liters(goals.waterMl)} L`}
+        value={liters(totals.waterMl)}
+        goal={liters(goals.waterMl)}
+        remaining={remaining(totals.waterMl, goals.waterMl, liters)}
         progress={progress(totals.waterMl, goals.waterMl)}
         expected={expected}
         color={paceColor(totals.waterMl, goals.waterMl, hour)}
@@ -54,17 +61,21 @@ export function TodayScreen({ profile, clock, dayTotals, hydration, run, onAddMe
       />
       <GaugeBar
         label="Calories"
-        text={`${fr(totals.kcal, 0)} / ${fr(goals.kcal, 0)} kcal`}
+        value={kcal(totals.kcal)}
+        goal={kcal(goals.kcal)}
+        remaining={overGoal ? 'au-dessus de l’objectif' : remaining(totals.kcal, goals.kcal, kcal)}
         progress={progress(totals.kcal, goals.kcal)}
         expected={expected}
         color={calorieColor(totals.kcal, goals.kcal, hour)}
-        status={isOverGoal(totals.kcal, goals.kcal) ? 'au-dessus de l’objectif' : undefined}
+        status={overGoal ? 'au-dessus de l’objectif' : undefined}
         icon="chevron-right"
         onPress={onOpenMeals}
       />
       <GaugeBar
         label="Protéines"
-        text={`${fr(totals.proteinG, 1)} / ${fr(goals.proteinG, 1)} g`}
+        value={grams(totals.proteinG)}
+        goal={grams(goals.proteinG)}
+        remaining={remaining(totals.proteinG, goals.proteinG, grams)}
         progress={progress(totals.proteinG, goals.proteinG)}
         expected={expected}
         color={paceColor(totals.proteinG, goals.proteinG, hour)}
