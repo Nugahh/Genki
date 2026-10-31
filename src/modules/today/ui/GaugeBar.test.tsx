@@ -17,7 +17,7 @@ const backgrounds = (node: Node | string | null): string[] => {
 const gauge = async (color: GaugeColor) => {
   await render(
     <PaperProvider theme={theme}>
-      <GaugeBar label="Eau" value="1 L" goal="2 L" remaining="reste 1 L" progress={0.5} expected={0.6} color={color} icon="plus" onPress={() => {}} />
+      <GaugeBar label="Eau" value="1 L" goal="2 L" remaining="reste 1 L" hint="Ouvre les verres du jour" progress={0.5} expected={0.6} color={color} icon="plus" onPress={() => {}} />
     </PaperProvider>,
   );
   return backgrounds(screen.toJSON() as Node);

@@ -65,6 +65,7 @@ export function TodayScreen({ profile, clock, dayTotals, hydration, run, onAddMe
           value={liters(totals.waterMl)}
           goal={liters(goals.waterMl)}
           remaining={remaining(totals.waterMl, goals.waterMl, liters)}
+          hint="Ouvre les verres du jour"
           progress={progress(totals.waterMl, goals.waterMl)}
           expected={expected}
           color={paceColor(totals.waterMl, goals.waterMl, hour)}
@@ -76,6 +77,7 @@ export function TodayScreen({ profile, clock, dayTotals, hydration, run, onAddMe
           value={kcal(totals.kcal)}
           goal={kcal(goals.kcal)}
           remaining={overGoal ? 'au-dessus de l’objectif' : remaining(totals.kcal, goals.kcal, kcal)}
+          hint="Ouvre le journal des repas"
           progress={progress(totals.kcal, goals.kcal)}
           expected={expected}
           color={calorieColor(totals.kcal, goals.kcal, hour)}
@@ -88,6 +90,7 @@ export function TodayScreen({ profile, clock, dayTotals, hydration, run, onAddMe
           value={grams(totals.proteinG)}
           goal={grams(goals.proteinG)}
           remaining={remaining(totals.proteinG, goals.proteinG, grams)}
+          hint="Ouvre le journal des repas"
           progress={progress(totals.proteinG, goals.proteinG)}
           expected={expected}
           color={paceColor(totals.proteinG, goals.proteinG, hour)}

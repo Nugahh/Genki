@@ -66,12 +66,12 @@ export function MealsScreen({ profile, clock, meals, onAdd, run }: Props) {
                 titleNumberOfLines={3}
                 description={`${gramsText(entry.grams)} g · ${kcalText(entry.macros.kcal)} kcal`}
                 right={(props) => <List.Icon {...props} icon="chevron-right" />}
-                accessibilityLabel={`${entry.foodName}, ${gramsText(entry.grams)} g`}
+                accessibilityLabel={`${entry.foodName}, ${gramsText(entry.grams)} g, ${kcalText(entry.macros.kcal)} kcal`}
                 onPress={() => setSelected(entry)}
               />
             ))}
             {list.length > 0 && (
-              <Button icon="star-outline" accessibilityLabel={`Enregistrer ${label} comme favori`} contentStyle={styles.button} onPress={() => setFavorite({ meal, name: label })}>
+              <Button icon="star-outline" accessibilityLabel={`Enregistrer comme favori, ${label}`} contentStyle={styles.button} onPress={() => setFavorite({ meal, name: label })}>
                 Enregistrer comme favori
               </Button>
             )}

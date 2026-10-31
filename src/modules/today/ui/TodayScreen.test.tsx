@@ -88,6 +88,13 @@ test('the Calories and Protéines gauges show the day against the goals', async 
   expect(screen.getByLabelText(`Protéines : ${fr(52.3)} g, sur ${fr(130)} g, reste ${fr(77.7)} g`)).toBeTruthy();
 });
 
+test('each gauge tells a screen reader what a touch does', async () => {
+  await renderToday();
+  expect(screen.getByLabelText(/^Eau : /).props.accessibilityHint).toBe('Ouvre les verres du jour');
+  expect(screen.getByLabelText(/^Calories : /).props.accessibilityHint).toBe('Ouvre le journal des repas');
+  expect(screen.getByLabelText(/^Protéines : /).props.accessibilityHint).toBe('Ouvre le journal des repas');
+});
+
 test('a gauge shows the day in big, and beneath it the goal and what is left of it', async () => {
   await renderToday({ kcal: 1500, proteinG: 52.3 });
   expect(screen.getByText(`${fr(1500)} kcal`)).toBeTruthy();

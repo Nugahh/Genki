@@ -33,7 +33,7 @@ const lunchOfRice = (meals: MealUseCases) =>
 
 /** Opens the actions of the rice line, then its quantity field. */
 async function openQuantity() {
-  await fireEvent.press(screen.getByLabelText('Riz blanc, cru, 200 g'));
+  await fireEvent.press(screen.getByLabelText('Riz blanc, cru, 200 g, 700 kcal'));
   await fireEvent.press(screen.getByText('Modifier la quantité'));
   return screen.getByLabelText('Quantité (g)');
 }
@@ -74,7 +74,7 @@ test('a touched line opens its actions, and the corrected quantity reaches the l
   const { meals } = await setup();
   await lunchOfRice(meals);
 
-  await fireEvent.press(screen.getByLabelText('Riz blanc, cru, 200 g'));
+  await fireEvent.press(screen.getByLabelText('Riz blanc, cru, 200 g, 700 kcal'));
   expect(screen.getByRole('header', { name: 'Riz blanc, cru' })).toBeTruthy();
   await fireEvent.press(screen.getByText('Modifier la quantité'));
   const field = screen.getByLabelText('Quantité (g)');
@@ -83,7 +83,7 @@ test('a touched line opens its actions, and the corrected quantity reaches the l
   await fireEvent.press(screen.getByText('Enregistrer'));
 
   expect(screen.getByText('150 g · 525 kcal')).toBeTruthy();
-  expect(screen.getByLabelText('Riz blanc, cru, 150 g')).toBeTruthy();
+  expect(screen.getByLabelText('Riz blanc, cru, 150 g, 525 kcal')).toBeTruthy();
   expect(screen.getByText(`Calories : 525 / ${goal} kcal`)).toBeTruthy();
   expect(screen.queryByLabelText('Quantité (g)')).toBeNull();
 });
@@ -97,7 +97,7 @@ test('the quantity accepts a comma as the decimal separator, and is offered back
 
   expect(screen.getByText('150,5 g · 527 kcal')).toBeTruthy();
   expect(entries.entries[0].grams).toBe(150.5);
-  await fireEvent.press(screen.getByLabelText('Riz blanc, cru, 150,5 g'));
+  await fireEvent.press(screen.getByLabelText('Riz blanc, cru, 150,5 g, 527 kcal'));
   await fireEvent.press(screen.getByText('Modifier la quantité'));
   expect(screen.getByLabelText('Quantité (g)')).toHaveDisplayValue('150,5');
 });
@@ -118,7 +118,7 @@ test('« Annuler » closes the actions, which open again on the three choices', 
   const { meals } = await setup();
   await lunchOfRice(meals);
 
-  await fireEvent.press(screen.getByLabelText('Riz blanc, cru, 200 g'));
+  await fireEvent.press(screen.getByLabelText('Riz blanc, cru, 200 g, 700 kcal'));
   await fireEvent.press(screen.getByText('Annuler'));
   expect(screen.queryByText('Modifier la quantité')).toBeNull();
 
@@ -127,7 +127,7 @@ test('« Annuler » closes the actions, which open again on the three choices', 
   expect(screen.queryByLabelText('Quantité (g)')).toBeNull();
   expect(screen.getByText('200 g · 700 kcal')).toBeTruthy();
 
-  await fireEvent.press(screen.getByLabelText('Riz blanc, cru, 200 g'));
+  await fireEvent.press(screen.getByLabelText('Riz blanc, cru, 200 g, 700 kcal'));
   expect(screen.getByText('Modifier la quantité')).toBeTruthy();
   expect(screen.getByText('Supprimer')).toBeTruthy();
 });
@@ -136,7 +136,7 @@ test('« Supprimer » asks first, and « Annuler » keeps the line and brings th
   const { entries, meals } = await setup();
   await lunchOfRice(meals);
 
-  await fireEvent.press(screen.getByLabelText('Riz blanc, cru, 200 g'));
+  await fireEvent.press(screen.getByLabelText('Riz blanc, cru, 200 g, 700 kcal'));
   await fireEvent.press(screen.getByText('Supprimer'));
   expect(screen.getByText('Supprimer Riz blanc, cru du journal ?')).toBeTruthy();
   expect(entries.entries).toHaveLength(1);
@@ -151,7 +151,7 @@ test('« Supprimer » removes the line and the totals fall back to zero', async 
   const { meals } = await setup();
   await lunchOfRice(meals);
 
-  await fireEvent.press(screen.getByLabelText('Riz blanc, cru, 200 g'));
+  await fireEvent.press(screen.getByLabelText('Riz blanc, cru, 200 g, 700 kcal'));
   await fireEvent.press(screen.getByText('Supprimer'));
   await fireEvent.press(screen.getByText('Supprimer')); // the confirmation
 
@@ -170,7 +170,7 @@ test('a meal is saved as a favorite: the name starts as its label and only its l
     await meals.logFood('dinner', yogurt, 125);
   });
 
-  await fireEvent.press(screen.getByLabelText('Enregistrer Déjeuner comme favori'));
+  await fireEvent.press(screen.getByLabelText('Enregistrer comme favori, Déjeuner'));
   expect(screen.getByRole('header', { name: 'Nom du favori' })).toBeTruthy();
   expect(screen.getByLabelText('Nom')).toHaveDisplayValue('Déjeuner');
   await fireEvent.changeText(screen.getByLabelText('Nom'), 'Riz du midi');
@@ -188,7 +188,7 @@ test('a favorite needs a name, and « Annuler » saves nothing', async () => {
   // Only a meal with something in it can be saved.
   expect(screen.getAllByText('Enregistrer comme favori')).toHaveLength(1);
 
-  await fireEvent.press(screen.getByLabelText('Enregistrer Déjeuner comme favori'));
+  await fireEvent.press(screen.getByLabelText('Enregistrer comme favori, Déjeuner'));
   // The rules refuse a longer name, which could then never be saved.
   expect(screen.getByLabelText('Nom')).toHaveProp('maxLength', 100);
   for (const blank of ['', '   ']) {
@@ -217,14 +217,14 @@ test('a quantity change, a removal and a favorite are handed to run: nothing is 
   await runWrite(0);
   expect(entries.entries[0].grams).toBe(150);
 
-  await fireEvent.press(screen.getByLabelText('Enregistrer Déjeuner comme favori'));
+  await fireEvent.press(screen.getByLabelText('Enregistrer comme favori, Déjeuner'));
   await fireEvent.press(screen.getByText('Enregistrer'));
   expect(writes).toHaveLength(2);
   expect(savedFavorites(meals)).toEqual([]);
   await runWrite(1);
   expect(savedFavorites(meals)).toHaveLength(1);
 
-  await fireEvent.press(screen.getByLabelText('Riz blanc, cru, 150 g'));
+  await fireEvent.press(screen.getByLabelText('Riz blanc, cru, 150 g, 525 kcal'));
   await fireEvent.press(screen.getByText('Supprimer'));
   await fireEvent.press(screen.getByText('Supprimer'));
   expect(writes).toHaveLength(3);
