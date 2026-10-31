@@ -45,6 +45,12 @@ jest.mock('@/composition', () => {
 
 const signedInAs = (user: { uid: string } | null) => jest.mocked(useAuthUser).mockReturnValue(user as never);
 
+/** Paper's tab bar ignores touches until it has been measured, which Jest never does: lay it out, then press the tab. */
+const pressTab = async (name: string) => {
+  await fireEvent(screen.getByTestId('bottom-navigation-bar'), 'layout', { nativeEvent: { layout: { x: 0, y: 0, width: 360, height: 80 } } });
+  await fireEvent.press(screen.getByRole('button', { name }));
+};
+
 afterEach(() => jest.restoreAllMocks());
 
 test('a signed-out user lands on the Google sign-in', async () => {
@@ -75,10 +81,20 @@ test('a phone in dark mode keeps the light theme', async () => {
   expect(screen.getByText('Eau')).toHaveStyle({ color: 'rgba(28, 27, 31, 1)' });
 });
 
+test('the tabs are Paper’s Material bar: the open tab is the selected one, and the selection follows the route', async () => {
+  signedInAs({ uid: 'alice' });
+  await renderRouter();
+  expect(screen.getByRole('button', { name: 'Aujourd’hui' })).toBeSelected();
+  expect(screen.getByRole('button', { name: 'Repas' })).not.toBeSelected();
+  await pressTab('Repas');
+  expect(screen.getByRole('button', { name: 'Repas' })).toBeSelected();
+  expect(screen.getByRole('button', { name: 'Aujourd’hui' })).not.toBeSelected();
+});
+
 test('the Repas tab opens the day journal', async () => {
   signedInAs({ uid: 'alice' });
   await renderRouter();
-  await fireEvent.press(screen.getByText('Repas'));
+  await pressTab('Repas');
   expect(screen).toHavePathname('/repas');
   expect(screen.getByText('Petit-déjeuner')).toBeTruthy();
 });
@@ -107,7 +123,7 @@ test('« + Repas » opens the search for the meal of the hour, and adding the fo
 test('the « Ajouter » of a meal on the journal opens the search for that meal', async () => {
   signedInAs({ uid: 'alice' });
   await renderRouter();
-  await fireEvent.press(screen.getByText('Repas'));
+  await pressTab('Repas');
   await fireEvent.press(screen.getByLabelText('Ajouter à Dîner'));
   expect(screen).toHavePathname('/add-food');
   expect(screen).toHaveSearchParams({ meal: 'dinner' });
@@ -116,7 +132,7 @@ test('the « Ajouter » of a meal on the journal opens the search for that meal'
 test('adding a food from the journal comes back to the Repas tab, not to Today', async () => {
   signedInAs({ uid: 'alice' });
   await renderRouter();
-  await fireEvent.press(screen.getByText('Repas'));
+  await pressTab('Repas');
   await fireEvent.press(screen.getByLabelText('Ajouter à Dîner'));
   await fireEvent.changeText(screen.getByLabelText('Rechercher un aliment'), 'riz');
   await fireEvent.press(await screen.findByText('Riz blanc, cru'));

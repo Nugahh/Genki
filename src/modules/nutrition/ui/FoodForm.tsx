@@ -14,13 +14,9 @@ const NUTRIENTS: [Nutrient, string][] = [
   ['carbs', 'Glucides pour 100 g'],
   ['fat', 'Lipides pour 100 g'],
 ];
-// Paper's segments are 40 dp tall: 4 dp more above and below the label make the 48 dp target.
-const LABEL = { paddingVertical: 4 };
-const STATES: { value: FoodState; label: string; labelStyle: typeof LABEL }[] = [
-  { value: 'raw', label: 'Cru', labelStyle: LABEL },
-  { value: 'cooked', label: 'Cuit', labelStyle: LABEL },
-  { value: 'other', label: 'Autre', labelStyle: LABEL },
-];
+// Paper's segments are 40 dp tall: 4 dp more above and below the label make the 48 dp target. The check tells the chosen one by more than its tint.
+const option = (value: FoodState, label: string) => ({ value, label, labelStyle: { paddingVertical: 4 }, showSelectedCheck: true });
+const STATES = [option('raw', 'Cru'), option('cooked', 'Cuit'), option('other', 'Autre')];
 
 const BLANK: Draft = { name: '', state: 'other', per100g: { kcal: '', protein: '', carbs: '', fat: '' }, portions: [] };
 const draftOf = ({ name, state, per100g: p, portions }: FoodInput): Draft => ({

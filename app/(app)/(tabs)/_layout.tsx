@@ -1,6 +1,7 @@
 import { Tabs } from 'expo-router/js-tabs';
 import { Icon } from 'react-native-paper';
 import { useApp } from '@/appContext';
+import { MaterialTabBar } from '@/MaterialTabBar';
 import { SyncIcon } from '@/modules/today';
 
 function HeaderSync() {
@@ -10,7 +11,7 @@ function HeaderSync() {
 
 export default function TabsLayout() {
   return (
-    <Tabs screenOptions={{ headerRight: () => <HeaderSync /> }}>
+    <Tabs tabBar={(props) => <MaterialTabBar {...props} />} screenOptions={{ headerRight: () => <HeaderSync /> }}>
       <Tabs.Screen
         name="index"
         options={{

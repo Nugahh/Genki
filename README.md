@@ -94,7 +94,10 @@ Ensuite :
 - **Journal.** Modifier la quantité d'une ligne, puis supprimer une ligne : les totaux suivent.
 - **« Réessayer ».** Le message d'un enregistrement refusé est visible et utilisable au-dessus de la fenêtre native « Ajouter un aliment ».
 - **Suppression d'un favori.** La boîte « Supprimer le favori … ? » (Favoris › corbeille) apparaît au-dessus de la fenêtre native « Ajouter un aliment » et ses deux boutons répondent.
-- **Mise en page, sur 360 dp et sur 412 dp.** Les quatre libellés « Favoris », « Récents », « Recherche » et « Créer » ne sont pas tronqués ; la rangée +250 ml, +500 ml, + Repas passe à la ligne proprement ; les textes des jauges tiennent.
+- **Mise en page, sur 360 dp et sur 412 dp.** Les libellés « Favoris », « Récents », « Recherche » et « Créer » (deux rangées de deux, une coche sur le segment choisi) ne sont pas tronqués ; la rangée +250 ml, +500 ml, + Repas passe à la ligne proprement ; les textes des jauges tiennent.
 - **Zones tactiles de 48 dp.** Puces Tous/Cru/Cuit, puces de portion et icônes Supprimer, à essayer au pouce.
+- **Barre d'onglets Material.** Aujourd'hui et Repas : l'onglet ouvert a l'indicateur en pilule, plus aucun bleu iOS. L'en-tête et le fond restent clairs, même avec le téléphone en mode sombre.
+- **Barres système et clavier.** Avec la navigation à trois boutons, puis par gestes : « Retour » et « Enregistrer » en bas de « Ajouter un aliment » ne passent pas sous la barre système. Ouvrir « Quantité (g) » (fiche d'un aliment, puis « Modifier la quantité » d'une ligne du journal) : le clavier ne cache ni le champ ni « Enregistrer ».
+- **Grande police et TalkBack.** Taille de police à 1,3× puis au maximum : aucun libellé de jauge, de segment ou de bouton n'est coupé ni ne déborde. Avec TalkBack : chaque onglet est annoncé une seule fois et dit s'il est sélectionné ; les boîtes de dialogue ne laissent pas atteindre l'écran derrière.
 - **Formats français sur Hermes.** « 1 200 / 2 200 kcal », « 0,6 g ».
 - **Attribution Ciqual.** Elle figure dans ce README (licence Etalab 2.0, section « Données alimentaires »).

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ScrollView, StyleSheet } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { SegmentedButtons } from 'react-native-paper';
 import type { FoodUseCases } from '../application/foodUseCases';
 import type { MealUseCases } from '../application/mealUseCases';
@@ -13,15 +13,11 @@ import { RecentsList } from './RecentsList';
 
 type Segment = 'favorites' | 'recents' | 'search' | 'create';
 
-// Paper's segments are 40 dp tall: 4 dp more above and below the label make the 48 dp target. They also pad a label by 16 dp
-// on each side, which cuts « Recherche » short on a phone with four segments: the label takes 10 dp of that back.
-const LABEL = { paddingVertical: 4, marginHorizontal: -10 };
-const SEGMENTS: { value: Segment; label: string; labelStyle: typeof LABEL }[] = [
-  { value: 'favorites', label: 'Favoris', labelStyle: LABEL },
-  { value: 'recents', label: 'Récents', labelStyle: LABEL },
-  { value: 'search', label: 'Recherche', labelStyle: LABEL },
-  { value: 'create', label: 'Créer', labelStyle: LABEL },
-];
+// Paper's segments are 40 dp tall: 4 dp more above and below the label make the 48 dp target. The check tells the chosen one by more than its tint.
+const option = (value: Segment, label: string) => ({ value, label, labelStyle: { paddingVertical: 4 }, showSelectedCheck: true });
+const SEGMENTS = [option('favorites', 'Favoris'), option('recents', 'Récents'), option('search', 'Recherche'), option('create', 'Créer')];
+// Two rows of two: four in a row left « Recherche » 1 or 2 dp of room on a 360 dp phone, none for the selected check or a larger system font.
+const ROWS = [SEGMENTS.slice(0, 2), SEGMENTS.slice(2)];
 
 type Props = {
   /** The meal the food is added to. */
@@ -70,7 +66,11 @@ export function AddFoodScreen({ meal, meals, foods, run, onDone }: Props) {
         />
       ) : (
         <>
-          <SegmentedButtons value={segment} onValueChange={setSegment} buttons={SEGMENTS} />
+          <View style={styles.segments}>
+            {ROWS.map((buttons, i) => (
+              <SegmentedButtons key={i} value={segment} onValueChange={setSegment} buttons={buttons} />
+            ))}
+          </View>
           {segment === 'favorites' && <FavoritesList meal={meal} meals={meals} foods={foods} custom={custom} run={run} onDone={onDone} />}
           {segment === 'recents' && <RecentsList meals={meals} foods={foods} custom={custom} onPick={(food, grams) => setSelected({ food, grams })} />}
           {segment === 'search' && <FoodSearch foods={foods} custom={custom} search={search} onSearch={setSearch} onSelect={(food) => setSelected({ food })} />}
@@ -81,4 +81,4 @@ export function AddFoodScreen({ meal, meals, foods, run, onDone }: Props) {
   );
 }
 
-const styles = StyleSheet.create({ content: { padding: 16, gap: 16 } });
+const styles = StyleSheet.create({ content: { padding: 16, gap: 16 }, segments: { gap: 8 } });

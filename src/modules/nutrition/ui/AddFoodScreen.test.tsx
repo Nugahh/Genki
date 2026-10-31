@@ -43,7 +43,8 @@ const search = (text: string) => fireEvent.changeText(screen.getByLabelText('Rec
 const type = (label: string, text: string) => fireEvent.changeText(screen.getByLabelText(label), text);
 
 /** Paper marks the chosen segment with `accessibilityState.checked`, which the `checked` filter of `getByRole` only reads on checkboxes and radios. */
-const isChecked = (name: string) => screen.getByRole('button', { name }).props.accessibilityState.checked;
+// The text content of the chosen segment also holds the glyph of its check, which screen readers skip.
+const isChecked = (name: string) => screen.getByRole('button', { name: new RegExp(`^${name}|${name}$`) }).props.accessibilityState.checked;
 /** A selected chip holds its check icon in its accessible name, hence the regular expression. */
 const isSelected = (label: string) => screen.queryByRole('button', { name: new RegExp(label), selected: true }) !== null;
 
