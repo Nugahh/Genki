@@ -6,6 +6,7 @@ const PATH = {
   goals: '/settings/goals',
   profile: '/settings/profile',
   water: '/settings/water',
+  steps: '/settings/steps',
   tobacco: '/settings/tobacco',
   data: '/settings/data',
 } as const satisfies Record<SettingsPage, string>;

@@ -50,6 +50,7 @@ const colors = {
     water: { container: 'rgb(214, 227, 255)', on: 'rgb(0, 27, 60)' },
     calories: { container: 'rgb(249, 216, 254)', on: 'rgb(40, 19, 47)' },
     protein: { container: 'rgb(178, 237, 235)', on: 'rgb(0, 32, 31)' },
+    steps: { container: 'rgb(225, 228, 236)', on: 'rgb(18, 28, 43)' },
   },
   // Solid marks of the Suivi charts, one per measure, each 4.5:1 or more on the page. The green, ochre and brick of the pace tell how a day went and are not reused here.
   chart: {

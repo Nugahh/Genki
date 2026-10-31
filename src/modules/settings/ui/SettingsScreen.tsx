@@ -3,7 +3,7 @@ import { Divider, List } from 'react-native-paper';
 import { goalModeText } from './goalMode';
 import type { Profile } from '../domain/profile';
 
-export type SettingsPage = 'goals' | 'profile' | 'water' | 'tobacco' | 'data';
+export type SettingsPage = 'goals' | 'profile' | 'water' | 'steps' | 'tobacco' | 'data';
 type Props = { profile: Profile; onOpen: (page: SettingsPage) => void };
 
 const longDate = (day: string) => new Date(`${day}T12:00:00Z`).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
@@ -27,6 +27,7 @@ export function SettingsScreen({ profile, onOpen }: Props) {
       {row('goals', 'Objectifs', `${kcal(profile.goals.kcal)} · ${goalModeText(profile.goalMode)}`, 'target')}
       {row('profile', 'Profil', `${profile.heightCm} cm · né en ${profile.birthYear}`, 'account-outline')}
       {row('water', 'Eau', profile.waterContainers.map((c) => `${c.label} ${c.ml} ml`).join(' · '), 'cup-water')}
+      {row('steps', 'Pas', 'Health Connect, Fitbit, téléphone qui envoie les pas', 'walk')}
       {row('tobacco', 'Tabac', profile.quitDate ? `Arrêt le ${longDate(profile.quitDate)}` : 'Pas de date d’arrêt', 'smoking-off')}
       {row('data', 'Données', 'Exporter, importer, recalculer les totaux', 'database-outline')}
       <Divider />

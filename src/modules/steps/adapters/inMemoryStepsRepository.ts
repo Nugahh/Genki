@@ -1,4 +1,4 @@
-import type { Device, StepsRepository } from '../application/ports';
+import type { Device } from '../application/ports';
 import type { StoredSource } from '../domain/steps';
 
 /** StepsRepository kept in memory, for tests. */

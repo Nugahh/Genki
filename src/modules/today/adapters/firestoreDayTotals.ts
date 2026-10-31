@@ -14,7 +14,16 @@ export function firestoreDayTotals(db: Firestore, uid: string): DayTotalsReposit
         (snapshot) => {
           const data = snapshot.data();
           onNext(
-            { waterMl: total(data?.waterMl), kcal: total(data?.kcal), proteinG: total(data?.proteinG), carbsG: total(data?.carbsG), fatG: total(data?.fatG) },
+            {
+              waterMl: total(data?.waterMl),
+              kcal: total(data?.kcal),
+              proteinG: total(data?.proteinG),
+              carbsG: total(data?.carbsG),
+              fatG: total(data?.fatG),
+              steps: total(data?.steps),
+              stepsSource: typeof data?.stepsSource === 'string' ? data.stepsSource : undefined,
+              stepsSyncedAt: data?.stepsSyncedAt?.toDate?.(),
+            },
             { hasPendingWrites: snapshot.metadata.hasPendingWrites, fromCache: snapshot.metadata.fromCache },
           );
         },

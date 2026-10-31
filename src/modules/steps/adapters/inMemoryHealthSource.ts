@@ -1,4 +1,4 @@
-import type { HealthDataSource, HealthStatus } from '../application/ports';
+import type { HealthStatus } from '../application/ports';
 import type { DaySteps, StepsSource } from '../domain/steps';
 
 /** HealthDataSource kept in memory, for tests: `days` holds the steps by day, `sources` the apps by day. */

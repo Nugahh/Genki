@@ -5,7 +5,7 @@ import type { AppTheme } from '@/theme';
 import type { GaugeColor } from '../domain/gauge';
 
 const PACE: Record<GaugeColor, string> = { green: 'dans le rythme', orange: 'un peu en retard', red: 'en retard' };
-const METRIC_ICON = { water: 'water', calories: 'fire', protein: 'arm-flex' } as const;
+const METRIC_ICON = { water: 'water', calories: 'fire', protein: 'arm-flex', steps: 'walk' } as const;
 
 type Props = {
   label: string;
@@ -24,6 +24,8 @@ type Props = {
   metric: keyof typeof METRIC_ICON;
   /** What a touch does, read by TalkBack after the label: the icon alone says it to the eye. */
   hint: string;
+  /** A line under the goal: where the number comes from, when it was last read. */
+  note?: string;
   /** What the color means, read by TalkBack: the pace wording unless the gauge has something else to say. */
   status?: string;
   /** "plus" adds, "chevron-right" opens (spec §6). */
@@ -31,7 +33,7 @@ type Props = {
   onPress: () => void;
 };
 
-export function GaugeBar({ label, value, goal, remaining, hint, metric, progress, expected, color, status = PACE[color], icon, onPress }: Props) {
+export function GaugeBar({ label, value, goal, remaining, hint, metric, progress, expected, color, status = PACE[color], note, icon, onPress }: Props) {
   const { colors } = useTheme<AppTheme>();
   // The fill slides to its value (from empty when the screen opens), unless the phone asks for no motion.
   const [fill] = useState(() => new Animated.Value(0));
@@ -71,6 +73,11 @@ export function GaugeBar({ label, value, goal, remaining, hint, metric, progress
             <View style={[styles.marker, { backgroundColor: colors.onSurface, left: `${expected * 100}%`, marginLeft: -2 * expected }]} />
           </View>
           <Text variant="bodyMedium" style={{ color: colors.onSurfaceVariant }}>{`sur ${goal} · ${remaining}`}</Text>
+          {note && (
+            <Text variant="bodySmall" style={{ color: colors.onSurfaceVariant }}>
+              {note}
+            </Text>
+          )}
         </View>
       </TouchableRipple>
     </Surface>
@@ -78,9 +85,9 @@ export function GaugeBar({ label, value, goal, remaining, hint, metric, progress
 }
 
 const styles = StyleSheet.create({
-  // A soft card: the ripple is clipped to its corners.
-  card: { borderRadius: 16, overflow: 'hidden' },
-  touch: { minHeight: 48, padding: 16 },
+  card: { borderRadius: 16 },
+  // A soft card: the ripple is clipped to its corners here, since a Surface with overflow hidden loses its shadow.
+  touch: { minHeight: 48, padding: 16, borderRadius: 16, overflow: 'hidden' },
   content: { gap: 4 },
   row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
   title: { flexDirection: 'row', alignItems: 'center', gap: 8, flexShrink: 1 },

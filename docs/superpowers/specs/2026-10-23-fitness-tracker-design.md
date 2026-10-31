@@ -244,6 +244,9 @@ Tracker Fitbit → application Fitbit (Google Health) → Health Connect → not
 - Historique : une application peut lire jusqu'à 30 jours avant sa première autorisation, à condition que des données aient déjà été écrites.
 - Depuis la mise à jour de juin 2026, les pas natifs du téléphone ont un nom d'origine synthétique. Il ne faut jamais filtrer sur l'ancien nom (`android`).
 
+### Téléphone qui écrit
+Un seul téléphone du compte écrit `days/{date}.steps` : le premier à se connecter devient l'écrivain, un autre le devient quand l'utilisateur le désigne dans Réglages › Pas (l'ancien perd le rôle dans la même écriture). La synchro lit hier et aujourd'hui, et n'écrit qu'un total qui change.
+
 ### Bouton Synchroniser
 Il lit le total du jour dans Health Connect et met à jour Firestore. Il est sur la jauge des pas (geste de rafraîchissement ou icône) et dans les réglages. Il ne force pas le tracker à envoyer ses données au téléphone : il propose un lien pour ouvrir l'application Fitbit, si Android le permet.
 

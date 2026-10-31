@@ -1,5 +1,5 @@
 import { initializeTestEnvironment, type RulesTestEnvironment } from '@firebase/rules-unit-testing';
-import { disableNetwork, doc, enableNetwork, serverTimestamp, setDoc, type Firestore } from 'firebase/firestore';
+import { disableNetwork, doc, enableNetwork, serverTimestamp, setDoc, Timestamp, type Firestore } from 'firebase/firestore';
 import { readFileSync } from 'node:fs';
 import type { DayTotals } from '../application/ports';
 import type { SyncMeta } from '../domain/sync';
@@ -52,7 +52,14 @@ test('reads the nutrition totals, a missing field as zero and a slight negative 
   const db = phone();
   const day = doc(db, 'users/alice/days/2026-10-23');
   await setDoc(day, { kcal: 1200.4, proteinG: 80, carbsG: 130, fatG: 40, updatedAt: serverTimestamp() });
-  expect(await totalsUntil(db, (_, sync) => !sync.fromCache)).toEqual({ waterMl: 0, kcal: 1200.4, proteinG: 80, carbsG: 130, fatG: 40 });
+  expect(await totalsUntil(db, (_, sync) => !sync.fromCache)).toEqual({ waterMl: 0, kcal: 1200.4, proteinG: 80, carbsG: 130, fatG: 40, steps: 0 });
   await setDoc(day, { kcal: -0.03, updatedAt: serverTimestamp() });
-  expect(await totalsUntil(db, (_, sync) => !sync.fromCache)).toEqual({ waterMl: 0, kcal: 0, proteinG: 0, carbsG: 0, fatG: 0 });
+  expect(await totalsUntil(db, (_, sync) => !sync.fromCache)).toEqual({ waterMl: 0, kcal: 0, proteinG: 0, carbsG: 0, fatG: 0, steps: 0 });
+});
+
+test('reads the steps with where they come from and when they were read', async () => {
+  const db = phone();
+  await setDoc(doc(db, 'users/alice/days/2026-10-23'), { steps: 8342, stepsSource: 'fitbit', stepsSyncedAt: Timestamp.fromDate(new Date('2026-10-23T14:32:00Z')), updatedAt: serverTimestamp() });
+  const totals = await totalsUntil(db, (_, sync) => !sync.fromCache);
+  expect(totals).toMatchObject({ steps: 8342, stepsSource: 'fitbit', stepsSyncedAt: new Date('2026-10-23T14:32:00Z') });
 });

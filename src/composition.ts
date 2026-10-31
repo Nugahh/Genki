@@ -22,7 +22,11 @@ import { tobaccoUseCases } from '@/modules/tobacco';
 import { tobaccoFactsSource } from '@/modules/tracking/adapters/tobaccoFactsSource';
 import { firestoreDataStore } from '@/modules/data/adapters/firestoreDataStore';
 import { dataUseCases } from '@/modules/data';
+import { healthConnectSource } from '@/modules/steps/adapters/healthConnectSource';
+import { firestoreStepsRepository } from '@/modules/steps/adapters/firestoreStepsRepository';
+import { stepsUseCases } from '@/modules/steps';
 import { openCiqual } from '@/platform/ciqual';
+import { thisDevice } from '@/platform/device';
 import { db } from '@/platform/firebase';
 import { systemClock } from '@/shared/clock';
 
@@ -44,6 +48,7 @@ export function compose(uid: string) {
     dayTotals: firestoreDayTotals(db, uid),
     training,
     tobacco,
+    steps: stepsUseCases({ health: healthConnectSource(), repo: firestoreStepsRepository(db, uid), device: thisDevice, clock: systemClock, timezone: profile.timezone }),
     data: dataUseCases({ store: firestoreDataStore(db, uid), clock: systemClock, timezone: profile.timezone }),
     body: bodyUseCases({ repo: firestoreBodyRepository(db, uid), milestones: training.listMilestones, clock: systemClock, timezone: profile.timezone }),
     settings: settingsUseCases(firestoreProfileRepository(db, uid)),

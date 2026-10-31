@@ -30,6 +30,7 @@ jest.mock('@/composition', () => {
   const { bodyUseCases, inMemoryBodyRepository } = jest.requireActual('@/modules/body');
   const { inMemoryCravingRepository, tobaccoUseCases } = jest.requireActual('@/modules/tobacco');
   const { dataUseCases, inMemoryDataStore } = jest.requireActual('@/modules/data');
+  const { inMemoryHealthSource, inMemoryStepsRepository, stepsUseCases } = jest.requireActual('@/modules/steps');
   const clock = { now: () => new Date('2026-10-23T10:00:00Z') }; // 12:00 in Paris: lunch
   const rice = { ref: { type: 'ciqual', id: '9100' }, name: 'Riz blanc, cru', state: 'raw', per100g: { kcal: 350, protein: 7, carbs: 78, fat: 0.6 }, portions: [] };
   return {
@@ -39,7 +40,7 @@ jest.mock('@/composition', () => {
       hydration: waterUseCases(inMemoryWaterRepository(), clock, DEFAULT_PROFILE.timezone),
       dayTotals: {
         observe: (_day, onNext) => {
-          onNext({ waterMl: 0, kcal: 0, proteinG: 0, carbsG: 0, fatG: 0 }, { hasPendingWrites: false, fromCache: false });
+          onNext({ waterMl: 0, kcal: 0, proteinG: 0, carbsG: 0, fatG: 0, steps: 0 }, { hasPendingWrites: false, fromCache: false });
           return () => {};
         },
       },
@@ -55,6 +56,8 @@ jest.mock('@/composition', () => {
         if (!mockFirstLaunch) void repo.saveProfile({ createdAt: new Date('2026-10-01T10:00:00Z') });
         return settingsUseCases(repo);
       })(),
+      // Health Connect is there but the permission is not given yet: the screens say so.
+      steps: stepsUseCases({ health: inMemoryHealthSource({ granted: false }), repo: inMemoryStepsRepository(), device: { id: 'phone-a', name: 'Pixel' }, clock, timezone: DEFAULT_PROFILE.timezone }),
       data: dataUseCases({ store: inMemoryDataStore(), clock, timezone: DEFAULT_PROFILE.timezone }),
       tobacco: tobaccoUseCases({ repo: inMemoryCravingRepository(), clock, timezone: DEFAULT_PROFILE.timezone }),
       tracking: trackingUseCases({ sources: { days: inMemoryFactsSource(), training: inMemoryFactsSource(), tobacco: inMemoryFactsSource() }, clock, timezone: DEFAULT_PROFILE.timezone }),
@@ -275,6 +278,33 @@ test('Today shows the days without tobacco once the quit date is set, and opens 
   expect(screen).toHaveSearchParams({ section: 'tabac', metric: 'cravings' });
   await fireEvent.press(screen.getByText('Envie résistée'));
   expect(await screen.findByText('Envie résistée notée.')).toBeTruthy();
+});
+
+test('Today says the steps cannot be read yet, and the Steps gauge opens the Activité section', async () => {
+  signedInAs({ uid: 'alice' });
+  await renderRouter();
+  expect(await screen.findByText('Autorise la lecture des pas dans Réglages › Pas.')).toBeTruthy();
+  await fireEvent.press(screen.getByLabelText(/^Pas : /));
+  expect(screen).toHavePathname('/suivi/activite');
+  expect(screen).toHaveSearchParams({ section: 'activite', metric: 'steps' });
+  expect(screen.getByText('Synchroniser')).toBeTruthy();
+});
+
+test('the steps settings ask for the permission, from the Activité section', async () => {
+  signedInAs({ uid: 'alice' });
+  await renderRouter(undefined, { initialUrl: '/suivi/activite?metric=steps' });
+  await fireEvent.press(await screen.findByText('Réglages des pas'));
+  expect(screen).toHavePathname('/settings/steps');
+  expect(await screen.findByText('Pas encore accordée')).toBeTruthy();
+  await fireEvent.press(screen.getByText('Autoriser la lecture des pas'));
+  expect(await screen.findByText('Accordée')).toBeTruthy();
+});
+
+test('the settings list has the steps page', async () => {
+  signedInAs({ uid: 'alice' });
+  await renderRouter(undefined, { initialUrl: '/settings' });
+  await fireEvent.press(screen.getByText('Pas'));
+  expect(screen).toHavePathname('/settings/steps');
 });
 
 test('the Repas tab opens the day journal', async () => {

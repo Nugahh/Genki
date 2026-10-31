@@ -56,13 +56,13 @@ test.each([
   expect(contrast(foreground, background)).toBeGreaterThanOrEqual(3);
 });
 
-test.each(['water', 'calories', 'protein'] as const)('the icon of the %s disc reads on its tint', (metric) => {
+test.each(['water', 'calories', 'protein', 'steps'] as const)('the icon of the %s disc reads on its tint', (metric) => {
   expect(contrast(colors.metric[metric].on, colors.metric[metric].container)).toBeGreaterThanOrEqual(4.5);
 });
 
-test('the three discs are three different tints, none of them a pace color', () => {
+test('the discs are different tints, none of them a pace color', () => {
   const tints = Object.values(colors.metric).map((m) => m.container);
-  expect(new Set(tints).size).toBe(3);
+  expect(new Set(tints).size).toBe(tints.length);
   for (const tint of tints) expect(Object.values(colors.pace)).not.toContain(tint);
 });
 

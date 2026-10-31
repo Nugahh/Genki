@@ -1,6 +1,7 @@
 import { router } from 'expo-router';
 import { useApp } from '@/appContext';
 import { BodyCard } from '@/modules/body';
+import { outcomeProblem } from '@/modules/steps';
 import { TobaccoCard } from '@/modules/tobacco';
 import { useAuthUser } from '@/platform/firebase';
 import { defaultMeal } from '@/modules/nutrition';
@@ -9,7 +10,7 @@ import { useNextSession } from '@/modules/training';
 import { hourOfDay } from '@/shared/clock';
 
 export default function Today() {
-  const { app, profile, run } = useApp();
+  const { app, profile, run, stepsSync } = useApp();
   const { clock, dayTotals, hydration } = app;
   const userName = useAuthUser()?.displayName?.split(' ')[0];
   const next = useNextSession(app.training, clock, profile.timezone);
@@ -22,7 +23,9 @@ export default function Today() {
       hydration={hydration}
       run={run}
       onAddMeal={() => router.push({ pathname: '/add-food', params: { meal: defaultMeal(hourOfDay(clock.now(), profile.timezone)) } })}
-      onOpenMetric={(metric) => router.navigate({ pathname: '/suivi/[section]', params: { section: 'nutrition', metric } })}
+      onOpenMetric={(metric) => router.navigate({ pathname: '/suivi/[section]', params: { section: metric === 'steps' ? 'activite' : 'nutrition', metric } })}
+      onRefresh={stepsSync.sync}
+      stepsProblem={outcomeProblem(stepsSync.outcome)}
       cards={
         <>
           <BodyCard body={app.body} clock={clock} timezone={profile.timezone} run={run} onOpen={() => router.navigate({ pathname: '/suivi/[section]', params: { section: 'corps', metric: 'weight' } })} />

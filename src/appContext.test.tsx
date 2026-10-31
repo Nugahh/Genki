@@ -2,12 +2,14 @@ import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import { Pressable, Text } from 'react-native';
 import { PaperProvider } from 'react-native-paper';
 import { inMemoryProfileRepository, settingsUseCases } from '@/modules/settings';
+import { inMemoryHealthSource, inMemoryStepsRepository, stepsUseCases } from '@/modules/steps';
 import { AppProvider, useApp } from './appContext';
 
 const MESSAGE = 'L’enregistrement a échoué.';
 const denied = new Error('permission-denied');
 // The provider reads the profile through the settings use cases; the rest of the app is not needed here.
-const app = { settings: settingsUseCases(inMemoryProfileRepository()) } as never;
+const steps = () => stepsUseCases({ health: inMemoryHealthSource(), repo: inMemoryStepsRepository({ devices: [{ id: 'other', name: 'Galaxy', stepsWriter: true }] }), device: { id: 'phone-a', name: 'Pixel' }, clock: { now: () => new Date('2026-11-03T10:00:00Z') }, timezone: 'Europe/Paris' });
+const app = { settings: settingsUseCases(inMemoryProfileRepository()), steps: steps() } as never;
 
 // Runs `write` on press and shows whether a write failed.
 function Saver({ write }: { write: () => Promise<void> }) {
@@ -96,7 +98,7 @@ test('gives the screens the live profile, and says when it was read', async () =
   }
   await render(
     <PaperProvider>
-      <AppProvider app={{ settings } as never}>
+      <AppProvider app={{ settings, steps: steps() } as never}>
         <Goal />
       </AppProvider>
     </PaperProvider>,

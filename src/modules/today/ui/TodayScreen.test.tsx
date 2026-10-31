@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from '@testing-library/react-native';
+import { act, fireEvent, render, screen, within } from '@testing-library/react-native';
 import { PaperProvider } from 'react-native-paper';
 import { inMemoryWaterRepository, waterUseCases } from '@/modules/hydration';
 import { DEFAULT_PROFILE, type GoalMode } from '@/modules/settings';
@@ -12,7 +12,7 @@ const afternoon = { now: () => new Date('2026-10-23T13:00:00Z') };
 const evening = { now: () => new Date('2026-10-23T18:30:00Z') }; // 20:30 in Paris
 const fr = (n: number) => n.toLocaleString('fr-FR');
 
-async function renderToday({ kcal = 0, proteinG = 0, waterMl = 0, userName, clock = afternoon, session, goalMode }: { kcal?: number; proteinG?: number; waterMl?: number; userName?: string; clock?: typeof afternoon; session?: { title: string; subtitle: string; onStart: () => void }; goalMode?: GoalMode } = {}) {
+async function renderToday({ kcal = 0, proteinG = 0, waterMl = 0, steps = 0, stepsReading = {}, stepsProblem, onRefresh, userName, clock = afternoon, session, goalMode }: { kcal?: number; proteinG?: number; waterMl?: number; steps?: number; stepsReading?: { stepsSource?: string; stepsSyncedAt?: Date }; stepsProblem?: string; onRefresh?: () => Promise<void>; userName?: string; clock?: typeof afternoon; session?: { title: string; subtitle: string; onStart: () => void }; goalMode?: GoalMode } = {}) {
   const water = inMemoryWaterRepository();
   if (waterMl > 0) water.add({ day: '2026-10-23', ml: waterMl, createdAt: clock.now() });
   // Day totals as Firestore keeps them: the water is the sum of the day's live glasses.
@@ -22,7 +22,7 @@ async function renderToday({ kcal = 0, proteinG = 0, waterMl = 0, userName, cloc
         day,
         (entries) =>
           onNext(
-            { waterMl: entries.reduce((sum, e) => sum + e.ml, 0), kcal, proteinG, carbsG: 0, fatG: 0 },
+            { waterMl: entries.reduce((sum, e) => sum + e.ml, 0), kcal, proteinG, carbsG: 0, fatG: 0, steps, ...stepsReading },
             { hasPendingWrites: false, fromCache: false },
           ),
         () => {},
@@ -42,6 +42,8 @@ async function renderToday({ kcal = 0, proteinG = 0, waterMl = 0, userName, cloc
         run={(write) => void write()}
         onAddMeal={onAddMeal}
         onOpenMetric={onOpenMetric}
+        stepsProblem={stepsProblem}
+        onRefresh={onRefresh}
       />
     </PaperProvider>,
   );
@@ -247,5 +249,54 @@ describe('the Calories gauge follows the goal mode', () => {
   test('in a surplus, being behind the pace is late', async () => {
     await renderToday({ kcal: 300, goalMode: 'surplus' });
     expect(read()).toHaveAccessibilityValue({ text: 'en retard' });
+  });
+});
+
+describe('the Steps gauge', () => {
+  test('reads the steps against the goal, with the pace of the day', async () => {
+    await renderToday({ steps: 3000 }); // 15:00: half of 8 000 is expected, so 75 % of the pace
+    expect(screen.getByLabelText(/^Pas : /)).toHaveAccessibilityValue({ text: 'un peu en retard' });
+    expect(screen.getByText(`${fr(3000)} pas`)).toBeTruthy();
+    expect(screen.getByText(`sur ${fr(8000)} pas · reste ${fr(5000)} pas`)).toBeTruthy();
+  });
+
+  test('is on track with the steps of the pace', async () => {
+    await renderToday({ steps: 4000 });
+    expect(screen.getByLabelText(/^Pas : /)).toHaveAccessibilityValue({ text: 'dans le rythme' });
+  });
+
+  test('says where the steps come from and when they were read', async () => {
+    await renderToday({ steps: 5000, stepsReading: { stepsSource: 'fitbit', stepsSyncedAt: new Date('2026-10-23T12:32:00Z') } });
+    expect(screen.getByText('Fitbit · lu à 14:32')).toBeTruthy();
+  });
+
+  test('says they were not read yet, and how to read them', async () => {
+    await renderToday();
+    expect(screen.getByText('Pas encore lu : tire l’écran vers le bas pour synchroniser.')).toBeTruthy();
+  });
+
+  test('says why they cannot be read, instead of the time', async () => {
+    await renderToday({ stepsProblem: 'Autorise la lecture des pas dans Réglages › Pas.', stepsReading: { stepsSource: 'phone', stepsSyncedAt: new Date('2026-10-23T12:32:00Z') } });
+    expect(screen.getByText('Autorise la lecture des pas dans Réglages › Pas.')).toBeTruthy();
+    expect(screen.queryByText(/lu à/)).toBeNull();
+  });
+
+  test('opens the steps in the Suivi', async () => {
+    const { onOpenMetric } = await renderToday();
+    await fireEvent.press(screen.getByLabelText(/^Pas : /));
+    expect(onOpenMetric).toHaveBeenLastCalledWith('steps');
+  });
+
+  test('pulling the screen down reads the steps again', async () => {
+    const onRefresh = jest.fn(async () => {});
+    await renderToday({ onRefresh });
+    const { refreshControl } = screen.getByTestId('gauges').props;
+    await act(async () => refreshControl.props.onRefresh());
+    expect(onRefresh).toHaveBeenCalledTimes(1);
+  });
+
+  test('has no pull to refresh when the host gives no way to sync', async () => {
+    await renderToday();
+    expect(screen.getByTestId('gauges').props.refreshControl).toBeUndefined();
   });
 });

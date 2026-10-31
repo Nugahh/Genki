@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { Button, Icon, Snackbar, Surface, Text, useTheme } from 'react-native-paper';
 import { WaterAmountDialog, WaterButtons, type Hydration, type WaterEntry } from '@/modules/hydration';
 import type { Profile } from '@/modules/settings';
@@ -20,16 +20,21 @@ type Props = {
   run: (write: () => Promise<void>) => void;
   /** « + Repas »: the host opens the add-food screen. */
   onAddMeal: () => void;
-  /** The Calories and Protéines gauges: the host opens the day journal. */
   /** Opens the Suivi of a measure (spec §6, « Tout est touchable »). */
-  onOpenMetric: (metric: 'calories' | 'protein') => void;
-  /** The session to do next, when there is a programme in progress: « Démarrer » opens it in the host. */
+  onOpenMetric: (metric: 'calories' | 'protein' | 'steps') => void;
+  /** Pulling the screen down reads the steps again; the screen waits for it to end. */
+  onRefresh?: () => Promise<void>;
+  /** Why the steps are not there (no permission, no Health Connect…), shown under the gauge. */
+  stepsProblem?: string;
   /** More cards under the session (the weight, the days without tobacco): the route composes them from their modules. */
   cards?: ReactNode;
+  /** The session to do next, when there is a programme in progress: « Démarrer » opens it in the host. */
   session?: { title: string; subtitle: string; onStart: () => void };
 };
 
-const NO_TOTALS: DayTotals = { waterMl: 0, kcal: 0, proteinG: 0, carbsG: 0, fatG: 0 };
+const NO_TOTALS: DayTotals = { waterMl: 0, kcal: 0, proteinG: 0, carbsG: 0, fatG: 0, steps: 0 };
+const steps = (n: number) => `${fr(n, 0)} pas`;
+const STEPS_SOURCE: Record<string, string> = { fitbit: 'Fitbit', phone: 'Ce téléphone' };
 const fr = (n: number, maximumFractionDigits: number) => n.toLocaleString('fr-FR', { maximumFractionDigits });
 const liters = (ml: number) => `${fr(ml / 1000, 2)} L`;
 const kcal = (n: number) => `${fr(n, 0)} kcal`;
@@ -50,12 +55,21 @@ function encouragement(totals: DayTotals, goals: Profile['goals']) {
 /** A gauge with no goal is drawn full. */
 const progress = (value: number, goal: number) => (goal > 0 ? value / goal : 1);
 
-export function TodayScreen({ profile, userName, clock, dayTotals, hydration, run, onAddMeal, onOpenMetric, session, cards }: Props) {
+export function TodayScreen({ profile, userName, clock, dayTotals, hydration, run, onAddMeal, onOpenMetric, onRefresh, stepsProblem, session, cards }: Props) {
   const now = useNow(clock);
   const day = dayKey(now, profile.timezone);
   const hour = hourOfDay(now, profile.timezone);
   const [totals, setTotals] = useState(NO_TOTALS);
   const [amountOpen, setAmountOpen] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const refresh = async () => {
+    setRefreshing(true);
+    try {
+      await onRefresh?.();
+    } finally {
+      setRefreshing(false);
+    }
+  };
   // Listener errors show on the SyncIcon, which watches the same document.
   useEffect(() => dayTotals.observe(day, (next) => setTotals(next), () => {}), [dayTotals, day]);
 
@@ -76,12 +90,15 @@ export function TodayScreen({ profile, userName, clock, dayTotals, hydration, ru
   // Gaining: going over the goal is the point, not a problem. Losing: it is the only way to be late, and a gauge under its pace is on track.
   const overGoal = profile.goalMode !== 'surplus' && isOverGoal(totals.kcal, goals.kcal);
   const { colors } = useTheme();
+  const syncedAt = totals.stepsSyncedAt?.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', timeZone: profile.timezone });
+  const stepsNote =
+    stepsProblem ?? (syncedAt ? [STEPS_SOURCE[totals.stepsSource ?? ''], `lu à ${syncedAt}`].filter(Boolean).join(' · ') : 'Pas encore lu : tire l’écran vers le bas pour synchroniser.');
   const greeting = [hour < 18 ? 'Bonjour' : 'Bonsoir', userName].filter(Boolean).join(' ');
 
   return (
     <View style={styles.screen}>
       <View style={styles.readings}>
-        <ScrollView testID="gauges" contentContainerStyle={styles.content}>
+        <ScrollView testID="gauges" contentContainerStyle={styles.content} refreshControl={onRefresh ? <RefreshControl refreshing={refreshing} onRefresh={() => void refresh()} /> : undefined}>
           <View style={styles.greeting}>
             <Text variant="titleLarge">{greeting}</Text>
             <Text variant="bodyLarge" style={{ color: colors.onSurfaceVariant }}>{encouragement(totals, goals)}</Text>
@@ -125,6 +142,20 @@ export function TodayScreen({ profile, userName, clock, dayTotals, hydration, ru
             color={paceColor(totals.proteinG, goals.proteinG, hour)}
             icon="chevron-right"
             onPress={() => onOpenMetric('protein')}
+          />
+          <GaugeBar
+            label="Pas"
+            metric="steps"
+            value={steps(totals.steps)}
+            goal={steps(goals.steps)}
+            remaining={remaining(totals.steps, goals.steps, steps)}
+            note={stepsNote}
+            hint="Ouvre le suivi des pas"
+            progress={progress(totals.steps, goals.steps)}
+            expected={expected}
+            color={paceColor(totals.steps, goals.steps, hour)}
+            icon="chevron-right"
+            onPress={() => onOpenMetric('steps')}
           />
           {session && (
             <Surface mode="flat" elevation={1} style={styles.session}>
