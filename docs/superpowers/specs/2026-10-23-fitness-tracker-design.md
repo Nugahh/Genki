@@ -85,7 +85,7 @@ L'application parle directement à Firestore par le SDK. REST n'apparaîtra que 
 Tout est rangé sous `users/{uid}`. Les identifiants sont des UUID générés par l'application pour pouvoir créer des données hors-ligne sans collision.
 
 ### Document `users/{uid}` (profil)
-`timezone` (défaut `Europe/Paris`), `sex` (`male` ou `female`, pour la formule des objectifs), `birthYear`, `heightCm`, `activityLevel` (`sedentary`, `light` ou `active`), `goals` (`kcal`, `proteinG`, `waterMl`, `steps`), `quitDate` (optionnel), `cigarettesPerDay` (optionnel), `packSize` (défaut 20), `packPrice` (optionnel), `ui` (`hubMetrics` : liste ordonnée d'identifiants de métriques, `period` : `day`, `week` ou `year`), `waterContainers` (liste de `{ label, ml }`, défaut 250 et 500), `createdAt`.
+`timezone` (défaut `Europe/Paris`), `sex` (`male` ou `female`, pour la formule des objectifs), `birthYear`, `heightCm`, `activityLevel` (`sedentary`, `light` ou `active`), `goals` (`kcal`, `proteinG`, `waterMl`, `steps`), `quitDate` (optionnel), `cigarettesPerDay` (optionnel), `packSize` (défaut 20), `packPrice` (optionnel), `goalMode` (`deficit`, `maintenance` ou `surplus` : ce à quoi sert l'objectif de calories, il décide des couleurs de la jauge), `weeklyLossKg` (optionnel, perte visée par semaine), `ui` (`hubMetrics` : liste ordonnée d'identifiants de métriques, `period` : `day`, `week` ou `year`), `waterContainers` (liste de `{ label, ml }`, défaut 250 et 500), `createdAt`.
 
 ### Sous-collections
 
