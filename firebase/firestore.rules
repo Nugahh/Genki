@@ -142,5 +142,56 @@ service cloud.firestore {
         && request.resource.data.updatedAt is timestamp;
       allow delete: if isOwner(uid);
     }
+
+    // The detailed shape of a programme (phases, sessions, exercises) is checked by the domain: here only the sizes of the lists are bounded.
+    match /users/{uid}/plans/{planId} {
+      allow create, update: if isOwner(uid)
+        && request.resource.data.keys().hasOnly(['name', 'active', 'startDay', 'phases', 'updatedAt'])
+        && isShortText(request.resource.data.name, 100)
+        && request.resource.data.active is bool
+        && isDayKey(request.resource.data.startDay)
+        && request.resource.data.phases is list
+        && request.resource.data.phases.size() >= 1
+        && request.resource.data.phases.size() <= 12
+        && request.resource.data.updatedAt is timestamp;
+      allow delete: if isOwner(uid);
+    }
+
+    // A workout is recorded once, as it was done: no change, no deletion in M3 (spec §4 rule 1).
+    match /users/{uid}/workoutLogs/{logId} {
+      allow create: if isOwner(uid)
+        && request.resource.data.keys().hasOnly(['day', 'planId', 'sessionName', 'exerciseIds', 'sets', 'durationMin', 'createdAt', 'deletedAt'])
+        && isDayKey(request.resource.data.day)
+        && isShortText(request.resource.data.planId, 100)
+        && isShortText(request.resource.data.sessionName, 100)
+        && request.resource.data.exerciseIds is list
+        && request.resource.data.exerciseIds.size() >= 1
+        && request.resource.data.exerciseIds.size() <= 20
+        && request.resource.data.sets is list
+        && request.resource.data.sets.size() >= 1
+        && request.resource.data.sets.size() <= 200
+        && request.resource.data.durationMin is int
+        && request.resource.data.durationMin >= 1
+        && request.resource.data.durationMin <= 1440
+        && request.resource.data.createdAt is timestamp
+        && request.resource.data.deletedAt == null;
+    }
+
+    match /users/{uid}/milestones/{milestoneId} {
+      allow create: if isOwner(uid)
+        && request.resource.data.keys().hasOnly(['metric', 'target', 'direction', 'label'])
+        && isShortText(request.resource.data.metric, 100)
+        && request.resource.data.target is number
+        && request.resource.data.target >= 0
+        && request.resource.data.target <= 100000
+        && request.resource.data.direction in ['up', 'down']
+        && isShortText(request.resource.data.label, 100);
+      // Reaching a milestone is the only change, and it happens once.
+      allow update: if isOwner(uid)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['achievedAt'])
+        && !('achievedAt' in resource.data)
+        && request.resource.data.achievedAt is timestamp;
+      allow delete: if isOwner(uid);
+    }
   }
 }

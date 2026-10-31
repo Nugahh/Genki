@@ -267,3 +267,110 @@ describe('days (nutrition totals)', () => {
     await assertFails(setDoc(doc(db('alice'), 'users/alice/days/2026-10-24'), { proteinG: '12', updatedAt: Timestamp.now() }));
   });
 });
+
+describe('plans', () => {
+  const phases = (n = 1) => Array.from({ length: n }, (_, i) => ({ name: `Phase ${i}`, weeks: 4, sessions: [{ name: 'A', exercises: [{ exerciseId: 'squat', name: 'Squat', sets: 3, reps: 8, incrementKg: 2.5 }] }] }));
+  const plan = () => ({ name: 'Reprise', active: true, startDay: '2026-11-02', phases: phases(), updatedAt: Timestamp.now() });
+
+  test('the owner creates, edits and deletes a programme, another user cannot', async () => {
+    const ref = doc(db('alice'), 'users/alice/plans/p1');
+    await assertSucceeds(setDoc(ref, plan()));
+    await assertSucceeds(setDoc(ref, { ...plan(), name: 'Autre nom' }));
+    await assertFails(setDoc(doc(db('bob'), 'users/alice/plans/p2'), plan()));
+    await assertFails(deleteDoc(doc(db('bob'), 'users/alice/plans/p1')));
+    await assertSucceeds(deleteDoc(ref));
+  });
+
+  test.each<[string, object]>([
+    ['an extra field', { extra: 1 }],
+    ['a blank name', { name: '' }],
+    ['a name of 101 characters', { name: 'x'.repeat(101) }],
+    ['an active flag that is not a boolean', { active: 'oui' }],
+    ['a start day that is not a day', { startDay: 'demain' }],
+    ['no phase', { phases: [] }],
+    ['13 phases', { phases: phases(13) }],
+    ['phases that are not a list', { phases: 'beaucoup' }],
+    ['no update time', { updatedAt: 'now' }],
+  ])('rejects %s', async (_, patch) => {
+    await assertFails(setDoc(doc(db('alice'), 'users/alice/plans/p1'), { ...plan(), ...patch }));
+  });
+});
+
+describe('workoutLogs', () => {
+  const log = () => ({
+    day: '2026-11-03',
+    planId: 'p1',
+    sessionName: 'Séance A',
+    exerciseIds: ['squat'],
+    sets: [{ exerciseId: 'squat', setNo: 1, reps: 8, kg: 20 }],
+    durationMin: 45,
+    createdAt: Timestamp.now(),
+    deletedAt: null,
+  });
+
+  test('the owner records a workout, another user cannot, and nobody changes or deletes it', async () => {
+    const ref = doc(db('alice'), 'users/alice/workoutLogs/w1');
+    await assertSucceeds(setDoc(ref, log()));
+    await assertFails(setDoc(doc(db('bob'), 'users/alice/workoutLogs/w2'), log()));
+    await assertFails(updateDoc(ref, { durationMin: 50 }));
+    await assertFails(setDoc(ref, { ...log(), durationMin: 50 }));
+    await assertFails(deleteDoc(ref));
+  });
+
+  test.each<[string, object]>([
+    ['an extra field', { extra: 1 }],
+    ['a day that is not a day', { day: 'hier' }],
+    ['a blank session name', { sessionName: '' }],
+    ['no exercise', { exerciseIds: [] }],
+    ['21 exercises', { exerciseIds: Array.from({ length: 21 }, (_, i) => `e${i}`) }],
+    ['no set', { sets: [] }],
+    ['201 sets', { sets: Array.from({ length: 201 }, () => ({ exerciseId: 'squat', setNo: 1, reps: 8, kg: 20 })) }],
+    ['a duration of 0', { durationMin: 0 }],
+    ['a duration above a day', { durationMin: 1441 }],
+    ['a fractional duration', { durationMin: 45.5 }],
+    ['a deletion mark', { deletedAt: Timestamp.now() }],
+    ['a creation time that is not a time', { createdAt: 'now' }],
+  ])('rejects %s', async (_, patch) => {
+    await assertFails(setDoc(doc(db('alice'), 'users/alice/workoutLogs/w1'), { ...log(), ...patch }));
+  });
+});
+
+describe('milestones', () => {
+  const milestone = () => ({ metric: 'exercise:tractions:reps', target: 10, direction: 'up', label: '10 tractions' });
+
+  test('the owner creates and deletes a milestone, another user cannot', async () => {
+    const ref = doc(db('alice'), 'users/alice/milestones/m1');
+    await assertSucceeds(setDoc(ref, milestone()));
+    await assertFails(setDoc(doc(db('bob'), 'users/alice/milestones/m2'), milestone()));
+    await assertFails(deleteDoc(doc(db('bob'), 'users/alice/milestones/m1')));
+    await assertSucceeds(deleteDoc(ref));
+  });
+
+  test.each<[string, object]>([
+    ['an extra field', { extra: 1 }],
+    ['a blank label', { label: '' }],
+    ['a negative target', { target: -1 }],
+    ['a target above 100 000', { target: 100001 }],
+    ['a target that is not a number', { target: '10' }],
+    ['a direction that is neither up nor down', { direction: 'sideways' }],
+    ['no metric', { metric: '' }],
+    ['an achievement set at creation', { achievedAt: Timestamp.now() }],
+  ])('rejects %s', async (_, patch) => {
+    await assertFails(setDoc(doc(db('alice'), 'users/alice/milestones/m1'), { ...milestone(), ...patch }));
+  });
+
+  test('achievedAt is set once, and nothing else changes', async () => {
+    await seed('users/alice/milestones/m1', milestone());
+    const ref = doc(db('alice'), 'users/alice/milestones/m1');
+    await assertFails(updateDoc(ref, { target: 12 }));
+    await assertFails(updateDoc(ref, { achievedAt: 'hier' }));
+    await assertFails(updateDoc(ref, { achievedAt: Timestamp.now(), target: 12 }));
+    await assertSucceeds(updateDoc(ref, { achievedAt: Timestamp.now() }));
+    await assertFails(updateDoc(ref, { achievedAt: Timestamp.now() }));
+  });
+
+  test('another user cannot mark one achieved', async () => {
+    await seed('users/alice/milestones/m1', milestone());
+    await assertFails(updateDoc(doc(db('bob'), 'users/alice/milestones/m1'), { achievedAt: Timestamp.now() }));
+  });
+});
