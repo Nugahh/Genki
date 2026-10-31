@@ -46,3 +46,6 @@ yarn-error.*
 *-debug.log
 # A crashed build:ciqual leaves assets/ciqual.db.tmp and its journal
 *.db.tmp*
+
+# Android Studio opens the repo: its project files are not ours
+/.idea/

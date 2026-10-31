@@ -56,6 +56,16 @@ test.each([
   expect(contrast(foreground, background)).toBeGreaterThanOrEqual(3);
 });
 
+test.each(['water', 'calories', 'protein'] as const)('the icon of the %s disc reads on its tint', (metric) => {
+  expect(contrast(colors.metric[metric].on, colors.metric[metric].container)).toBeGreaterThanOrEqual(4.5);
+});
+
+test('the three discs are three different tints, none of them a pace color', () => {
+  const tints = Object.values(colors.metric).map((m) => m.container);
+  expect(new Set(tints).size).toBe(3);
+  for (const tint of tints) expect(Object.values(colors.pace)).not.toContain(tint);
+});
+
 test('the three paces differ in lightness too, not only in hue (red and green look alike to some eyes)', () => {
   const { green, orange, red } = colors.pace;
   expect(contrast(green, red)).toBeGreaterThanOrEqual(1.3);

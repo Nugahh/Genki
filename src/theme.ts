@@ -45,6 +45,12 @@ const colors = {
     level4: 'rgb(237, 231, 224)',
     level5: 'rgb(231, 226, 219)',
   },
+  // One pastel disc per measure under its icon: blue, lilac, turquoise, clear of the green, ochre and brick of the pace.
+  metric: {
+    water: { container: 'rgb(214, 227, 255)', on: 'rgb(0, 27, 60)' },
+    calories: { container: 'rgb(249, 216, 254)', on: 'rgb(40, 19, 47)' },
+    protein: { container: 'rgb(178, 237, 235)', on: 'rgb(0, 32, 31)' },
+  },
   // The pace of a gauge (spec §9), outside the Material roles. Each is 3:1 or more on the gauge track (surfaceVariant) and they differ in lightness.
   pace: { green: '#007334', orange: '#B56A00', red: '#9E1910' },
 };

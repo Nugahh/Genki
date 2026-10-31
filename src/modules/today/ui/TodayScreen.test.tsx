@@ -8,11 +8,13 @@ import type { DayTotalsRepository } from '../application/ports';
 import { TodayScreen } from './TodayScreen';
 
 // 15:00 in Paris: half of the daily goals is expected by now.
-const clock = { now: () => new Date('2026-10-23T13:00:00Z') };
+const afternoon = { now: () => new Date('2026-10-23T13:00:00Z') };
+const evening = { now: () => new Date('2026-10-23T18:30:00Z') }; // 20:30 in Paris
 const fr = (n: number) => n.toLocaleString('fr-FR');
 
-async function renderToday({ kcal = 0, proteinG = 0 }: { kcal?: number; proteinG?: number } = {}) {
+async function renderToday({ kcal = 0, proteinG = 0, waterMl = 0, userName, clock = afternoon }: { kcal?: number; proteinG?: number; waterMl?: number; userName?: string; clock?: typeof afternoon } = {}) {
   const water = inMemoryWaterRepository();
+  if (waterMl > 0) water.add({ day: '2026-10-23', ml: waterMl, createdAt: clock.now() });
   // Day totals as Firestore keeps them: the water is the sum of the day's live glasses.
   const dayTotals: DayTotalsRepository = {
     observe: (day, onNext) =>
@@ -32,6 +34,7 @@ async function renderToday({ kcal = 0, proteinG = 0 }: { kcal?: number; proteinG
     <PaperProvider theme={theme}>
       <TodayScreen
         profile={DEFAULT_PROFILE}
+        userName={userName}
         clock={clock}
         dayTotals={dayTotals}
         hydration={waterUseCases(water, clock, DEFAULT_PROFILE.timezone)}
@@ -59,6 +62,27 @@ test('the quick-add buttons stay outside the scrolling gauges, under the thumb w
   expect(scrolling.queryByText('+ Repas')).toBeNull();
   expect(screen.getByText('+250 ml')).toBeTruthy();
   expect(screen.getByText('+ Repas')).toBeTruthy();
+});
+
+test('the screen greets by the time of day and by first name', async () => {
+  await renderToday({ userName: 'Francis' });
+  expect(screen.getByText('Bonjour Francis')).toBeTruthy();
+});
+
+test('in the evening it says « Bonsoir », and without a name it only greets', async () => {
+  await renderToday({ clock: evening });
+  expect(screen.getByText('Bonsoir')).toBeTruthy();
+});
+
+test.each([
+  [{}, 'Encore 2,5 L d’eau et 130 g de protéines aujourd’hui.'],
+  [{ waterMl: 2500 }, 'Objectif d’eau atteint, bravo ! Encore 130 g de protéines.'],
+  [{ proteinG: 130 }, 'Objectif de protéines atteint, bravo ! Encore 2,5 L d’eau.'],
+  [{ waterMl: 3000, proteinG: 140 }, 'Objectifs d’eau et de protéines atteints, bravo !'],
+  [{ waterMl: 1500, proteinG: 52.3 }, 'Encore 1 L d’eau et 77,7 g de protéines aujourd’hui.'],
+])('the message under the greeting says what is left of the water and protein goals: %j', async (totals, message) => {
+  await renderToday(totals);
+  expect(screen.getByText(message)).toBeTruthy();
 });
 
 test('the gauges and the quick actions wear their icons: a drop, a flame, a flexed arm; two cups and a fork and knife', async () => {

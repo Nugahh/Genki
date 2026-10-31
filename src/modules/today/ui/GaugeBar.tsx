@@ -1,9 +1,11 @@
-import { StyleSheet, View } from 'react-native';
-import { Icon, Text, TouchableRipple, useTheme } from 'react-native-paper';
+import { useEffect, useRef, useState } from 'react';
+import { AccessibilityInfo, Animated, Easing, StyleSheet, View } from 'react-native';
+import { Icon, Surface, Text, TouchableRipple, useTheme } from 'react-native-paper';
 import type { AppTheme } from '@/theme';
 import type { GaugeColor } from '../domain/gauge';
 
 const PACE: Record<GaugeColor, string> = { green: 'dans le rythme', orange: 'un peu en retard', red: 'en retard' };
+const METRIC_ICON = { water: 'water', calories: 'fire', protein: 'arm-flex' } as const;
 
 type Props = {
   label: string;
@@ -18,8 +20,8 @@ type Props = {
   /** Where the user should be by now, from 0 to 1. */
   expected: number;
   color: GaugeColor;
-  /** The icon of the metric (a drop, a flame): it wears the label, on a tinted disc. */
-  symbol: string;
+  /** What is measured: its icon (a drop, a flame, a flexed arm) wears the label, on a disc of its own tint. */
+  metric: keyof typeof METRIC_ICON;
   /** What a touch does, read by TalkBack after the label: the icon alone says it to the eye. */
   hint: string;
   /** What the color means, read by TalkBack: the pace wording unless the gauge has something else to say. */
@@ -29,41 +31,56 @@ type Props = {
   onPress: () => void;
 };
 
-export function GaugeBar({ label, value, goal, remaining, hint, symbol, progress, expected, color, status = PACE[color], icon, onPress }: Props) {
+export function GaugeBar({ label, value, goal, remaining, hint, metric, progress, expected, color, status = PACE[color], icon, onPress }: Props) {
   const { colors } = useTheme<AppTheme>();
+  // The fill slides to its value (from empty when the screen opens), unless the phone asks for no motion.
+  const fill = useRef(new Animated.Value(0)).current;
+  const [reduceMotion, setReduceMotion] = useState(false);
+  useEffect(() => {
+    void AccessibilityInfo.isReduceMotionEnabled().then(setReduceMotion);
+  }, []);
+  useEffect(() => {
+    Animated.timing(fill, { toValue: Math.max(0, Math.min(progress, 1)), duration: reduceMotion ? 0 : 450, easing: Easing.out(Easing.cubic), useNativeDriver: false }).start();
+  }, [fill, progress, reduceMotion]);
+
+  const tint = colors.metric[metric];
   return (
-    <TouchableRipple
-      onPress={onPress}
-      accessibilityRole="button"
-      accessibilityLabel={`${label} : ${value}, sur ${goal}, ${remaining}`}
-      accessibilityHint={hint}
-      accessibilityValue={{ text: status }}
-      style={styles.touch}
-    >
-      <View style={styles.content}>
-        <View style={styles.row}>
-          <View style={styles.title}>
-            <View style={[styles.badge, { backgroundColor: colors.secondaryContainer }]}>
-              <Icon source={symbol} size={20} color={colors.onSecondaryContainer} />
+    <Surface mode="flat" elevation={1} style={styles.card}>
+      <TouchableRipple
+        onPress={onPress}
+        accessibilityRole="button"
+        accessibilityLabel={`${label} : ${value}, sur ${goal}, ${remaining}`}
+        accessibilityHint={hint}
+        accessibilityValue={{ text: status }}
+        style={styles.touch}
+      >
+        <View style={styles.content}>
+          <View style={styles.row}>
+            <View style={styles.title}>
+              <View style={[styles.badge, { backgroundColor: tint.container }]}>
+                <Icon source={METRIC_ICON[metric]} size={20} color={tint.on} />
+              </View>
+              <Text variant="labelLarge" style={[styles.label, { color: colors.onSurfaceVariant }]}>{label}</Text>
             </View>
-            <Text variant="labelLarge" style={[styles.label, { color: colors.onSurfaceVariant }]}>{label}</Text>
+            <Icon source={icon} size={24} />
           </View>
-          <Icon source={icon} size={24} />
+          <Text variant="headlineSmall" style={styles.value}>{value}</Text>
+          <View style={[styles.track, { backgroundColor: colors.surfaceVariant }]}>
+            <Animated.View style={[styles.fill, { width: fill.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] }), backgroundColor: colors.pace[color] }]} />
+            {/* Pulled back by its 2 dp width as it nears 100 %, or the track's overflow would clip it. */}
+            <View style={[styles.marker, { backgroundColor: colors.onSurface, left: `${expected * 100}%`, marginLeft: -2 * expected }]} />
+          </View>
+          <Text variant="bodyMedium" style={{ color: colors.onSurfaceVariant }}>{`sur ${goal} · ${remaining}`}</Text>
         </View>
-        <Text variant="headlineSmall" style={styles.value}>{value}</Text>
-        <View style={[styles.track, { backgroundColor: colors.surfaceVariant }]}>
-          <View style={[styles.fill, { width: `${Math.min(progress, 1) * 100}%`, backgroundColor: colors.pace[color] }]} />
-          {/* Pulled back by its 2 dp width as it nears 100 %, or the track's overflow would clip it. */}
-          <View style={[styles.marker, { backgroundColor: colors.onSurface, left: `${expected * 100}%`, marginLeft: -2 * expected }]} />
-        </View>
-        <Text variant="bodyMedium" style={{ color: colors.onSurfaceVariant }}>{`sur ${goal} · ${remaining}`}</Text>
-      </View>
-    </TouchableRipple>
+      </TouchableRipple>
+    </Surface>
   );
 }
 
 const styles = StyleSheet.create({
-  touch: { minHeight: 48, borderRadius: 12, padding: 12 },
+  // A soft card: the ripple is clipped to its corners.
+  card: { borderRadius: 16, overflow: 'hidden' },
+  touch: { minHeight: 48, padding: 16 },
   content: { gap: 4 },
   row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
   title: { flexDirection: 'row', alignItems: 'center', gap: 8, flexShrink: 1 },

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
-import { Button, Snackbar, Surface } from 'react-native-paper';
+import { Button, Snackbar, Surface, Text, useTheme } from 'react-native-paper';
 import { WaterButtons, WaterSheet, type Hydration, type WaterEntry } from '@/modules/hydration';
 import type { Profile } from '@/modules/settings';
 import { dayKey, hourOfDay, type Clock } from '@/shared/clock';
@@ -11,6 +11,8 @@ import { GaugeBar } from './GaugeBar';
 
 type Props = {
   profile: Profile;
+  /** The first name of the signed-in user, for the greeting; none is fine. */
+  userName?: string;
   clock: Clock;
   dayTotals: DayTotalsRepository;
   hydration: Hydration;
@@ -29,10 +31,21 @@ const kcal = (n: number) => `${fr(n, 0)} kcal`;
 const grams = (n: number) => `${fr(n, 1)} g`;
 /** What is left of a goal: a gauge is never read from the goal alone. */
 const remaining = (value: number, goal: number, format: (n: number) => string) => (value < goal ? `reste ${format(goal - value)}` : 'objectif atteint');
+/** What is left of the water and protein goals, in a sentence: calories wait for the goal modes (spec §9). */
+function encouragement(totals: DayTotals, goals: Profile['goals']) {
+  const water = totals.waterMl >= goals.waterMl;
+  const protein = totals.proteinG >= goals.proteinG;
+  const waterLeft = `${liters(goals.waterMl - totals.waterMl)} d’eau`;
+  const proteinLeft = `${grams(goals.proteinG - totals.proteinG)} de protéines`;
+  if (water && protein) return 'Objectifs d’eau et de protéines atteints, bravo !';
+  if (water) return `Objectif d’eau atteint, bravo ! Encore ${proteinLeft}.`;
+  if (protein) return `Objectif de protéines atteint, bravo ! Encore ${waterLeft}.`;
+  return `Encore ${waterLeft} et ${proteinLeft} aujourd’hui.`;
+}
 /** A gauge with no goal is drawn full. */
 const progress = (value: number, goal: number) => (goal > 0 ? value / goal : 1);
 
-export function TodayScreen({ profile, clock, dayTotals, hydration, run, onAddMeal, onOpenMeals }: Props) {
+export function TodayScreen({ profile, userName, clock, dayTotals, hydration, run, onAddMeal, onOpenMeals }: Props) {
   const now = useNow(clock);
   const day = dayKey(now, profile.timezone);
   const hour = hourOfDay(now, profile.timezone);
@@ -56,14 +69,20 @@ export function TodayScreen({ profile, clock, dayTotals, hydration, run, onAddMe
     run(() => hydration.removeWater(entry));
   };
   const overGoal = isOverGoal(totals.kcal, goals.kcal);
+  const { colors } = useTheme();
+  const greeting = [hour < 18 ? 'Bonjour' : 'Bonsoir', userName].filter(Boolean).join(' ');
 
   return (
     <View style={styles.screen}>
       <View style={styles.readings}>
         <ScrollView testID="gauges" contentContainerStyle={styles.content}>
+          <View style={styles.greeting}>
+            <Text variant="titleLarge">{greeting}</Text>
+            <Text variant="bodyLarge" style={{ color: colors.onSurfaceVariant }}>{encouragement(totals, goals)}</Text>
+          </View>
           <GaugeBar
             label="Eau"
-            symbol="water"
+            metric="water"
             value={liters(totals.waterMl)}
             goal={liters(goals.waterMl)}
             remaining={remaining(totals.waterMl, goals.waterMl, liters)}
@@ -76,7 +95,7 @@ export function TodayScreen({ profile, clock, dayTotals, hydration, run, onAddMe
           />
           <GaugeBar
             label="Calories"
-            symbol="fire"
+            metric="calories"
             value={kcal(totals.kcal)}
             goal={kcal(goals.kcal)}
             remaining={overGoal ? 'au-dessus de l’objectif' : remaining(totals.kcal, goals.kcal, kcal)}
@@ -90,7 +109,7 @@ export function TodayScreen({ profile, clock, dayTotals, hydration, run, onAddMe
           />
           <GaugeBar
             label="Protéines"
-            symbol="arm-flex"
+            metric="protein"
             value={grams(totals.proteinG)}
             goal={grams(goals.proteinG)}
             remaining={remaining(totals.proteinG, goals.proteinG, grams)}
@@ -140,6 +159,7 @@ const styles = StyleSheet.create({
   // The container the take-back snackbar rests at the bottom of: right above the actions.
   readings: { flex: 1 },
   content: { padding: 16, gap: 16 },
+  greeting: { gap: 4, paddingHorizontal: 4 },
   // The amounts and « + Repas » share one row, which wraps on a large font.
   actions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, padding: 16 },
   grow: { flexGrow: 1 },
