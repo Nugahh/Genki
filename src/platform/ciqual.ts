@@ -1,10 +1,9 @@
 import { importDatabaseFromAssetAsync, openDatabaseAsync } from 'expo-sqlite';
-import type { SqlReader } from '@/modules/nutrition/adapters/ciqualCatalog';
 
 // Bump the version in the file name when assets/ciqual.db is rebuilt: the app then installs the new copy.
 const DATABASE = 'ciqual-2025-11-03.db';
 
-export async function openCiqual(): Promise<SqlReader> {
+export async function openCiqual() {
   // <SQLiteProvider assetSource> without the component: the copy happens only while the file is not in the app's storage yet.
   // importDatabaseFromAssetAsync is @hidden ("testing only") in SDK 58 (build/hooks.d.ts) but is exactly what the provider calls
   // (build/hooks.js): if a later SDK breaks the typecheck here, that is why, and <SQLiteProvider assetSource> is the way out.
