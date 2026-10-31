@@ -93,6 +93,7 @@ Ensuite :
 - **Repas sur deux téléphones.** Ajouter un repas sur chacun hors-ligne, puis rétablir le réseau : les deux affichent les calories et les protéines additionnées.
 - **Journal.** Modifier la quantité d'une ligne, puis supprimer une ligne : les totaux suivent.
 - **« Réessayer ».** Le message d'un enregistrement refusé est visible et utilisable au-dessus de la fenêtre native « Ajouter un aliment ».
+- **Suppression d'un favori.** La boîte « Supprimer le favori … ? » (Favoris › corbeille) apparaît au-dessus de la fenêtre native « Ajouter un aliment » et ses deux boutons répondent.
 - **Mise en page, sur 360 dp et sur 412 dp.** Les quatre libellés « Favoris », « Récents », « Recherche » et « Créer » ne sont pas tronqués ; la rangée +250 ml, +500 ml, + Repas passe à la ligne proprement ; les textes des jauges tiennent.
 - **Zones tactiles de 48 dp.** Puces Tous/Cru/Cuit, puces de portion et icônes Supprimer, à essayer au pouce.
 - **Formats français sur Hermes.** « 1 200 / 2 200 kcal », « 0,6 g ».
