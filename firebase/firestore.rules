@@ -242,6 +242,16 @@ service cloud.firestore {
         && request.resource.data.deletedAt == null;
     }
 
+    // A craving is noted once, as it happens; only a mis-tap takes it back (no total depends on it).
+    match /users/{uid}/cravings/{cravingId} {
+      allow create: if isOwner(uid)
+        && request.resource.data.keys().hasOnly(['day', 'createdAt', 'resisted'])
+        && isDayKey(request.resource.data.day)
+        && request.resource.data.createdAt is timestamp
+        && request.resource.data.resisted is bool;
+      allow delete: if isOwner(uid);
+    }
+
     match /users/{uid}/milestones/{milestoneId} {
       allow create: if isOwner(uid)
         && request.resource.data.keys().hasOnly(['metric', 'target', 'direction', 'label'])
