@@ -51,6 +51,18 @@ const colors = {
     calories: { container: 'rgb(249, 216, 254)', on: 'rgb(40, 19, 47)' },
     protein: { container: 'rgb(178, 237, 235)', on: 'rgb(0, 32, 31)' },
   },
+  // Solid marks of the Suivi charts, one per measure, each 4.5:1 or more on the page. The green, ochre and brick of the pace tell how a day went and are not reused here.
+  chart: {
+    water: 'rgb(38, 94, 167)',
+    calories: 'rgb(125, 82, 140)',
+    protein: 'rgb(0, 110, 108)',
+    carbs: 'rgb(140, 95, 30)',
+    fat: 'rgb(160, 65, 105)',
+    steps: 'rgb(85, 95, 113)',
+    weight: 'rgb(70, 80, 150)',
+    waist: 'rgb(110, 100, 60)',
+    training: 'rgb(40, 110, 150)',
+  },
   // The pace of a gauge (spec §9), outside the Material roles. Each is 3:1 or more on the gauge track (surfaceVariant) and they differ in lightness.
   pace: { green: '#007334', orange: '#B56A00', red: '#9E1910' },
 };
