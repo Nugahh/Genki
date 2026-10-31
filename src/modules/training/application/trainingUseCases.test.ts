@@ -86,7 +86,8 @@ describe('a workout', () => {
   test('writes nothing before save, then the log with its day, duration and exercises', async () => {
     const { workouts, training } = setup();
     const done = [...sets('squat-gobelet', [8, 8, 8], 20), ...sets('pompes', [8], 0)];
-    const { save } = await training.finishWorkout({ plan, session, done, startedAt: new Date('2026-11-03T09:15:00Z') });
+    const { summary, save } = await training.finishWorkout({ plan, session, done, startedAt: new Date('2026-11-03T09:15:00Z') });
+    expect(summary.durationMin).toBe(45);
     expect(workouts.logs).toEqual([]);
     await save();
     expect(workouts.logs).toEqual<WorkoutLog[]>([

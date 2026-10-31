@@ -11,7 +11,7 @@ const MINUTE_MS = 60 * 1000;
 
 /** One exercise of a workout being started: what was done last time, and the sets to fill in. */
 export type DraftExercise = { exercise: PlannedExercise; last: LoggedSet[]; sets: DraftSet[] };
-export type WorkoutSummary = { suggestions: Suggestion[]; achieved: Milestone[] };
+export type WorkoutSummary = { durationMin: number; suggestions: Suggestion[]; achieved: Milestone[] };
 
 export function trainingUseCases(deps: { plans: PlanRepository; workouts: WorkoutRepository; milestones: MilestoneRepository; clock: Clock; timezone: string }) {
   const { plans, workouts, milestones, clock, timezone } = deps;
@@ -66,7 +66,7 @@ export function trainingUseCases(deps: { plans: PlanRepository; workouts: Workou
       if (problem) throw new Error(problem);
 
       const achieved = reachedBy(await milestones.list(), input.done);
-      const summary: WorkoutSummary = { suggestions: suggestionsFor(input.session.exercises, input.done), achieved };
+      const summary: WorkoutSummary = { durationMin: log.durationMin, suggestions: suggestionsFor(input.session.exercises, input.done), achieved };
       const save = async () => {
         await Promise.all([workouts.add(log), ...achieved.map((m) => milestones.markAchieved(m.id, now))]);
       };

@@ -110,6 +110,17 @@ test('the Sport tab offers the starter programme, and creating it shows the sess
   expect(screen.getAllByLabelText(/^Démarrer Séance /)).toHaveLength(3);
 });
 
+test('starting a session opens the workout with its exercises', async () => {
+  signedInAs({ uid: 'alice' });
+  await renderRouter();
+  await pressTab('Sport');
+  await fireEvent.press(screen.getByText('Partir du modèle'));
+  await fireEvent.press(screen.getByLabelText('Démarrer Séance B — Bas du corps'));
+  expect(screen).toHavePathname('/workout');
+  expect(screen).toHaveSearchParams({ session: '1' });
+  expect(await screen.findByText('Squat gobelet')).toBeTruthy();
+});
+
 test('the Repas tab opens the day journal', async () => {
   signedInAs({ uid: 'alice' });
   await renderRouter();
