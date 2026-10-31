@@ -18,7 +18,8 @@ jest.mock('@/composition', () => {
     mealUseCases,
   } = jest.requireActual('@/modules/nutrition');
   const { inMemoryMilestoneRepository, inMemoryPlanRepository, inMemoryWorkoutRepository, trainingUseCases } = jest.requireActual('@/modules/training');
-  const { DEFAULT_PROFILE } = jest.requireActual('@/modules/settings');
+  const { DEFAULT_PROFILE, inMemoryProfileRepository, settingsUseCases } = jest.requireActual('@/modules/settings');
+  const { inMemoryFactsSource, trackingUseCases } = jest.requireActual('@/modules/tracking');
   const clock = { now: () => new Date('2026-10-23T10:00:00Z') }; // 12:00 in Paris: lunch
   const rice = { ref: { type: 'ciqual', id: '9100' }, name: 'Riz blanc, cru', state: 'raw', per100g: { kcal: 350, protein: 7, carbs: 78, fat: 0.6 }, portions: [] };
   return {
@@ -36,6 +37,8 @@ jest.mock('@/composition', () => {
         const milestones = inMemoryMilestoneRepository();
         return trainingUseCases({ plans: inMemoryPlanRepository(), workouts: inMemoryWorkoutRepository(milestones), milestones, clock, timezone: DEFAULT_PROFILE.timezone });
       })(),
+      settings: settingsUseCases(inMemoryProfileRepository()),
+      tracking: trackingUseCases({ sources: [inMemoryFactsSource()], goals: DEFAULT_PROFILE.goals, clock, timezone: DEFAULT_PROFILE.timezone }),
       nutrition: {
         meals: mealUseCases({
           entries: inMemoryFoodEntryRepository(),

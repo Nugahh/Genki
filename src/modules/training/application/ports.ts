@@ -19,6 +19,8 @@ export interface WorkoutRepository {
   latestWithExercise(exerciseId: string): Promise<WorkoutLog | undefined>;
   /** The workouts that hold the exercise, newest first. */
   history(exerciseId: string, max: number): Promise<WorkoutLog[]>;
+  /** The workouts of the days `from` to `to` (inclusive), live. */
+  observeBetween(from: string, to: string, onNext: (logs: WorkoutLog[]) => void, onError: (error: Error) => void): () => void;
   /** The latest workout, whatever its exercises. */
   observeLatest(onNext: (log: WorkoutLog | undefined) => void, onError: (error: Error) => void): () => void;
 }

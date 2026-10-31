@@ -70,6 +70,18 @@ test('the latest workout, whatever its exercises, is the last one created', asyn
   expect((await latest(db))?.exerciseIds).toEqual(['pompes']);
 });
 
+test('the workouts between two days are observed, both days included', async () => {
+  const db = phone();
+  for (const day of ['2026-11-01', '2026-11-02', '2026-11-08', '2026-11-09']) await workoutsOn(db).add(log(day, ['squat']));
+  const days = await new Promise<string[]>((resolve, reject) => {
+    const stop = workoutsOn(db).observeBetween('2026-11-02', '2026-11-08', (logs) => {
+      stop();
+      resolve(logs.map((l) => l.day).sort());
+    }, reject);
+  });
+  expect(days).toEqual(['2026-11-02', '2026-11-08']);
+});
+
 test('a workout sets the date of the milestones it reaches, once, in the same batch as its log', async () => {
   const db = phone();
   const milestones = firestoreMilestoneRepository(db as never, 'alice');

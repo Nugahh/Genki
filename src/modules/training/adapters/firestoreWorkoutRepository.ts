@@ -57,6 +57,10 @@ export function firestoreWorkoutRepository(db: Firestore, uid: string): WorkoutR
     },
     latestWithExercise: (exerciseId) => holding(exerciseId, 1).then((found) => found[0]),
     history: holding,
+    // A range on one field needs no composite index. shortcut: M3 never deletes a workout; filter on `deletedAt` once it can.
+    observeBetween(from, to, onNext, onError) {
+      return onSnapshot(query(logs, where('day', '>=', from), where('day', '<=', to)), (snapshot) => onNext(snapshot.docs.map(logOf)), onError);
+    },
     observeLatest(onNext, onError) {
       return onSnapshot(query(logs, orderBy('createdAt', 'desc'), limit(1)), (snapshot) => onNext(snapshot.docs.map(logOf)[0]), onError);
     },

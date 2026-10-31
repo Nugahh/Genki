@@ -24,6 +24,14 @@ export function inMemoryWorkoutRepository(milestones?: { markAchieved(id: string
     async history(exerciseId: string, max: number) {
       return holding(repo.logs, exerciseId).slice(0, max);
     },
+    observeBetween(from: string, to: string, onNext: (logs: WorkoutLog[]) => void) {
+      const listener = () => onNext(repo.logs.filter((l) => l.day >= from && l.day <= to));
+      listeners.add(listener);
+      listener();
+      return () => {
+        listeners.delete(listener);
+      };
+    },
     observeLatest(onNext: (log: WorkoutLog | undefined) => void) {
       const listener = () => onNext([...repo.logs].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())[0]);
       listeners.add(listener);

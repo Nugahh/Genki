@@ -7,3 +7,4 @@ export { PlanScreen } from './ui/PlanScreen';
 export { SportScreen } from './ui/SportScreen';
 export { useNextSession } from './ui/useNextSession';
 export { WorkoutScreen } from './ui/WorkoutScreen';
+export type { WorkoutLog } from './domain/workout';

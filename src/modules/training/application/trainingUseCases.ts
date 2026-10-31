@@ -20,6 +20,7 @@ export function trainingUseCases(deps: { plans: PlanRepository; workouts: Workou
   return {
     observePlans: plans.observeAll,
     observeLatestWorkout: workouts.observeLatest,
+    observeWorkoutsBetween: workouts.observeBetween,
     /** The milestones still to reach first, then the achieved ones, each by label. */
     observeMilestones(onNext: (list: Milestone[]) => void, onError: (error: Error) => void) {
       const order = (a: Milestone, b: Milestone) => Number(!!a.achievedAt) - Number(!!b.achievedAt) || a.label.localeCompare(b.label, 'fr');
