@@ -44,3 +44,5 @@ yarn-error.*
 /google-services.json
 /google-services.dev.json
 *-debug.log
+# A crashed build:ciqual leaves assets/ciqual.db.tmp and its journal
+*.db.tmp*
