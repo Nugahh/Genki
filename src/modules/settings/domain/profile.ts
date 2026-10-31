@@ -43,7 +43,8 @@ export const DEFAULT_PROFILE: Profile = {
 };
 
 const within = (n: number | undefined, min: number, max: number) => n !== undefined && Number.isFinite(n) && n >= min && n <= max;
-const isDay = (value: string) => /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(Date.parse(`${value}T00:00:00Z`));
+// A day that exists: 2026-02-31 would roll over to 3 March.
+const isDay = (value: string) => /^\d{4}-\d{2}-\d{2}$/.test(value) && new Date(`${value}T00:00:00Z`).toISOString().slice(0, 10) === value;
 
 /** A French message for the first problem with a profile, or null. The bounds are those of the Firestore rules. */
 export function validateProfile(profile: Profile): string | null {
@@ -56,8 +57,8 @@ export function validateProfile(profile: Profile): string | null {
   if (!within(goals.steps, 0, 100000)) return 'Les pas sont compris entre 0 et 100 000 par jour.';
   if (profile.weeklyLossKg !== undefined && !within(profile.weeklyLossKg, 0.1, 2)) return 'La perte visée est comprise entre 0,1 et 2 kg par semaine.';
   if (profile.quitDate !== undefined && !isDay(profile.quitDate)) return 'La date d’arrêt du tabac n’est pas valide.';
-  if (profile.cigarettesPerDay !== undefined && !within(profile.cigarettesPerDay, 0, 200)) return 'Le nombre de cigarettes par jour est compris entre 0 et 200.';
-  if (!within(profile.packSize, 1, 100)) return 'Un paquet contient entre 1 et 100 cigarettes.';
+  if (profile.cigarettesPerDay !== undefined && !(Number.isInteger(profile.cigarettesPerDay) && within(profile.cigarettesPerDay, 0, 200))) return 'Le nombre de cigarettes par jour est un entier de 0 à 200.';
+  if (!(Number.isInteger(profile.packSize) && within(profile.packSize, 1, 100))) return 'Un paquet contient entre 1 et 100 cigarettes.';
   if (profile.packPrice !== undefined && !within(profile.packPrice, 0, 100)) return 'Le prix du paquet est compris entre 0 et 100 €.';
   const { waterContainers } = profile;
   if (waterContainers.length < 1 || waterContainers.length > 6) return 'Il faut entre 1 et 6 contenants d’eau.';

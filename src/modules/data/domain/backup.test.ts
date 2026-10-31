@@ -1,4 +1,4 @@
-import { chunk, countDocuments, exportFile, parseBackup, restoreWrites, type BackupFile } from './backup';
+import { chunk, exportFile, parseBackup, restoreWrites, type BackupFile } from './backup';
 
 const stamp = (iso: string) => ({ __timestamp: iso });
 const backup = (patch: Partial<BackupFile> = {}): BackupFile => ({
@@ -67,8 +67,6 @@ describe('restoreWrites', () => {
     expect(restoreWrites(backup()).map((w) => w.collection)).toEqual(['days', 'waterEntries', 'milestones', 'milestones', 'milestones']);
   });
 });
-
-test('counts the documents', () => expect(countDocuments(backup())).toBe(5));
 
 test('chunk cuts a list into parts of the size given', () => {
   expect(chunk([1, 2, 3, 4, 5], 2)).toEqual([[1, 2], [3, 4], [5]]);

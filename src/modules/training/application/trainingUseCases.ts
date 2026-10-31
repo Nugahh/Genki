@@ -1,4 +1,5 @@
 import { dayKey, type Clock } from '@/shared/clock';
+import { withTimeout } from '@/shared/withTimeout';
 import { reachedBy, validateMilestone, type Milestone, type NewMilestone } from '../domain/milestone';
 import { validatePlan, type Plan, type PlannedExercise, type PlannedSession } from '../domain/plan';
 import { prefillSets, suggestionsFor, type DraftSet, type Suggestion } from '../domain/progression';
@@ -9,6 +10,7 @@ import type { MilestoneRepository, PlanRepository, WorkoutRepository } from './p
 const HISTORY_SHOWN = 20;
 const MINUTE_MS = 60 * 1000;
 const DAY_MIN = 24 * 60;
+const MILESTONES_WAIT_MS = 1500;
 
 /** One exercise of a workout being started: what was done last time, and the sets to fill in. */
 export type DraftExercise = { exercise: PlannedExercise; last: LoggedSet[]; sets: DraftSet[] };
@@ -74,8 +76,9 @@ export function trainingUseCases(deps: { plans: PlanRepository; workouts: Workou
       const problem = validateWorkout(log);
       if (problem) throw new Error(problem);
 
-      // shortcut: a milestone that cannot be read now is missed if the next workout does not reach it again; the read waits for the network, so a weak signal delays « Terminer ».
-      const achieved = reachedBy(await milestones.list().catch(() => []), input.done);
+      // shortcut: a milestone that cannot be read within a moment (offline, the read waits for the network) is missed if the next workout
+      // does not reach it again; the summary and the save do not wait for it.
+      const achieved = reachedBy(await withTimeout(milestones.list().catch(() => []), MILESTONES_WAIT_MS, []), input.done);
       const summary: WorkoutSummary = { durationMin: log.durationMin, suggestions: suggestionsFor(input.session.exercises, input.done), achieved };
       const save = () =>
         workouts.add(

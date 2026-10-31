@@ -1,4 +1,5 @@
 import { addDays, dayKey, type Clock } from '@/shared/clock';
+import { withTimeout } from '@/shared/withTimeout';
 import { reachedByMeasure, rollingMean, validateMeasure, type Measure } from '../domain/body';
 import type { BodyRepository } from './ports';
 
@@ -6,7 +7,9 @@ import type { BodyRepository } from './ports';
 export type MilestoneList = () => Promise<{ id: string; metric: string; target: number; direction: 'up' | 'down'; achievedAt?: Date }[]>;
 
 /** What Today shows of the body: the measures of the day, and the mean over the last seven days. */
-export type BodySummary = { today: Measure; weightAverage?: number; waistAverage?: number };
+export type BodySummary = { today: Measure; weightAverage?: number };
+
+const MILESTONES_WAIT_MS = 1500;
 
 export function bodyUseCases(deps: { repo: BodyRepository; milestones: MilestoneList; clock: Clock; timezone: string }) {
   const { repo, milestones, clock, timezone } = deps;
@@ -16,8 +19,9 @@ export function bodyUseCases(deps: { repo: BodyRepository; milestones: Milestone
     async save(measure: Measure, day = dayKey(clock.now(), timezone)) {
       const problem = validateMeasure(measure);
       if (problem) throw new Error(problem);
-      // A milestone that cannot be read now is reached by a later measure: the measure itself must be kept.
-      const reached = reachedByMeasure(await milestones().catch(() => []), measure);
+      // A milestone that cannot be read now (offline, the read waits for the network) is reached by a later measure: the measure itself
+      // is kept, at once.
+      const reached = reachedByMeasure(await withTimeout(milestones().catch(() => []), MILESTONES_WAIT_MS, []), measure);
       await repo.save(day, measure, reached, clock.now());
       return reached;
     },
@@ -32,7 +36,6 @@ export function bodyUseCases(deps: { repo: BodyRepository; milestones: Milestone
           onNext({
             today: days.get(day) ?? {},
             weightAverage: rollingMean(week.map((d) => days.get(d)?.weightKg)),
-            waistAverage: rollingMean(week.map((d) => days.get(d)?.waistCm)),
           }),
         onError,
       );

@@ -59,13 +59,27 @@ describe('observeSummary', () => {
     const seen: BodySummary[] = [];
     body.observeSummary('2026-11-03', (s) => seen.push(s), () => {});
     // 27 October is eight days before: out of the seven days.
-    expect(seen[seen.length - 1]).toEqual({ today: { weightKg: 80, waistCm: 92 }, weightAverage: 81, waistAverage: 92 });
+    expect(seen[seen.length - 1]).toEqual({ today: { weightKg: 80, waistCm: 92 }, weightAverage: 81 });
   });
 
   test('is empty with no measure', () => {
     const { body } = setup();
     const seen: BodySummary[] = [];
     body.observeSummary('2026-11-03', (s) => seen.push(s), () => {});
-    expect(seen[0]).toEqual({ today: {}, weightAverage: undefined, waistAverage: undefined });
+    expect(seen[0]).toEqual({ today: {}, weightAverage: undefined });
   });
+});
+
+test('does not wait for the milestones to be read: offline the read never comes, the measure is kept after a moment', async () => {
+  jest.useFakeTimers();
+  try {
+    const { repo } = setup();
+    const body = bodyUseCases({ repo, milestones: () => new Promise(() => {}), clock, timezone: 'Europe/Paris' });
+    const saved = body.save({ weightKg: 80 });
+    await jest.advanceTimersByTimeAsync(1500);
+    expect(await saved).toEqual([]);
+    expect(repo.days.get('2026-11-03')).toEqual({ weightKg: 80 });
+  } finally {
+    jest.useRealTimers();
+  }
 });

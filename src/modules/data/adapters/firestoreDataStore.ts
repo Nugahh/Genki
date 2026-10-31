@@ -1,4 +1,4 @@
-import { collection, doc, getDoc, getDocs, query, serverTimestamp, setDoc, Timestamp, where, writeBatch, type Firestore } from '@react-native-firebase/firestore';
+import { collection, doc, getDocFromServer, getDocsFromServer, query, serverTimestamp, setDoc, Timestamp, where, writeBatch, type Firestore } from '@react-native-firebase/firestore';
 import type { DataStore, RestoreResult } from '../application/ports';
 import { chunk, COLLECTIONS, TIMESTAMP_KEY, isTimestampMarker, type CollectionName, type RawDoc, type RestoreWrite } from '../domain/backup';
 import type { Totals } from '../domain/totals';
@@ -30,11 +30,13 @@ export function firestoreDataStore(db: Firestore, uid: string): DataStore {
   const col = (name: CollectionName) => collection(db, 'users', uid, name);
 
   return {
+    // Read from the server, never the cache: offline a read would answer with the few days that were opened, and a backup or a
+    // recount made from them would be silently incomplete. Offline, it fails instead, and the screen says so.
     async readAll() {
-      const snapshot = await getDoc(profile);
+      const snapshot = await getDocFromServer(profile);
       const collections: Partial<Record<CollectionName, RawDoc[]>> = {};
       for (const name of COLLECTIONS) {
-        const docs = await getDocs(col(name));
+        const docs = await getDocsFromServer(col(name));
         collections[name] = docs.docs.map((d) => ({ id: d.id, data: toJson(d.data()) as Record<string, unknown> }));
       }
       return { profile: (toJson(snapshot.data() ?? {}) as Record<string, unknown>), collections };
@@ -48,33 +50,35 @@ export function firestoreDataStore(db: Firestore, uid: string): DataStore {
       };
       try {
         await setDoc(profile, fromJson(stored) as Record<string, unknown>, { merge: true });
+        result.written += 1;
       } catch (error) {
-        fail(0, error);
+        fail(1, error); // the profile is a document too
       }
       // A batch never mixes collections, nor a creation with an update: a document the rules refuse then costs its own collection only,
       // and the update of a milestone (the date it was reached) finds the milestone already created.
       const groups = (['set', 'update'] as const).flatMap((mode) => COLLECTIONS.flatMap((name) => chunk(writes.filter((w) => w.mode === mode && w.collection === name), BATCH)));
       for (const part of groups) {
-        const batch = writeBatch(db);
-        for (const w of part) {
-          const ref = doc(col(w.collection), w.id);
-          const data = fromJson(w.data) as Record<string, unknown>;
-          if (w.mode === 'update') batch.update(ref, data);
-          else batch.set(ref, data);
-        }
         try {
+          const batch = writeBatch(db);
+          for (const w of part) {
+            const ref = doc(col(w.collection), w.id);
+            const data = fromJson(w.data) as Record<string, unknown>;
+            if (w.mode === 'update') batch.update(ref, data);
+            else batch.set(ref, data);
+          }
           await batch.commit();
-          result.written += part.length;
+          // The date a milestone was reached is part of the milestone, not a document of its own.
+          result.written += part.filter((w) => w.mode === 'set').length;
         } catch (error) {
-          fail(part.length, error);
+          fail(part.filter((w) => w.mode === 'set').length || part.length, error);
         }
       }
       return result;
     },
 
     async readTotalsInput() {
-      const live = (name: 'waterEntries' | 'foodEntries') => getDocs(query(col(name), where('deletedAt', '==', null)));
-      const [water, food, days] = await Promise.all([live('waterEntries'), live('foodEntries'), getDocs(col('days'))]);
+      const live = (name: 'waterEntries' | 'foodEntries') => getDocsFromServer(query(col(name), where('deletedAt', '==', null)));
+      const [water, food, days] = await Promise.all([live('waterEntries'), live('foodEntries'), getDocsFromServer(col('days'))]);
       return {
         water: water.docs.map((d) => ({ day: d.data().day as string, ml: d.data().ml as number })),
         food: food.docs.map((d) => {

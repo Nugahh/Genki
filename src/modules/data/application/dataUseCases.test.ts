@@ -38,7 +38,7 @@ describe('export and import', () => {
     const { text } = await data.exportBackup();
     const target = setup({ profile: {}, collections: {} });
     const result = await target.data.importBackup(text);
-    expect(result).toEqual({ written: 6, failed: 0, firstError: undefined }); // 1 + 2 + 1 + 1 creations, 1 milestone date
+    expect(result).toEqual({ written: 6, failed: 0, firstError: undefined }); // the profile, the day, 2 glasses (the third was deleted), 1 food entry, 1 milestone
     const back = await target.store.readAll();
     expect(back.profile).toEqual(account().profile);
     expect(back.collections.waterEntries?.map((d) => d.id)).toEqual(['w1', 'w2']); // w3 was deleted
@@ -49,7 +49,7 @@ describe('export and import', () => {
   test('says what a backup holds before it is restored', () => {
     const { data } = setup();
     return data.exportBackup().then(({ text }) => {
-      expect(data.previewBackup(text)).toEqual({ documents: 6, exportedAt: new Date('2026-11-03T22:30:00.000Z') });
+      expect(data.previewBackup(text)).toEqual({ documents: 6 });
     });
   });
 

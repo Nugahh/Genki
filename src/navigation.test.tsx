@@ -5,6 +5,10 @@ import type { App } from '@/composition';
 import { signInWithGoogle, useAuthUser } from '@/platform/firebase';
 import { theme } from '@/theme';
 
+// Read when the app is composed: a test sets them to play a first launch, and a profile whose snapshots come late.
+let mockFirstLaunch = false;
+let mockProfileLatencyMs = 0;
+
 jest.mock('@/platform/firebase', () => ({ useAuthUser: jest.fn(), signInWithGoogle: jest.fn() }));
 // The file picker and the share sheet are native: the Data screen is tested on its own, here only that it opens.
 jest.mock('@/platform/files', () => ({ shareTextFile: jest.fn(), pickTextFile: jest.fn() }));
@@ -46,9 +50,9 @@ jest.mock('@/composition', () => {
         return { training, body };
       })(),
       settings: (() => {
-        const repo = inMemoryProfileRepository();
+        const repo = inMemoryProfileRepository({ latencyMs: mockProfileLatencyMs });
         // The profile was set up before, unless a test says it is a first launch.
-        if (!(globalThis as { firstLaunch?: boolean }).firstLaunch) void repo.saveProfile({ createdAt: new Date('2026-10-01T10:00:00Z') });
+        if (!mockFirstLaunch) void repo.saveProfile({ createdAt: new Date('2026-10-01T10:00:00Z') });
         return settingsUseCases(repo);
       })(),
       data: dataUseCases({ store: inMemoryDataStore(), clock, timezone: DEFAULT_PROFILE.timezone }),
@@ -91,9 +95,16 @@ test('a failed Google sign-in shows why', async () => {
   expect(screen.getByText('La connexion a échoué. DEVELOPER_ERROR')).toBeTruthy();
 });
 
-test('a first launch goes to the setup, which can be skipped and is then not shown again', async () => {
-  (globalThis as { firstLaunch?: boolean }).firstLaunch = true;
-  try {
+describe('a first launch', () => {
+  beforeEach(() => {
+    mockFirstLaunch = true;
+  });
+  afterEach(() => {
+    mockFirstLaunch = false;
+    mockProfileLatencyMs = 0;
+  });
+
+  test('goes to the setup, which can be skipped and is then not shown again', async () => {
     signedInAs({ uid: 'alice' });
     await renderRouter();
     expect(screen).toHavePathname('/setup');
@@ -101,9 +112,20 @@ test('a first launch goes to the setup, which can be skipped and is then not sho
     await fireEvent.press(screen.getByText('Passer'));
     await waitFor(() => expect(screen).toHavePathname('/'));
     expect(screen.getByLabelText(/^Eau : /)).toBeTruthy();
-  } finally {
-    delete (globalThis as { firstLaunch?: boolean }).firstLaunch;
-  }
+    // Once done, a visit to the setup leaves it.
+    await act(async () => router.push('/setup'));
+    await waitFor(() => expect(screen).toHavePathname('/'));
+  });
+
+  test('does not bounce back to the setup when the profile snapshot comes after the write', async () => {
+    mockProfileLatencyMs = 40;
+    signedInAs({ uid: 'alice' });
+    await renderRouter();
+    await waitFor(() => expect(screen).toHavePathname('/setup'));
+    await fireEvent.press(screen.getByText('Passer'));
+    await waitFor(() => expect(screen).toHavePathname('/'), { timeout: 2000 });
+    expect(screen.getByLabelText(/^Eau : /)).toBeTruthy();
+  });
 });
 
 test('a signed-in user lands on Today, with the sync icon in the top bar', async () => {

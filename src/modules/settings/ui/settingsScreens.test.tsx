@@ -86,6 +86,15 @@ describe('GoalsScreen', () => {
     expect(onSave).toHaveBeenCalledWith({ goalMode: 'deficit', weeklyLossKg: 0.5, goals: { kcal: 1900, proteinG: 130, waterMl: 2500, steps: 8000 } });
   });
 
+  test('a loss left in the hidden field does not block the screen outside a deficit', async () => {
+    await setup();
+    await fireEvent.press(screen.getByText('Déficit'));
+    await type('Perte visée (kg par semaine)', '3');
+    expect(screen.getByText('Enregistrer')).toBeDisabled();
+    await fireEvent.press(screen.getByText('Maintien'));
+    expect(screen.getByText('Enregistrer')).toBeEnabled();
+  });
+
   test('takes the weekly loss off outside a deficit', async () => {
     const { onSave } = await setup({ ...DEFAULT_PROFILE, goalMode: 'deficit', weeklyLossKg: 0.5 });
     await fireEvent.press(screen.getByText('Maintien'));
@@ -123,12 +132,12 @@ describe('WaterContainersScreen', () => {
 
   test('renames, changes the amount, adds and removes, then saves', async () => {
     const { onSave } = await setup();
-    await type('Nom du contenant 1', 'Petit verre');
-    await type('Contenance du contenant 1 (ml)', '200');
+    await type('Nom, contenant 1', 'Petit verre');
+    await type('Contenance (ml), contenant 1', '200');
     await fireEvent.press(screen.getByLabelText('Supprimer le contenant Bouteille'));
     await fireEvent.press(screen.getByText('Ajouter un contenant'));
-    await type('Nom du contenant 2', 'Gourde');
-    await type('Contenance du contenant 2 (ml)', '750');
+    await type('Nom, contenant 2', 'Gourde');
+    await type('Contenance (ml), contenant 2', '750');
     await fireEvent.press(screen.getByText('Enregistrer'));
     expect(onSave).toHaveBeenCalledWith({
       waterContainers: [
@@ -144,14 +153,14 @@ describe('WaterContainersScreen', () => {
     expect(screen.getByLabelText('Supprimer le contenant Verre')).toBeDisabled();
     for (let i = 0; i < 5; i++) {
       await fireEvent.press(screen.getByText('Ajouter un contenant'));
-      await type(`Nom du contenant ${i + 2}`, `C${i}`);
+      await type(`Nom, contenant ${i + 2}`, `C${i}`);
     }
     expect(screen.getByText('Ajouter un contenant')).toBeDisabled();
   });
 
   test('refuses an empty name', async () => {
     await setup();
-    await type('Nom du contenant 1', ' ');
+    await type('Nom, contenant 1', ' ');
     expect(screen.getByText('Le nom d’un contenant fait entre 1 et 30 caractères.')).toBeTruthy();
     expect(screen.getByText('Enregistrer')).toBeDisabled();
   });

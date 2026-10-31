@@ -1,5 +1,5 @@
 import { initializeTestEnvironment, type RulesTestEnvironment } from '@firebase/rules-unit-testing';
-import { setLogLevel, type Firestore } from 'firebase/firestore';
+import { doc, setDoc, setLogLevel, type Firestore } from 'firebase/firestore';
 import { readFileSync } from 'node:fs';
 import type { StoredProfile } from '../application/ports';
 import type { UiPrefs } from '../domain/ui';
@@ -89,4 +89,18 @@ describe('the profile', () => {
   test('a value the rules refuse is rejected', async () => {
     await expect(profileOn(phone()).saveProfile({ heightCm: 90 })).rejects.toThrow();
   });
+});
+
+test('fields of the wrong shape, or a time zone Intl does not know, are left out so that the default shows', async () => {
+  await env.withSecurityRulesDisabled((ctx) =>
+    setDoc(doc(ctx.firestore() as unknown as Firestore, 'users/alice'), {
+      heightCm: 'tall',
+      sex: 'x',
+      timezone: 'Mars/Base',
+      goalMode: 'deficit',
+      goals: { kcal: 'lots', steps: 9000 },
+      waterContainers: [{ label: 'Verre', ml: 250 }, { label: 3 }, 'oops'],
+    }),
+  );
+  expect(await storedProfile(phone())).toEqual({ goalMode: 'deficit', goals: { steps: 9000 }, waterContainers: [{ label: 'Verre', ml: 250 }] });
 });

@@ -22,7 +22,7 @@ export function exerciseIdOf(name: string): string {
 }
 
 const DAY_MS = 24 * 60 * 60 * 1000;
-const isDay = (value: string) => /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(Date.parse(`${value}T00:00:00Z`));
+const isDay = (value: string) => /^\d{4}-\d{2}-\d{2}$/.test(value) && new Date(`${value}T00:00:00Z`).toISOString().slice(0, 10) === value;
 /** Whole days from one day key to another: keys are calendar days, so UTC arithmetic has no time-zone or clock-change drift. */
 const daysBetween = (from: string, to: string) => Math.round((Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / DAY_MS);
 

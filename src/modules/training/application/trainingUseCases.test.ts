@@ -154,6 +154,19 @@ describe('a workout', () => {
     expect(workouts.logs).toHaveLength(1);
   });
 
+  test('does not wait for the milestones to be read: offline the read never comes, and the summary is there after a moment', async () => {
+    jest.useFakeTimers();
+    try {
+      const { milestones, training } = setup();
+      milestones.list = () => new Promise(() => {});
+      const finishing = training.finishWorkout({ plan, session, done: sets('squat-gobelet', [8], 20), startedAt: new Date('2026-11-03T09:15:00Z') });
+      await jest.advanceTimersByTimeAsync(1500);
+      expect((await finishing).summary.achieved).toEqual([]);
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
   test('records the log and the milestones it reaches together: a refused milestone leaves no log', async () => {
     const { workouts, milestones, training } = setup();
     await training.addMilestone({ metric: 'exercise:squat-gobelet:kg', target: 20, direction: 'up', label: 'Squat à 20 kg' });

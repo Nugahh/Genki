@@ -49,7 +49,7 @@ test('an export restores into an empty account: the rules accept every document,
   await env.clearFirestore();
 
   const result = await dataOn(phone()).importBackup(text);
-  expect(result).toEqual({ written: 11, failed: 0, firstError: undefined });
+  expect(result).toEqual({ written: 11, failed: 0, firstError: undefined }); // the profile and 10 documents (a glass was taken back)
 
   const read = async (path: string) => (await getDoc(doc(phone(), path))).data();
   expect(await read('users/alice')).toMatchObject({ heightCm: 180, goalMode: 'deficit', goals: { kcal: 2000 }, quitDate: '2026-10-01', ui: { period: 'year' } });
@@ -73,7 +73,8 @@ test('a second restore into the same account fails on what is immutable, and say
   // Each collection is a batch of its own, so the others still go through.
   expect(result.failed).toBeGreaterThan(0);
   expect(result.written).toBeGreaterThan(0);
-  expect(result.written + result.failed).toBe(11);
+  // The profile and 10 documents, and the date of the milestone (refused: it was already set) counted as one more failure.
+  expect(result.written + result.failed).toBe(12);
   expect(result.firstError).toEqual(expect.stringMatching(/\S/));
 });
 
@@ -84,4 +85,18 @@ test('the totals are rebuilt from the entries, and the weight of the day is left
   expect(await dataOn(db).recomputeTotals()).toEqual({ days: 1, corrected: 1 });
   expect((await getDoc(doc(db, 'users/alice/days/2026-11-02'))).data()).toMatchObject({ kcal: 350, waterMl: 250, weightKg: 80.5 });
   expect(await dataOn(db).recomputeTotals()).toEqual({ days: 1, corrected: 0 });
+});
+
+test('a profile the rules refuse is counted as failed and reported, and the documents still go through', async () => {
+  const data = dataOn(phone());
+  const text = JSON.stringify({
+    version: 1,
+    exportedAt: '2026-11-03T10:00:00.000Z',
+    profile: { heightCm: 5 },
+    collections: { cravings: [{ id: 'c1', data: { day: '2026-11-02', createdAt: { __timestamp: '2026-11-02T15:00:00.000Z' }, resisted: true } }] },
+  });
+  const result = await data.importBackup(text);
+  expect(result.failed).toBe(1);
+  expect(result.written).toBe(1);
+  expect(result.firstError).toEqual(expect.stringMatching(/\S/));
 });

@@ -12,8 +12,8 @@ export function settingsUseCases(repo: ProfileRepository) {
     },
 
     /** The profile as the app uses it: what was stored over the defaults. */
-    observeProfile(onNext: (profile: Profile) => void, onError: (error: Error) => void) {
-      return repo.observeProfile((stored) => onNext(withDefaults(stored)), onError);
+    observeProfile(onNext: (profile: Profile, known: boolean) => void, onError: (error: Error) => void) {
+      return repo.observeProfile((stored, known) => onNext(withDefaults(stored), known), onError);
     },
     /** Checks the fields of the patch (each against the others' defaults) and merges them; a field at null is taken off. */
     async saveProfile(patch: ProfilePatch) {

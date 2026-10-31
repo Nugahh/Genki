@@ -74,5 +74,5 @@ const styles = StyleSheet.create({
   badge: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
   text: { flex: 1, gap: 2 },
   // Paper's icon button is 40 dp, and its container clips the extra hit area: 48 dp make the touch target.
-  add: { width: 48, height: 48, borderRadius: 24, marginRight: 12 },
+  add: { width: 48, height: 48, borderRadius: 24, marginLeft: 8, marginRight: 12 },
 });

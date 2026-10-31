@@ -11,8 +11,11 @@ export interface ProfileRepository {
   observeUi(onNext: (ui: UiPrefs) => void, onError: (error: Error) => void): () => void;
   /** Merges the given fields into the stored preferences; settles once the server has the write. */
   saveUi(ui: UiPrefs): Promise<void>;
-  /** The stored profile (`{}` while nothing was chosen), live. Returns the unsubscribe function. */
-  observeProfile(onNext: (stored: StoredProfile) => void, onError: (error: Error) => void): () => void;
+  /**
+   * The stored profile (`{}` while nothing was chosen), live. `known` is false for a snapshot that only says « not in the cache »
+   * (a new phone not yet connected): nothing can be told of the profile from it. Returns the unsubscribe function.
+   */
+  observeProfile(onNext: (stored: StoredProfile, known: boolean) => void, onError: (error: Error) => void): () => void;
   /** Merges the fields into the stored profile (`goals` field by field); settles once the server has the write. */
   saveProfile(patch: ProfilePatch): Promise<void>;
 }

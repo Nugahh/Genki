@@ -58,10 +58,10 @@ describe('import', () => {
     const text = await backupText();
     const { store } = await setup({ picked: text, source: { profile: {}, collections: {} } as never });
     await fireEvent.press(screen.getByText('Importer une sauvegarde'));
-    expect(await screen.findByText('Importer 2 documents ?')).toBeTruthy();
+    expect(await screen.findByText('Importer 3 documents ?')).toBeTruthy();
     expect((await store.readAll()).collections.days).toEqual([]); // nothing written yet
     await fireEvent.press(screen.getByText('Importer'));
-    expect(await screen.findByText('2 documents restaurés.')).toBeTruthy();
+    expect(await screen.findByText('3 documents restaurés.')).toBeTruthy();
     expect((await store.readAll()).collections.days).toHaveLength(1);
   });
 
@@ -82,7 +82,7 @@ describe('import', () => {
     await setup({ picked: text, refuse: ['w1'], source: { profile: {}, collections: {} } as never });
     await fireEvent.press(screen.getByText('Importer une sauvegarde'));
     await fireEvent.press(await screen.findByText('Importer'));
-    const message = await screen.findByText('1 document restauré, 1 refusé : refused: w1');
+    const message = await screen.findByText('2 documents restaurés, 1 refusé : refused: w1');
     expect(message.props.accessibilityLiveRegion).toBe('polite');
   });
 

@@ -31,10 +31,11 @@ export function GoalsScreen({ profile, weightKg, year, onSave }: Props) {
   const [notes, setNotes] = useState<string[]>([]);
 
   const goals = { kcal: parseNumber(kcal), proteinG: parseNumber(protein), waterMl: parseNumber(water), steps: parseNumber(steps) };
-  const weeklyLossKg = loss.trim() === '' ? undefined : parseNumber(loss);
+  // The loss is only asked for in a deficit: outside it, whatever is left in the hidden field must not block the screen.
+  const weeklyLossKg = mode === 'deficit' && loss.trim() !== '' ? parseNumber(loss) : undefined;
   const problem = validateProfile({ ...profile, goalMode: mode, goals, weeklyLossKg });
   const weightNumber = parseNumber(weight);
-  const canPropose = Number.isFinite(weightNumber) && weightNumber > 20 && weightNumber < 400;
+  const canPropose = Number.isFinite(weightNumber) && weightNumber > 20 && weightNumber < 400 && (weeklyLossKg === undefined || Number.isFinite(weeklyLossKg));
 
   const propose = () => {
     const proposal = proposeGoals({ profile: { ...profile, goalMode: mode, weeklyLossKg }, weightKg: weightNumber, year });
@@ -93,7 +94,7 @@ export function GoalsScreen({ profile, weightKg, year, onSave }: Props) {
         mode="contained"
         contentStyle={styles.button}
         disabled={problem !== null}
-        onPress={() => onSave({ goalMode: mode, weeklyLossKg: mode === 'deficit' && weeklyLossKg !== undefined ? weeklyLossKg : null, goals })}
+        onPress={() => onSave({ goalMode: mode, weeklyLossKg: weeklyLossKg ?? null, goals })}
       >
         Enregistrer
       </Button>

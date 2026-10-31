@@ -87,9 +87,6 @@ export function restoreWrites(backup: BackupFile): RestoreWrite[] {
   return [...sets, ...updates];
 }
 
-/** The documents of a backup, per collection, for a summary before restoring. */
-export const countDocuments = (backup: BackupFile) => COLLECTIONS.reduce((sum, name) => sum + (backup.collections[name]?.length ?? 0), 0);
-
 export function chunk<T>(items: T[], size: number): T[][] {
   const chunks: T[][] = [];
   for (let i = 0; i < items.length; i += size) chunks.push(items.slice(i, i + size));

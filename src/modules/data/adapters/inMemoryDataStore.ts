@@ -16,7 +16,7 @@ export function inMemoryDataStore(initial: { profile?: Record<string, unknown>; 
     },
     async restore(profile: Record<string, unknown>, writes: RestoreWrite[]): Promise<RestoreResult> {
       store.profile = { ...store.profile, ...profile };
-      let written = 0;
+      let written = 1; // the profile
       let failed = 0;
       let firstError: string | undefined;
       for (const w of writes) {
@@ -27,7 +27,7 @@ export function inMemoryDataStore(initial: { profile?: Record<string, unknown>; 
         }
         const collection = store.docs.get(w.collection)!;
         collection.set(w.id, w.mode === 'update' ? { ...collection.get(w.id), ...w.data } : w.data);
-        written++;
+        if (w.mode === 'set') written++;
       }
       return { written, failed, firstError };
     },

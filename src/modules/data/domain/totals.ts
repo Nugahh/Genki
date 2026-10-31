@@ -1,5 +1,5 @@
 export type Totals = { waterMl: number; kcal: number; proteinG: number; carbsG: number; fatG: number };
-export const NO_TOTALS: Totals = { waterMl: 0, kcal: 0, proteinG: 0, carbsG: 0, fatG: 0 };
+const NO_TOTALS: Totals = { waterMl: 0, kcal: 0, proteinG: 0, carbsG: 0, fatG: 0 };
 
 /** The live entries the totals of a day are made of (soft-deleted ones are left out by whoever reads them). */
 export type TotalsInput = {

@@ -1,8 +1,11 @@
 import type { ProfilePatch, ProfileRepository, StoredProfile } from '../application/ports';
 import type { UiPrefs } from '../domain/ui';
 
-/** ProfileRepository kept in memory, for tests. */
-export function inMemoryProfileRepository(): ProfileRepository & { ui: UiPrefs; stored: StoredProfile } {
+/**
+ * ProfileRepository kept in memory, for tests. With a `latencyMs`, the snapshots of the profile come that much later than the write,
+ * as they do over the native bridge.
+ */
+export function inMemoryProfileRepository(options: { latencyMs?: number } = {}): ProfileRepository & { ui: UiPrefs; stored: StoredProfile } {
   const uiListeners = new Set<() => void>();
   const profileListeners = new Set<() => void>();
   const repo = {
@@ -20,8 +23,8 @@ export function inMemoryProfileRepository(): ProfileRepository & { ui: UiPrefs; 
       repo.ui = { ...repo.ui, ...ui };
       uiListeners.forEach((listener) => listener());
     },
-    observeProfile(onNext: (stored: StoredProfile) => void) {
-      const listener = () => onNext(repo.stored);
+    observeProfile(onNext: (stored: StoredProfile, known: boolean) => void) {
+      const listener = () => onNext(repo.stored, true);
       profileListeners.add(listener);
       listener();
       return () => {
@@ -36,7 +39,9 @@ export function inMemoryProfileRepository(): ProfileRepository & { ui: UiPrefs; 
         else if (value !== undefined) next[key] = value;
       }
       repo.stored = next as StoredProfile;
-      profileListeners.forEach((listener) => listener());
+      const notify = () => profileListeners.forEach((listener) => listener());
+      if (options.latencyMs) setTimeout(notify, options.latencyMs);
+      else notify();
     },
   };
   return repo;

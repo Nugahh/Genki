@@ -70,6 +70,7 @@ describe('validatePlan', () => {
     ['an increment of 51 kg', withExercise({ incrementKg: 51 })],
     ['a blank exercise name', withExercise({ name: ' ' })],
     ['a start day that is not a day', { ...newPlan(), startDay: 'demain' }],
+    ['a start day that does not exist', { ...newPlan(), startDay: '2026-02-31' }],
     ['an exercise whose name makes no identifier', withExercise({ name: '💪', exerciseId: '' })],
     ['two exercises of a session with the same identifier', withPhase({ sessions: [{ name: 'A', exercises: [exercise('Pompes'), exercise('Pompes')] }] })],
   ] as [string, NewPlan][])('refuses %s with a message', (_, invalid) => {

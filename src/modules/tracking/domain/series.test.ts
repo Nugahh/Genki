@@ -59,6 +59,22 @@ describe('toneOf calories by goal mode', () => {
   ] as const)('%s at %s of the goal is %s', (kcalMode, ratio, tone) => expect(toneOf(calories, { ...goals, kcalMode }, ratio * 2000)).toBe(tone));
 });
 
+describe('toneOf calories: the exact edges of each band', () => {
+  const at = (kcalMode: 'deficit' | 'maintenance' | 'surplus', ratio: number) => toneOf(calories, { ...goals, kcalMode }, ratio * 2000);
+  test.each([
+    ['maintenance', 0.6, 'warn'],
+    ['maintenance', 0.9, 'good'],
+    ['maintenance', 1.05, 'good'],
+    ['maintenance', 1.1, 'warn'],
+    ['deficit', 0.5, 'warn'],
+    ['deficit', 0.8, 'good'],
+    ['deficit', 1.05, 'good'],
+    ['deficit', 1.1, 'warn'],
+    ['surplus', 0.8, 'warn'],
+    ['surplus', 0.95, 'good'],
+  ] as const)('%s at exactly %s is %s', (mode, ratio, tone) => expect(at(mode, ratio)).toBe(tone));
+});
+
 describe('seriesFor', () => {
   const week = seriesFor(
     calories,

@@ -1,5 +1,5 @@
 import { dayKey, type Clock } from '@/shared/clock';
-import { countDocuments, exportFile, parseBackup, restoreWrites } from '../domain/backup';
+import { exportFile, parseBackup, restoreWrites } from '../domain/backup';
 import { daysToCorrect, totalsFromEntries } from '../domain/totals';
 import type { DataStore, RestoreResult } from './ports';
 
@@ -14,11 +14,11 @@ export function dataUseCases(deps: { store: DataStore; clock: Clock; timezone: s
       return { name: `genki-${dayKey(now, timezone)}.json`, text: JSON.stringify(exportFile({ profile, collections, now }), null, 2) };
     },
 
-    /** What a backup holds, checked, before anything is written: the number of documents and the day it was made. */
+    /** What a backup would write, checked, before anything is written: the documents (one more for the profile; a deleted one is not written back). */
     previewBackup(text: string) {
       const parsed = parseBackup(text);
       if (!parsed.ok) throw new Error(parsed.error);
-      return { documents: countDocuments(parsed.backup), exportedAt: new Date(parsed.backup.exportedAt) };
+      return { documents: 1 + restoreWrites(parsed.backup).filter((w) => w.mode === 'set').length };
     },
 
     /** Restores a backup into the account (it is made for an empty one); reports what was written and what the rules refused. */

@@ -4,6 +4,16 @@ import type { ProfilePatch, ProfileRepository, StoredProfile } from '../applicat
 const PERIODS = ['day', 'week', 'year'];
 const num = (value: unknown) => (typeof value === 'number' && Number.isFinite(value) ? value : undefined);
 const text = (value: unknown) => (typeof value === 'string' ? value : undefined);
+// The rules take any short text as a time zone; a name Intl does not know would break every date of the app.
+const zone = (value: unknown) => {
+  if (typeof value !== 'string') return undefined;
+  try {
+    new Intl.DateTimeFormat('en-GB', { timeZone: value });
+    return value;
+  } catch {
+    return undefined;
+  }
+};
 const oneOf = <T extends string>(value: unknown, allowed: readonly T[]) => (allowed.includes(value as T) ? (value as T) : undefined);
 
 /** The stored fields we trust, by type: a field of another shape is left out and the default shows. */
@@ -11,7 +21,7 @@ function storedOf(data: Record<string, any> | undefined): StoredProfile {
   if (!data) return {};
   const goals = data.goals ?? {};
   const fields = {
-    timezone: text(data.timezone),
+    timezone: zone(data.timezone),
     sex: oneOf(data.sex, ['male', 'female'] as const),
     birthYear: num(data.birthYear),
     heightCm: num(data.heightCm),
@@ -51,7 +61,8 @@ export function firestoreProfileRepository(db: Firestore, uid: string): ProfileR
     saveUi: (ui) => setDoc(profile, { ui }, { merge: true }),
 
     observeProfile(onNext, onError) {
-      return onSnapshot(profile, (snapshot) => onNext(storedOf(snapshot.data())), onError);
+      // A document that is not in the cache says nothing about the server's: it is not « nothing stored ».
+      return onSnapshot(profile, (snapshot) => onNext(storedOf(snapshot.data()), snapshot.exists() || !snapshot.metadata.fromCache), onError);
     },
     saveProfile(patch: ProfilePatch) {
       const data: Record<string, unknown> = {};

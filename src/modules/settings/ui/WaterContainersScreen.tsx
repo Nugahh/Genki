@@ -22,8 +22,8 @@ export function WaterContainersScreen({ profile, onSave }: Props) {
     <ScrollView contentContainerStyle={styles.content}>
       {rows.map((row, i) => (
         <View key={i} style={styles.row}>
-          <TextInput style={styles.name} label="Nom" accessibilityLabel={`Nom du contenant ${i + 1}`} value={row.label} onChangeText={(label) => change(i, { label })} maxLength={30} />
-          <TextInput style={styles.amount} label="ml" accessibilityLabel={`Contenance du contenant ${i + 1} (ml)`} value={row.ml} onChangeText={(ml) => change(i, { ml })} keyboardType="number-pad" />
+          <TextInput style={styles.name} label="Nom" accessibilityLabel={`Nom, contenant ${i + 1}`} value={row.label} onChangeText={(label) => change(i, { label })} maxLength={30} />
+          <TextInput style={styles.amount} label="Contenance (ml)" accessibilityLabel={`Contenance (ml), contenant ${i + 1}`} value={row.ml} onChangeText={(ml) => change(i, { ml })} keyboardType="number-pad" />
           <IconButton
             icon="delete-outline"
             style={styles.iconButton}
