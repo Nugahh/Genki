@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { AccessibilityInfo, Animated, Easing, StyleSheet, View } from 'react-native';
 import { Icon, Surface, Text, TouchableRipple, useTheme } from 'react-native-paper';
 import type { AppTheme } from '@/theme';
@@ -34,7 +34,7 @@ type Props = {
 export function GaugeBar({ label, value, goal, remaining, hint, metric, progress, expected, color, status = PACE[color], icon, onPress }: Props) {
   const { colors } = useTheme<AppTheme>();
   // The fill slides to its value (from empty when the screen opens), unless the phone asks for no motion.
-  const fill = useRef(new Animated.Value(0)).current;
+  const [fill] = useState(() => new Animated.Value(0));
   const [reduceMotion, setReduceMotion] = useState(false);
   useEffect(() => {
     void AccessibilityInfo.isReduceMotionEnabled().then(setReduceMotion);
