@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, within } from '@testing-library/react-native';
 import { PaperProvider } from 'react-native-paper';
 import { inMemoryWaterRepository, waterUseCases } from '@/modules/hydration';
-import { DEFAULT_PROFILE } from '@/modules/settings';
+import { DEFAULT_PROFILE, type GoalMode } from '@/modules/settings';
 import glyphs from '@expo/vector-icons/build/vendor/react-native-vector-icons/glyphmaps/MaterialCommunityIcons.json';
 import { theme } from '@/theme';
 import type { DayTotalsRepository } from '../application/ports';
@@ -12,7 +12,7 @@ const afternoon = { now: () => new Date('2026-10-23T13:00:00Z') };
 const evening = { now: () => new Date('2026-10-23T18:30:00Z') }; // 20:30 in Paris
 const fr = (n: number) => n.toLocaleString('fr-FR');
 
-async function renderToday({ kcal = 0, proteinG = 0, waterMl = 0, userName, clock = afternoon, session }: { kcal?: number; proteinG?: number; waterMl?: number; userName?: string; clock?: typeof afternoon; session?: { title: string; subtitle: string; onStart: () => void } } = {}) {
+async function renderToday({ kcal = 0, proteinG = 0, waterMl = 0, userName, clock = afternoon, session, goalMode }: { kcal?: number; proteinG?: number; waterMl?: number; userName?: string; clock?: typeof afternoon; session?: { title: string; subtitle: string; onStart: () => void }; goalMode?: GoalMode } = {}) {
   const water = inMemoryWaterRepository();
   if (waterMl > 0) water.add({ day: '2026-10-23', ml: waterMl, createdAt: clock.now() });
   // Day totals as Firestore keeps them: the water is the sum of the day's live glasses.
@@ -33,7 +33,7 @@ async function renderToday({ kcal = 0, proteinG = 0, waterMl = 0, userName, cloc
   await render(
     <PaperProvider theme={theme}>
       <TodayScreen
-        profile={DEFAULT_PROFILE}
+        profile={{ ...DEFAULT_PROFILE, goalMode: goalMode ?? DEFAULT_PROFILE.goalMode }}
         userName={userName}
         session={session}
         clock={clock}
@@ -223,4 +223,29 @@ test.each([
 ])('the Calories gauge with %i kcal is read « %s »', async (kcal, status) => {
   await renderToday({ kcal });
   expect(screen.getByLabelText(/^Calories : /)).toHaveAccessibilityValue({ text: status });
+});
+
+describe('the Calories gauge follows the goal mode', () => {
+  const read = () => screen.getByLabelText(/^Calories : /);
+
+  test('in a deficit, eating less than the pace is not late', async () => {
+    await renderToday({ kcal: 300, goalMode: 'deficit' });
+    expect(read()).toHaveAccessibilityValue({ text: 'dans l’objectif de déficit' });
+  });
+
+  test('in a deficit, going over the goal is still read as over', async () => {
+    await renderToday({ kcal: 2400, goalMode: 'deficit' });
+    expect(read()).toHaveAccessibilityValue({ text: 'au-dessus de l’objectif' });
+  });
+
+  test('in a surplus, going over the goal is not a problem: the goal is reached', async () => {
+    await renderToday({ kcal: 2600, goalMode: 'surplus' });
+    expect(read()).toHaveAccessibilityValue({ text: 'dans le rythme' });
+    expect(screen.getByText(`sur ${fr(2200)} kcal · objectif atteint`)).toBeTruthy();
+  });
+
+  test('in a surplus, being behind the pace is late', async () => {
+    await renderToday({ kcal: 300, goalMode: 'surplus' });
+    expect(read()).toHaveAccessibilityValue({ text: 'en retard' });
+  });
 });

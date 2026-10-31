@@ -73,7 +73,8 @@ export function TodayScreen({ profile, userName, clock, dayTotals, hydration, ru
     setAdded(null);
     run(() => hydration.removeWater(entry));
   };
-  const overGoal = isOverGoal(totals.kcal, goals.kcal);
+  // Gaining: going over the goal is the point, not a problem. Losing: it is the only way to be late, and a gauge under its pace is on track.
+  const overGoal = profile.goalMode !== 'surplus' && isOverGoal(totals.kcal, goals.kcal);
   const { colors } = useTheme();
   const greeting = [hour < 18 ? 'Bonjour' : 'Bonsoir', userName].filter(Boolean).join(' ');
 
@@ -107,8 +108,8 @@ export function TodayScreen({ profile, userName, clock, dayTotals, hydration, ru
             hint="Ouvre le suivi des calories"
             progress={progress(totals.kcal, goals.kcal)}
             expected={expected}
-            color={calorieColor(totals.kcal, goals.kcal, hour)}
-            status={overGoal ? 'au-dessus de l’objectif' : undefined}
+            color={calorieColor(totals.kcal, goals.kcal, hour, profile.goalMode)}
+            status={overGoal ? 'au-dessus de l’objectif' : profile.goalMode === 'deficit' ? 'dans l’objectif de déficit' : undefined}
             icon="chevron-right"
             onPress={() => onOpenMetric('calories')}
           />
