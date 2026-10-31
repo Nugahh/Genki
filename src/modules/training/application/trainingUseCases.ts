@@ -20,6 +20,8 @@ export function trainingUseCases(deps: { plans: PlanRepository; workouts: Workou
   return {
     observePlans: plans.observeAll,
     observeLatestWorkout: workouts.observeLatest,
+    /** The milestones with their state: what a measure of the body is checked against. */
+    listMilestones: milestones.list,
     observeWorkoutsBetween: workouts.observeBetween,
     /** The milestones still to reach first, then the achieved ones, each by label. */
     observeMilestones(onNext: (list: Milestone[]) => void, onError: (error: Error) => void) {

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { Button, Icon, Snackbar, Surface, Text, useTheme } from 'react-native-paper';
 import { WaterAmountDialog, WaterButtons, type Hydration, type WaterEntry } from '@/modules/hydration';
@@ -24,6 +24,8 @@ type Props = {
   /** Opens the Suivi of a measure (spec §6, « Tout est touchable »). */
   onOpenMetric: (metric: 'calories' | 'protein') => void;
   /** The session to do next, when there is a programme in progress: « Démarrer » opens it in the host. */
+  /** More cards under the session (the weight, the days without tobacco): the route composes them from their modules. */
+  cards?: ReactNode;
   session?: { title: string; subtitle: string; onStart: () => void };
 };
 
@@ -48,7 +50,7 @@ function encouragement(totals: DayTotals, goals: Profile['goals']) {
 /** A gauge with no goal is drawn full. */
 const progress = (value: number, goal: number) => (goal > 0 ? value / goal : 1);
 
-export function TodayScreen({ profile, userName, clock, dayTotals, hydration, run, onAddMeal, onOpenMetric, session }: Props) {
+export function TodayScreen({ profile, userName, clock, dayTotals, hydration, run, onAddMeal, onOpenMetric, session, cards }: Props) {
   const now = useNow(clock);
   const day = dayKey(now, profile.timezone);
   const hour = hourOfDay(now, profile.timezone);
@@ -140,6 +142,7 @@ export function TodayScreen({ profile, userName, clock, dayTotals, hydration, ru
               </Button>
             </Surface>
           )}
+          {cards}
         </ScrollView>
         {/* Mounted per glass, as the failure message is: Paper's Snackbar misses a message that lands during its fade-out. It rests on the actions below. */}
         {added && (

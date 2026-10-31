@@ -30,3 +30,7 @@ export function hourOfDay(date: Date, timeZone: string): number {
   // Some engines print midnight as "24" even with h23.
   return (Number(p.hour) % 24) + Number(p.minute) / 60;
 }
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+/** The day `n` days after (or before, if negative) a day key: calendar arithmetic, with no time zone or clock change in it. */
+export const addDays = (day: string, n: number) => new Date(Date.parse(`${day}T00:00:00Z`) + n * DAY_MS).toISOString().slice(0, 10);

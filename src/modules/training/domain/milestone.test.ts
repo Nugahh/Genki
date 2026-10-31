@@ -38,15 +38,21 @@ describe('reachedBy', () => {
 describe('validateMilestone', () => {
   const valid = { metric: 'exercise:tractions:reps', target: 10, direction: 'up' as const, label: '10 tractions' };
   test('accepts a valid milestone', () => expect(validateMilestone(valid)).toBeNull());
+  test.each(['weightKg', 'waistCm'])('accepts the body metric %s', (metric) => expect(validateMilestone({ ...valid, metric, direction: 'down' })).toBeNull());
   test.each([
     ['a blank label', { label: ' ' }],
     ['a label of 101 characters', { label: 'x'.repeat(101) }],
     ['a negative target', { target: -1 }],
     ['a target above 100 000', { target: 100001 }],
     ['a target that is not a number', { target: NaN }],
-    ['a metric that is not an exercise metric', { metric: 'weightKg' }],
+    ['a metric that is neither an exercise nor a measure of the body', { metric: 'bodyFat' }],
     ['a metric of an unknown kind', { metric: 'exercise:tractions:speed' }],
   ])('refuses %s with a message', (_, patch) => {
     expect(validateMilestone({ ...valid, ...patch })).toEqual(expect.stringMatching(/\S/));
   });
+});
+
+test('a workout does not reach a milestone of the body', () => {
+  const waist = pullups({ metric: 'waistCm', target: 90, direction: 'down' });
+  expect(reachedBy([waist], [{ exerciseId: 'tractions', setNo: 1, reps: 12, kg: 0 }])).toEqual([]);
 });

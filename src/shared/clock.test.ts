@@ -1,4 +1,4 @@
-import { dayKey, hourOfDay } from './clock';
+import { addDays, dayKey, hourOfDay } from './clock';
 
 const PARIS = 'Europe/Paris';
 
@@ -23,4 +23,10 @@ describe('hourOfDay', () => {
   test('midnight is 0', () => {
     expect(hourOfDay(new Date('2026-10-23T22:00:00Z'), PARIS)).toBe(0);
   });
+});
+
+test('addDays crosses month and year ends', () => {
+  expect(addDays('2026-10-31', 1)).toBe('2026-11-01');
+  expect(addDays('2026-01-01', -1)).toBe('2025-12-31');
+  expect(addDays('2028-02-28', 1)).toBe('2028-02-29');
 });

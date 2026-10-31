@@ -1,5 +1,6 @@
 import { Redirect, router, Stack, useLocalSearchParams } from 'expo-router';
 import { useApp } from '@/appContext';
+import { BodyExtras } from '@/modules/body';
 import { WaterDay } from '@/modules/hydration';
 import { useUiPrefs } from '@/modules/settings';
 import { goalsOf, NutritionExtras, sectionById, SectionScreen, TrainingExtras } from '@/modules/tracking';
@@ -37,6 +38,7 @@ export default function SuiviSection() {
         timezone={app.profile.timezone}
         renderExtras={({ period, day, view }) => {
           if (info.id === 'nutrition') return <NutritionExtras split={view?.split} onOpenJournal={() => router.navigate('/repas')} />;
+          if (info.id === 'corps') return <BodyExtras body={app.body} clock={app.clock} timezone={app.profile.timezone} run={run} />;
           if (info.id === 'eau') return period === 'day' ? <WaterDay hydration={app.hydration} day={day} timezone={app.profile.timezone} run={run} /> : null;
           if (info.id === 'entrainement') return <TrainingSection period={period} day={day} />;
           return null;

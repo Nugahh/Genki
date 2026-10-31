@@ -21,6 +21,7 @@ jest.mock('@/composition', () => {
   const { inMemoryMilestoneRepository, inMemoryPlanRepository, inMemoryWorkoutRepository, trainingUseCases } = jest.requireActual('@/modules/training');
   const { DEFAULT_PROFILE, inMemoryProfileRepository, settingsUseCases } = jest.requireActual('@/modules/settings');
   const { inMemoryFactsSource, trackingUseCases } = jest.requireActual('@/modules/tracking');
+  const { bodyUseCases, inMemoryBodyRepository } = jest.requireActual('@/modules/body');
   const clock = { now: () => new Date('2026-10-23T10:00:00Z') }; // 12:00 in Paris: lunch
   const rice = { ref: { type: 'ciqual', id: '9100' }, name: 'Riz blanc, cru', state: 'raw', per100g: { kcal: 350, protein: 7, carbs: 78, fat: 0.6 }, portions: [] };
   return {
@@ -34,9 +35,11 @@ jest.mock('@/composition', () => {
           return () => {};
         },
       },
-      training: (() => {
+      ...(() => {
         const milestones = inMemoryMilestoneRepository();
-        return trainingUseCases({ plans: inMemoryPlanRepository(), workouts: inMemoryWorkoutRepository(milestones), milestones, clock, timezone: DEFAULT_PROFILE.timezone });
+        const training = trainingUseCases({ plans: inMemoryPlanRepository(), workouts: inMemoryWorkoutRepository(milestones), milestones, clock, timezone: DEFAULT_PROFILE.timezone });
+        const body = bodyUseCases({ repo: inMemoryBodyRepository(milestones), milestones: training.listMilestones, clock, timezone: DEFAULT_PROFILE.timezone });
+        return { training, body };
       })(),
       settings: (() => {
         const repo = inMemoryProfileRepository();
@@ -191,6 +194,31 @@ test('the settings reach the profile and the water containers', async () => {
   await act(async () => router.back());
   await fireEvent.press(screen.getByText('Eau'));
   expect(screen).toHavePathname('/settings/water');
+});
+
+test('Today has a weight card: one tap enters a measure, a touch opens the weight in Suivi', async () => {
+  signedInAs({ uid: 'alice' });
+  await renderRouter();
+  expect(await screen.findByText('Pas encore de pesée')).toBeTruthy();
+  await fireEvent.press(screen.getByLabelText('Saisir une mesure'));
+  await fireEvent.changeText(screen.getByLabelText('Poids (kg)'), '80,5');
+  await fireEvent.press(screen.getByText('Enregistrer'));
+  expect(await screen.findByText('80,5 kg')).toBeTruthy();
+  await fireEvent.press(screen.getByText('Poids'));
+  expect(screen).toHavePathname('/suivi/corps');
+  expect(screen).toHaveSearchParams({ section: 'corps', metric: 'weight' });
+});
+
+test('the goals start the proposal from the weight entered', async () => {
+  signedInAs({ uid: 'alice' });
+  await renderRouter();
+  await fireEvent.press(await screen.findByLabelText('Saisir une mesure'));
+  await fireEvent.changeText(screen.getByLabelText('Poids (kg)'), '80');
+  await fireEvent.press(screen.getByText('Enregistrer'));
+  await screen.findByText('80 kg');
+  await fireEvent.press(screen.getByLabelText('Réglages'));
+  await fireEvent.press(screen.getByText('Objectifs'));
+  expect(await screen.findByLabelText('Poids (kg)')).toHaveDisplayValue('80');
 });
 
 test('the Repas tab opens the day journal', async () => {

@@ -10,8 +10,10 @@ export default function Setup() {
     <SetupScreen
       profile={profile}
       year={year}
-      onDone={(patch) => {
+      onDone={(patch, weightKg) => {
         run(() => app.settings.saveProfile(patch));
+        // The weight typed is the first measure.
+        run(async () => void (await app.body.save({ weightKg })));
         router.replace('/');
       }}
       onSkip={() => {

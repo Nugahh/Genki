@@ -346,6 +346,27 @@ describe('days (nutrition totals)', () => {
   test('rejects a total that is not a number', async () => {
     await assertFails(setDoc(doc(db('alice'), 'users/alice/days/2026-10-24'), { proteinG: '12', updatedAt: Timestamp.now() }));
   });
+
+  describe('the measures of the body', () => {
+    const day = () => doc(db('alice'), 'users/alice/days/2026-10-24');
+    const measure = (data: object) => setDoc(day(), { updatedAt: Timestamp.now(), ...data }, { merge: true });
+
+    test('a weight and a waist are merged into the day, next to the totals', async () => {
+      await assertSucceeds(setDoc(day(), { kcal: 1800, updatedAt: Timestamp.now() }));
+      await assertSucceeds(measure({ weightKg: 80.5 }));
+      await assertSucceeds(measure({ waistCm: 92 }));
+    });
+
+    test.each<[string, object]>([
+      ['a weight of 19 kg', { weightKg: 19 }],
+      ['a weight of 401 kg', { weightKg: 401 }],
+      ['a weight that is a string', { weightKg: '80' }],
+      ['a waist of 29 cm', { waistCm: 29 }],
+      ['a waist of 301 cm', { waistCm: 301 }],
+    ])('rejects %s', async (_, data) => {
+      await assertFails(measure(data));
+    });
+  });
 });
 
 describe('plans', () => {

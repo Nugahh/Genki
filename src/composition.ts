@@ -15,6 +15,8 @@ import { firestoreDaysSource } from '@/modules/tracking/adapters/firestoreDaysSo
 import { trainingFactsSource } from '@/modules/tracking/adapters/trainingFactsSource';
 import { trackingUseCases } from '@/modules/tracking';
 import { firestoreDayTotals } from '@/modules/today/adapters/firestoreDayTotals';
+import { firestoreBodyRepository } from '@/modules/body/adapters/firestoreBodyRepository';
+import { bodyUseCases } from '@/modules/body';
 import { openCiqual } from '@/platform/ciqual';
 import { db } from '@/platform/firebase';
 import { systemClock } from '@/shared/clock';
@@ -35,6 +37,7 @@ export function compose(uid: string) {
     hydration: waterUseCases(firestoreWaterRepository(db, uid), systemClock, profile.timezone),
     dayTotals: firestoreDayTotals(db, uid),
     training,
+    body: bodyUseCases({ repo: firestoreBodyRepository(db, uid), milestones: training.listMilestones, clock: systemClock, timezone: profile.timezone }),
     settings: settingsUseCases(firestoreProfileRepository(db, uid)),
     tracking: trackingUseCases({ sources: { days: firestoreDaysSource(db, uid), training: trainingFactsSource(training) }, clock: systemClock, timezone: profile.timezone }),
     nutrition: {

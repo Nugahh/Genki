@@ -145,13 +145,16 @@ service cloud.firestore {
     match /users/{uid}/days/{day} {
       allow create, update: if isOwner(uid)
         && isDayKey(day)
-        && request.resource.data.keys().hasOnly(['waterMl', 'kcal', 'proteinG', 'carbsG', 'fatG', 'updatedAt'])
+        && request.resource.data.keys().hasOnly(['waterMl', 'kcal', 'proteinG', 'carbsG', 'fatG', 'weightKg', 'waistCm', 'updatedAt'])
         && request.resource.data.updatedAt is timestamp
         && atLeast(request.resource.data, 'waterMl', 0)
         && atLeast(request.resource.data, 'kcal', -0.05)
         && atLeast(request.resource.data, 'proteinG', -0.05)
         && atLeast(request.resource.data, 'carbsG', -0.05)
-        && atLeast(request.resource.data, 'fatG', -0.05);
+        && atLeast(request.resource.data, 'fatG', -0.05)
+        // The measures of the body: one value a day, typed by hand (spec §4 rule 8).
+        && (!('weightKg' in request.resource.data) || (request.resource.data.weightKg is number && request.resource.data.weightKg >= 20 && request.resource.data.weightKg <= 400))
+        && (!('waistCm' in request.resource.data) || (request.resource.data.waistCm is number && request.resource.data.waistCm >= 30 && request.resource.data.waistCm <= 300));
     }
 
     match /users/{uid}/foodEntries/{entryId} {
