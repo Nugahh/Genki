@@ -308,7 +308,9 @@ Today splits into two groups. The upper region scrolls: a greeting (« Bonjour �
 
 Sport lists the programme in progress as cards, one per session of the phase (the next one marked « Prochaine », each with a tonal « Démarrer »), then « Modifier le programme », « Repartir du modèle » and the milestones. A workout is one column of exercises, each with its last result and one row per set (load and reps, prefilled), a rest timer under the thumb (« Repos 1:30 », « Passer ») and a summary at the end; leaving it asks « Abandonner la séance ? ». The editor opens an exercise in a form, and an exercise opens its history.
 
-Navigation is a three-tab bottom bar (Aujourd'hui, Repas, Sport) under a header whose right end holds the sync cloud. Every control is at least 48 × 48 dp, with at least 8 dp between neighbouring targets: Paper buttons get a 48 dp content height, icon buttons are sized to 48 × 48, and segment labels are padded to reach 48 dp.
+Suivi opens on a hub of statistic cards (label, the number over the period, how it moved since the period before in muted ink, a thin curve, a chevron) under a Jour / Semaine / Année switch; « Modifier » moves, hides and adds cards from a dialog with 48 dp arrow buttons. A section screen has the switch with arrows to earlier periods, chips for the statistics of the section, a chart in a level-1 card, a summary (average, days on target, best day) and what is particular to the section (macros split, glasses of the day, sessions against planned). Charts are thin: bars with a rounded data end standing on a flat baseline, a dashed goal line, today dashed and unfilled; a day's tone is the pace green, ochre or brick, never the only signal, since the chart is also read aloud in words (« dans la cible », « loin de la cible »). Each measure has one solid hue of its own (theme `chart`), clear of the pace colors.
+
+Navigation is a four-tab bottom bar (Aujourd'hui, Repas, Sport, Suivi) under a header whose right end holds the sync cloud. Every control is at least 48 × 48 dp, with at least 8 dp between neighbouring targets: Paper buttons get a 48 dp content height, icon buttons are sized to 48 × 48, and segment labels are padded to reach 48 dp.
 
 Frontmatter dimensions are written in px; in React Native they are unitless dp.
 
@@ -370,7 +372,7 @@ Standard Paper components, restrained: a tonal button, a soft card, a flat field
 - **Take-back:** the same shape with « +250 ml ajoutés » and « Annuler », 4 seconds, on Today only.
 
 ### Navigation
-- **Tab bar:** Paper's Material 3 navigation bar, 80 dp on Paper Bar: three destinations, each an icon with a label (calendar-today for Aujourd'hui, silverware-fork-knife for Repas, dumbbell for Sport), the open one in a 64 × 32 dp Ink Tint pill with Ink-toned icon and label, the other in Ink Soft. Each tab is announced once, as a tab with its selected state.
+- **Tab bar:** Paper's Material 3 navigation bar, 80 dp on Paper Bar: four destinations, each an icon with a label (calendar-today for Aujourd'hui, silverware-fork-knife for Repas, dumbbell for Sport, chart-line for Suivi), the open one in a 64 × 32 dp Ink Tint pill with Ink-toned icon and label, the other in Ink Soft. Each tab is announced once, as a tab with its selected state.
 - **Header:** the page color with a hairline, title at the left on Android. At the right, the sync cloud: 24 dp icon with 16 dp horizontal margin and a French label for each state (cloud-check-outline « Synchronisé », cloud-upload-outline « En attente d'envoi », cloud-off-outline « Hors-ligne », cloud-alert « Erreur de synchronisation »).
 
 ## Do's and Don'ts

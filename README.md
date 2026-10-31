@@ -2,9 +2,9 @@
 
 Application mobile personnelle de suivi : hydratation, alimentation, sport. Spec : `docs/superpowers/specs/2026-10-23-fitness-tracker-design.md`.
 
-État : M0 (socle, connexion Google, règles), M1 (eau sur l'écran Aujourd'hui, hors-ligne, synchro entre deux téléphones) et M2 (alimentation : base Ciqual embarquée, journal par repas, favoris, aliments personnalisés, jauges Calories et Protéines sur l'écran Aujourd'hui).
+État : M0 (socle, connexion Google, règles), M1 (eau sur l'écran Aujourd'hui, hors-ligne, synchro entre deux téléphones), M2 (alimentation : base Ciqual embarquée, journal par repas, favoris, aliments personnalisés, jauges Calories et Protéines sur l'écran Aujourd'hui), M3 (entraînement : programme, séances, progression, jalons) et M4 (Suivi : hub de statistiques, courbes par rubrique, périodes jour, semaine, année).
 
-M2 ajoute du code natif (`expo-sqlite`) : après la mise à jour, refaire `npm run android`. Recharger le JavaScript ne suffit pas. Avant d'installer M2, redéployer aussi les règles Firestore sur les deux projets Firebase (`npx firebase deploy --only firestore:rules --project <id>`) : celles des serveurs refuseraient toute écriture d'alimentation (détail dans « À vérifier sur le téléphone avant M4 »).
+M2 ajoute du code natif (`expo-sqlite`) : après la mise à jour, refaire `npm run android`. Recharger le JavaScript ne suffit pas. Avant d'installer M2, redéployer aussi les règles Firestore sur les deux projets Firebase (`npx firebase deploy --only firestore:rules --project <id>`) : celles des serveurs refuseraient toute écriture d'alimentation (détail dans « À vérifier sur le téléphone avant M5 »).
 
 ## Prérequis
 
@@ -78,7 +78,7 @@ npm run test:emulator   # règles et adaptateurs Firestore, émulateur sur le po
 
 La CI GitHub Actions lance les mêmes commandes.
 
-## À vérifier sur le téléphone avant M4
+## À vérifier sur le téléphone avant M5
 
 Ce que Jest ne montre pas : le natif, le réseau et la mise en page. D'abord :
 
@@ -87,8 +87,12 @@ Ce que Jest ne montre pas : le natif, le réseau et la mise en page. D'abord :
 
 3. **Déployer les règles et l'index Firestore avant d'installer M3** : sans eux, le programme, les séances et les jalons seraient refusés, et l'historique d'un exercice resterait vide. `npx firebase deploy --only firestore:rules,firestore:indexes --project <id>`, sur les deux projets. L'index (`workoutLogs` : `exerciseIds` + `day` décroissant) met quelques minutes à se construire : tant qu'il est en cours, l'historique et le pré-remplissage d'une séance échouent.
 
+4. **Déployer à nouveau les règles avant d'installer M4** : `npx firebase deploy --only firestore:rules --project <id>`, sur les deux projets. M4 ajoute la règle du document `users/{uid}` (les préférences d'affichage du Suivi, `ui`) ; M3 en a relevé deux bornes (400 séries par séance, 120 caractères pour la métrique d'un jalon). Sans elles, l'ordre des cartes du Suivi ne s'enregistre pas.
+5. **Refaire le client de développement avec `npm run android`** : M4 ajoute `react-native-svg` (code natif des courbes). Recharger le JavaScript ne suffit pas.
+
 Ensuite :
 
+- **Suivi (M4).** Le quatrième onglet ouvre le hub : une carte par statistique (Calories, Protéines, Eau, Pas, Poids, Volume) avec sa valeur, sa variation et sa courbe ; les statistiques sans mesure disent « Pas encore de mesure ». « Jour / Semaine / Année » change la période de toutes les cartes et se retrouve en rouvrant l'application, aussi sur l'autre téléphone. « Modifier » monte, descend, masque ou ajoute une carte. Une carte ouvre sa rubrique : puces des statistiques, flèches vers les semaines précédentes, courbe avec la ligne d'objectif (aujourd'hui en pointillé), résumé. Sur Aujourd'hui, toucher Calories ou Protéines ouvre Suivi › Nutrition sur la bonne courbe ; le retour mène au hub, puis à Aujourd'hui. Retoucher l'onglet Suivi depuis une rubrique revient au hub. Les rubriques Activité et Corps restent vides tant que M5 et M6 n'écrivent pas les pas, le poids et le tour de taille. Eau en vue Jour : la liste des verres, avec suppression.
 - **Sport (M3).** Onglet Sport › « Partir du modèle » : trois séances, la prochaine marquée. Démarrer une séance : les séries sont pré-remplies (charge visée et répétitions prévues), « Repos 1:30 » démarre quand une série est validée et « Passer » l'arrête. Terminer la séance, couper le réseau, la refaire : le résumé s'affiche aussitôt, hors-ligne, et la séance apparaît à la reconnexion. Sur Aujourd'hui, la carte « Séance du jour » passe à la séance suivante.
 - **Programme (M3).** Sport › « Modifier le programme » : renommer, changer, ajouter et supprimer un exercice (le dernier d'une séance ne se supprime pas) ; « Voir l'historique » liste les séries des dernières séances. Un jalon (Sport › Jalons) passe à « atteint » quand une séance le franchit.
 - **Eau sur deux téléphones (M1, spec §11).** Connectés au même compte Google, couper le réseau sur les deux, ajouter de l'eau sur chacun, rétablir le réseau. Les deux doivent afficher la somme, et l'icône nuage repasser à « Synchronisé ».
