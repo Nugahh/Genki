@@ -1,0 +1,44 @@
+import { StyleSheet, View } from 'react-native';
+import { IconButton, SegmentedButtons, Text } from 'react-native-paper';
+import type { Period } from '../domain/period';
+
+type Props = {
+  period: Period;
+  onPeriod: (period: Period) => void;
+  /** What the period is, e.g. « Semaine du 26 oct. au 1 nov. ». */
+  title: string;
+  /** The arrows to earlier and later periods; without it only the title shows. */
+  onShift?: (step: -1 | 1) => void;
+  canGoForward?: boolean;
+};
+
+// Paper's segment is 40 dp tall: 4 dp of padding above and below the label make the 48 dp target.
+const PERIODS = [
+  { value: 'day', label: 'Jour', labelStyle: { paddingVertical: 4 }, showSelectedCheck: true },
+  { value: 'week', label: 'Semaine', labelStyle: { paddingVertical: 4 }, showSelectedCheck: true },
+  { value: 'year', label: 'Année', labelStyle: { paddingVertical: 4 }, showSelectedCheck: true },
+];
+
+/** Day, week or year (shared by every Suivi screen), and which one: with arrows to go back in time. */
+export function PeriodPicker({ period, onPeriod, title, onShift, canGoForward = false }: Props) {
+  return (
+    <View style={styles.box}>
+      <SegmentedButtons value={period} onValueChange={(value) => onPeriod(value as Period)} buttons={PERIODS} />
+      <View style={styles.row}>
+        {onShift && <IconButton icon="chevron-left" style={styles.iconButton} accessibilityLabel="Période précédente" onPress={() => onShift(-1)} />}
+        <Text variant="titleMedium" accessibilityLiveRegion="polite" style={styles.title}>
+          {title}
+        </Text>
+        {onShift && <IconButton icon="chevron-right" style={styles.iconButton} accessibilityLabel="Période suivante" disabled={!canGoForward} onPress={() => onShift(1)} />}
+      </View>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  box: { gap: 8 },
+  row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4 },
+  title: { flexShrink: 1, textAlign: 'center' },
+  // Paper's icon button is 40 dp, and its container clips the extra hit area: 48 dp make the touch target.
+  iconButton: { width: 48, height: 48, borderRadius: 24 },
+});
