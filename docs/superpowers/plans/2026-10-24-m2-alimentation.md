@@ -10,6 +10,8 @@
 
 Spec : `docs/superpowers/specs/2026-10-23-fitness-tracker-design.md`. Plan précédent : `docs/superpowers/plans/2026-10-23-m0-m1-socle-hydratation.md` (mêmes conventions).
 
+> Le code du dépôt fait foi : les blocs de code des tâches 2 et 3 n'ont pas été resynchronisés après les corrections de revue.
+
 ## Global Constraints
 
 Exigences de la spec (texte d'origine) :

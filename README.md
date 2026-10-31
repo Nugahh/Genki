@@ -4,7 +4,7 @@ Application mobile personnelle de suivi : hydratation, alimentation, sport. Spec
 
 État : M0 (socle, connexion Google, règles), M1 (eau sur l'écran Aujourd'hui, hors-ligne, synchro entre deux téléphones) et M2 (alimentation : base Ciqual embarquée, journal par repas, favoris, aliments personnalisés, jauges Calories et Protéines sur l'écran Aujourd'hui).
 
-M2 ajoute du code natif (`expo-sqlite`) : après la mise à jour, refaire `npm run android`. Recharger le JavaScript ne suffit pas.
+M2 ajoute du code natif (`expo-sqlite`) : après la mise à jour, refaire `npm run android`. Recharger le JavaScript ne suffit pas. Avant d'installer M2, redéployer aussi les règles Firestore sur les deux projets Firebase (`npx firebase deploy --only firestore:rules --project <id>`) : celles des serveurs refuseraient toute écriture d'alimentation (détail dans « À vérifier sur le téléphone avant M3 »).
 
 ## Prérequis
 
@@ -80,13 +80,20 @@ La CI GitHub Actions lance les mêmes commandes.
 
 ## À vérifier sur le téléphone avant M3
 
-Ce que Jest ne montre pas : le natif, le réseau et la mise en page. D'abord, refaire le client de développement avec `npm run android` (M2 ajoute le module natif `expo-sqlite` : recharger le JavaScript ne suffit pas). Ensuite :
+Ce que Jest ne montre pas : le natif, le réseau et la mise en page. D'abord :
+
+1. **Redéployer les règles Firestore avant d'installer M2.** Les règles des serveurs (celles de M1) n'ont aucun `match` pour `foodEntries`, `foods` et `favoriteMeals`, et limitent `days` aux champs de l'eau : toute écriture d'alimentation serait refusée (hors-ligne, les entrées s'affichent dans le journal puis disparaissent au retour du réseau). Les déployer sur les deux projets Firebase, dev et prod, avec `npx firebase deploy --only firestore:rules --project <id>`. Les nouvelles règles acceptent toujours les écritures d'eau de M1 : les déployer d'abord est sans risque.
+2. Refaire le client de développement avec `npm run android` (M2 ajoute le module natif `expo-sqlite` : recharger le JavaScript ne suffit pas).
+
+Ensuite :
 
 - **Eau sur deux téléphones (M1, spec §11).** Connectés au même compte Google, couper le réseau sur les deux, ajouter de l'eau sur chacun, rétablir le réseau. Les deux doivent afficher la somme, et l'icône nuage repasser à « Synchronisé ».
 - **Base Ciqual.** Au premier lancement, l'application copie la base embarquée vers `files/SQLite/ciqual-2025-11-03.db` dans son stockage. Ensuite, en mode avion, chercher « riz » (Repas › Ajouter › Recherche) : les résultats arrivent aussitôt. Avec un build de développement, Metro doit être joignable au tout premier lancement à froid : `Asset.downloadAsync` s'exécute avant de regarder si la base est déjà installée.
+- **Variante prod (release).** Installer la version release, passer en mode avion avant le premier lancement, chercher « riz » : la base est alors copiée depuis l'APK et non depuis Metro.
 - **Repas sur deux téléphones.** Ajouter un repas sur chacun hors-ligne, puis rétablir le réseau : les deux affichent les calories et les protéines additionnées.
 - **Journal.** Modifier la quantité d'une ligne, puis supprimer une ligne : les totaux suivent.
 - **« Réessayer ».** Le message d'un enregistrement refusé est visible et utilisable au-dessus de la fenêtre native « Ajouter un aliment ».
 - **Mise en page, sur 360 dp et sur 412 dp.** Les quatre libellés « Favoris », « Récents », « Recherche » et « Créer » ne sont pas tronqués ; la rangée +250 ml, +500 ml, + Repas passe à la ligne proprement ; les textes des jauges tiennent.
+- **Zones tactiles de 48 dp.** Puces Tous/Cru/Cuit, puces de portion et icônes Supprimer, à essayer au pouce.
 - **Formats français sur Hermes.** « 1 200 / 2 200 kcal », « 0,6 g ».
 - **Attribution Ciqual.** Elle figure dans ce README (licence Etalab 2.0, section « Données alimentaires »).
