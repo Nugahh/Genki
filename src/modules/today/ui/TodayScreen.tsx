@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
-import { Button, Snackbar } from 'react-native-paper';
+import { Button, Snackbar, Surface } from 'react-native-paper';
 import { WaterButtons, WaterSheet, type Hydration, type WaterEntry } from '@/modules/hydration';
 import type { Profile } from '@/modules/settings';
 import { dayKey, hourOfDay, type Clock } from '@/shared/clock';
@@ -59,79 +59,84 @@ export function TodayScreen({ profile, clock, dayTotals, hydration, run, onAddMe
 
   return (
     <View style={styles.screen}>
-      <ScrollView contentContainerStyle={styles.content}>
-        <GaugeBar
-          label="Eau"
-          value={liters(totals.waterMl)}
-          goal={liters(goals.waterMl)}
-          remaining={remaining(totals.waterMl, goals.waterMl, liters)}
-          hint="Ouvre les verres du jour"
-          progress={progress(totals.waterMl, goals.waterMl)}
-          expected={expected}
-          color={paceColor(totals.waterMl, goals.waterMl, hour)}
-          icon="plus"
-          onPress={() => setSheetOpen(true)}
-        />
-        <GaugeBar
-          label="Calories"
-          value={kcal(totals.kcal)}
-          goal={kcal(goals.kcal)}
-          remaining={overGoal ? 'au-dessus de l’objectif' : remaining(totals.kcal, goals.kcal, kcal)}
-          hint="Ouvre le journal des repas"
-          progress={progress(totals.kcal, goals.kcal)}
-          expected={expected}
-          color={calorieColor(totals.kcal, goals.kcal, hour)}
-          status={overGoal ? 'au-dessus de l’objectif' : undefined}
-          icon="chevron-right"
-          onPress={onOpenMeals}
-        />
-        <GaugeBar
-          label="Protéines"
-          value={grams(totals.proteinG)}
-          goal={grams(goals.proteinG)}
-          remaining={remaining(totals.proteinG, goals.proteinG, grams)}
-          hint="Ouvre le journal des repas"
-          progress={progress(totals.proteinG, goals.proteinG)}
-          expected={expected}
-          color={paceColor(totals.proteinG, goals.proteinG, hour)}
-          icon="chevron-right"
-          onPress={onOpenMeals}
-        />
-        <View style={styles.buttons}>
-          <WaterButtons containers={profile.waterContainers} onAdd={addWater} />
-          <Button mode="contained-tonal" icon="silverware-fork-knife" accessibilityLabel="Ajouter un repas" contentStyle={styles.button} onPress={onAddMeal}>
-            + Repas
-          </Button>
-        </View>
-        <WaterSheet
-          visible={sheetOpen}
-          onDismiss={() => setSheetOpen(false)}
-          day={day}
-          timezone={profile.timezone}
-          containers={profile.waterContainers}
-          hydration={hydration}
-          run={run}
-        />
-      </ScrollView>
-      {/* Mounted per glass, as the failure message is: Paper's Snackbar misses a message that lands during its fade-out. */}
-      {added && (
-        <Snackbar
-          key={added.id}
-          visible
-          duration={4000}
-          onDismiss={() => setAdded(null)}
-          action={{ label: 'Annuler', onPress: () => takeBack(added), contentStyle: { minHeight: 48 } }}
-        >
-          {`+${added.ml} ml ajoutés`}
-        </Snackbar>
-      )}
+      <View style={styles.readings}>
+        <ScrollView testID="gauges" contentContainerStyle={styles.content}>
+          <GaugeBar
+            label="Eau"
+            value={liters(totals.waterMl)}
+            goal={liters(goals.waterMl)}
+            remaining={remaining(totals.waterMl, goals.waterMl, liters)}
+            hint="Ouvre les verres du jour"
+            progress={progress(totals.waterMl, goals.waterMl)}
+            expected={expected}
+            color={paceColor(totals.waterMl, goals.waterMl, hour)}
+            icon="plus"
+            onPress={() => setSheetOpen(true)}
+          />
+          <GaugeBar
+            label="Calories"
+            value={kcal(totals.kcal)}
+            goal={kcal(goals.kcal)}
+            remaining={overGoal ? 'au-dessus de l’objectif' : remaining(totals.kcal, goals.kcal, kcal)}
+            hint="Ouvre le journal des repas"
+            progress={progress(totals.kcal, goals.kcal)}
+            expected={expected}
+            color={calorieColor(totals.kcal, goals.kcal, hour)}
+            status={overGoal ? 'au-dessus de l’objectif' : undefined}
+            icon="chevron-right"
+            onPress={onOpenMeals}
+          />
+          <GaugeBar
+            label="Protéines"
+            value={grams(totals.proteinG)}
+            goal={grams(goals.proteinG)}
+            remaining={remaining(totals.proteinG, goals.proteinG, grams)}
+            hint="Ouvre le journal des repas"
+            progress={progress(totals.proteinG, goals.proteinG)}
+            expected={expected}
+            color={paceColor(totals.proteinG, goals.proteinG, hour)}
+            icon="chevron-right"
+            onPress={onOpenMeals}
+          />
+        </ScrollView>
+        {/* Mounted per glass, as the failure message is: Paper's Snackbar misses a message that lands during its fade-out. It rests on the actions below. */}
+        {added && (
+          <Snackbar
+            key={added.id}
+            visible
+            duration={4000}
+            onDismiss={() => setAdded(null)}
+            action={{ label: 'Annuler', onPress: () => takeBack(added), contentStyle: { minHeight: 48 } }}
+          >
+            {`+${added.ml} ml ajoutés`}
+          </Snackbar>
+        )}
+      </View>
+      {/* The frequent actions are pinned under the thumb, whatever the day holds above: the page, these actions, the tab bar are three tonal levels. */}
+      <Surface mode="flat" elevation={1} style={styles.actions}>
+        <WaterButtons containers={profile.waterContainers} onAdd={addWater} />
+        <Button mode="contained-tonal" icon="silverware-fork-knife" accessibilityLabel="Ajouter un repas" contentStyle={styles.button} onPress={onAddMeal}>
+          + Repas
+        </Button>
+      </Surface>
+      <WaterSheet
+        visible={sheetOpen}
+        onDismiss={() => setSheetOpen(false)}
+        day={day}
+        timezone={profile.timezone}
+        containers={profile.waterContainers}
+        hydration={hydration}
+        run={run}
+      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   screen: { flex: 1 },
+  // The container the take-back snackbar rests at the bottom of: right above the actions.
+  readings: { flex: 1 },
   content: { padding: 16, gap: 16 },
-  buttons: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  actions: { padding: 16, gap: 8 },
   button: { minHeight: 48 },
 });

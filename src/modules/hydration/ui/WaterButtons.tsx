@@ -15,6 +15,7 @@ export function WaterButtons({ containers, onAdd }: Props) {
           icon="cup-water"
           onPress={() => onAdd(c.ml)}
           accessibilityLabel={`Ajouter ${c.ml} ml (${c.label})`}
+          style={styles.grow}
           contentStyle={styles.button}
         >
           +{c.ml} ml
@@ -26,5 +27,7 @@ export function WaterButtons({ containers, onAdd }: Props) {
 
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  // The amounts share the row: wide targets, wrapping on a large font.
+  grow: { flexGrow: 1 },
   button: { minHeight: 48 },
 });

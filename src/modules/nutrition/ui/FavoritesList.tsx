@@ -72,7 +72,8 @@ export function FavoritesList({ meal, meals, foods, custom, run, onDone }: Props
 }
 
 const styles = StyleSheet.create({
-  row: { flexDirection: 'row', alignItems: 'center' },
+  // 8 dp between the row that logs the favorite and the bin that forgets it: two targets, not one.
+  row: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   item: { flex: 1 },
   // Paper's icon button is 40 dp, and its container clips the extra hit area: 48 dp make the touch target.
   iconButton: { width: 48, height: 48, borderRadius: 24 },

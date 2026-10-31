@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react-native';
+import { fireEvent, render, screen, within } from '@testing-library/react-native';
 import { PaperProvider } from 'react-native-paper';
 import { inMemoryWaterRepository, waterUseCases } from '@/modules/hydration';
 import { DEFAULT_PROFILE } from '@/modules/settings';
@@ -48,6 +48,16 @@ test('a quick-add button fills the water gauge', async () => {
   expect(screen.getByLabelText('Eau : 0 L, sur 2,5 L, reste 2,5 L')).toHaveAccessibilityValue({ text: 'en retard' });
   await fireEvent.press(screen.getByText('+500 ml'));
   expect(screen.getByLabelText('Eau : 0,5 L, sur 2,5 L, reste 2 L')).toBeTruthy();
+});
+
+test('the quick-add buttons stay outside the scrolling gauges, under the thumb whatever the day holds', async () => {
+  await renderToday();
+  const scrolling = within(screen.getByTestId('gauges'));
+  expect(scrolling.getByLabelText(/^Eau : /)).toBeTruthy();
+  expect(scrolling.queryByText('+250 ml')).toBeNull();
+  expect(scrolling.queryByText('+ Repas')).toBeNull();
+  expect(screen.getByText('+250 ml')).toBeTruthy();
+  expect(screen.getByText('+ Repas')).toBeTruthy();
 });
 
 test('a quick add offers to take the glass back, and « Annuler » does', async () => {
