@@ -29,7 +29,7 @@ export function WaterSheet({ visible, onDismiss, day, timezone, containers, hydr
     <Portal>
       <Modal visible={visible} onDismiss={onDismiss} overlayAccessibilityLabel="Fermer" contentContainerStyle={[styles.sheet, { backgroundColor: colors.elevation.level3 }]}>
         <Text variant="titleLarge">Eau</Text>
-        <WaterButtons containers={containers} onAdd={(ml) => run(() => hydration.addWater(ml))} />
+        <WaterButtons containers={containers} onAdd={(ml) => run(() => hydration.addWater(ml).saved)} />
         <ScrollView style={styles.list}>
           {entries.length === 0 && <Text>Aucun verre aujourd’hui.</Text>}
           {entries.map((entry) => (

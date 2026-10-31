@@ -28,14 +28,15 @@ export function firestoreWaterRepository(db: Firestore, uid: string): WaterRepos
   return {
     add(entry: NewWaterEntry) {
       const batch = writeBatch(db);
-      batch.set(doc(entries), {
+      const glass = doc(entries);
+      batch.set(glass, {
         day: entry.day,
         ml: entry.ml,
         createdAt: Timestamp.fromDate(entry.createdAt),
         deletedAt: null,
       });
       moveDayTotal(batch, entry.day, entry.ml);
-      return batch.commit();
+      return { id: glass.id, saved: batch.commit() };
     },
 
     remove(entry: WaterEntry) {

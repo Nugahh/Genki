@@ -35,8 +35,12 @@ export function RecentsList({ meals, foods, custom, onPick }: Props) {
 
   return (
     <View>
-      {recents?.length === 0 && <Text>Aucun aliment récent.</Text>}
-      {problem && <HelperText type="error">{problem}</HelperText>}
+      {recents?.length === 0 && <Text accessibilityLiveRegion="polite">Aucun aliment récent.</Text>}
+      {problem && (
+        <HelperText type="error" accessibilityLiveRegion="polite">
+          {problem}
+        </HelperText>
+      )}
       {recents?.map((recent) => (
         <List.Item
           key={`${recent.ref.type}:${recent.ref.id}`}

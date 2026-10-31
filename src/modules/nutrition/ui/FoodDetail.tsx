@@ -6,6 +6,7 @@ import type { MealUseCases } from '../application/mealUseCases';
 import { isValidGrams, type Food } from '../domain/food';
 import { macrosFor } from '../domain/macros';
 import type { Meal } from '../domain/meal';
+import { ConfirmDelete } from './ConfirmDelete';
 import { FoodForm } from './FoodForm';
 import { asText, gramsText, macrosText, MEAL_LABELS, parseNumber } from './format';
 import { StateChip } from './StateChip';
@@ -33,6 +34,7 @@ export function FoodDetail({ food: chosen, grams: last, meal, meals, foods, run,
   const [food, setFood] = useState(chosen);
   const [text, setText] = useState(asText(last ?? 100));
   const [editing, setEditing] = useState(false);
+  const [removing, setRemoving] = useState(false);
   // Set by the first touch of « Ajouter à … »: a second one, before the host has left the screen, must not log the food again.
   const submitted = useRef(false);
   const grams = parseNumber(text);
@@ -79,8 +81,16 @@ export function FoodDetail({ food: chosen, grams: last, meal, meals, foods, run,
         ))}
       </View>
       <TextInput label="Quantité (g)" accessibilityLabel="Quantité (g)" value={text} onChangeText={setText} keyboardType="decimal-pad" />
-      {text.trim() !== '' && !valid && <HelperText type="error">La quantité doit être comprise entre 0 et 5 000 g.</HelperText>}
-      {valid && <Text variant="bodyLarge">{macrosText(macrosFor(food.per100g, grams))}</Text>}
+      {text.trim() !== '' && !valid && (
+        <HelperText type="error" accessibilityLiveRegion="polite">
+          La quantité doit être comprise entre 0 et 5 000 g.
+        </HelperText>
+      )}
+      {valid && (
+        <Text variant="bodyLarge" accessibilityLiveRegion="polite">
+          {macrosText(macrosFor(food.per100g, grams))}
+        </Text>
+      )}
       <Button
         mode="contained"
         contentStyle={styles.button}
@@ -99,15 +109,7 @@ export function FoodDetail({ food: chosen, grams: last, meal, meals, foods, run,
           <Button mode="outlined" icon="pencil" contentStyle={styles.button} onPress={() => setEditing(true)}>
             Modifier l’aliment
           </Button>
-          <Button
-            mode="outlined"
-            icon="delete-outline"
-            contentStyle={styles.button}
-            onPress={() => {
-              run(() => foods.remove(food.ref.id));
-              onRemoved();
-            }}
-          >
+          <Button mode="outlined" icon="delete-outline" contentStyle={styles.button} onPress={() => setRemoving(true)}>
             Supprimer l’aliment
           </Button>
         </>
@@ -115,6 +117,16 @@ export function FoodDetail({ food: chosen, grams: last, meal, meals, foods, run,
       <Button contentStyle={styles.button} onPress={onBack}>
         Retour
       </Button>
+      {removing && (
+        <ConfirmDelete
+          title={`Supprimer l’aliment ${food.name} ?`}
+          onCancel={() => setRemoving(false)}
+          onConfirm={() => {
+            run(() => foods.remove(food.ref.id));
+            onRemoved();
+          }}
+        />
+      )}
     </View>
   );
 }

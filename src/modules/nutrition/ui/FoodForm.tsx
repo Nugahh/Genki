@@ -91,7 +91,11 @@ export function FoodForm({ initial, submitLabel, onSubmit }: Props) {
       <Button icon="plus" contentStyle={styles.button} onPress={() => change({ portions: [...draft.portions, { label: '', grams: '' }] })}>
         Ajouter une portion
       </Button>
-      {problem !== null && <HelperText type="error">{problem}</HelperText>}
+      {problem !== null && (
+        <HelperText type="error" accessibilityLiveRegion="polite">
+          {problem}
+        </HelperText>
+      )}
       <Button mode="contained" contentStyle={styles.button} disabled={problem !== null} onPress={() => onSubmit(food)}>
         {submitLabel}
       </Button>

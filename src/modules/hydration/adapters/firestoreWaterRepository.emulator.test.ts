@@ -42,16 +42,29 @@ const journal = (db: Firestore) =>
 test('two phones adding water offline end up with the sum (spec §10)', async () => {
   const [a, b] = [phone(), phone()];
   await Promise.all([disableNetwork(a), disableNetwork(b)]);
-  const writes = [waterOn(a).add(glass(250)), waterOn(b).add(glass(500))];
+  const writes = [waterOn(a).add(glass(250)).saved, waterOn(b).add(glass(500)).saved];
   await Promise.all([enableNetwork(a), enableNetwork(b)]);
   await Promise.all(writes);
   expect(await serverTotal(a)).toBe(750);
 });
 
+test('add hands back the id the glass is stored under, before the server has it', async () => {
+  const db = phone();
+  await disableNetwork(db);
+  const { id, saved } = waterOn(db).add(glass(250));
+  // Offline, the glass is already in the journal under that id, so it can be taken back at once (the writes settle with the network).
+  expect(await journal(db)).toEqual([{ id, ...glass(250) }]);
+  const removed = waterOn(db).remove({ id, ...glass(250) });
+  expect(await journal(db)).toEqual([]);
+  await enableNetwork(db);
+  await Promise.all([saved, removed]);
+  expect(await serverTotal(db)).toBe(0);
+});
+
 test('removing a glass hides it from the journal and takes it off the total', async () => {
   const db = phone();
-  await waterOn(db).add(glass(250));
-  await waterOn(db).add(glass(500));
+  await waterOn(db).add(glass(250)).saved;
+  await waterOn(db).add(glass(500)).saved;
   const quarter = (await journal(db)).find((e) => e.ml === 250);
   await waterOn(db).remove(quarter!);
   expect(await journal(db)).toEqual([{ id: expect.any(String), ...glass(500) }]);
@@ -60,15 +73,15 @@ test('removing a glass hides it from the journal and takes it off the total', as
 
 test('a glass the rules refuse leaves the total alone: one batch', async () => {
   const db = phone();
-  await expect(waterOn(db).add(glass(6000))).rejects.toThrow();
+  await expect(waterOn(db).add(glass(6000)).saved).rejects.toThrow();
   expect(await serverTotal(db)).toBeUndefined();
 });
 
 test('a glass removed offline on two phones comes off the total once', async () => {
   const [a, b] = [phone(), phone()];
   // The 500 ml glass keeps a double decrement above zero: only the delete-once rule can stop it.
-  await waterOn(a).add(glass(500));
-  await waterOn(a).add(glass(250));
+  await waterOn(a).add(glass(500)).saved;
+  await waterOn(a).add(glass(250)).saved;
   const quarter = (await journal(a)).find((e) => e.ml === 250);
   await Promise.all([disableNetwork(a), disableNetwork(b)]);
   const removals = [waterOn(a).remove(quarter!), waterOn(b).remove(quarter!)];

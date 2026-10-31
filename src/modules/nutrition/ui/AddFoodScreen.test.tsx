@@ -218,7 +218,14 @@ test('a custom food can be changed or deleted from its fiche', async () => {
   expect(screen.getByText('260 kcal · 8 g de protéines · 48 g de glucides · 2 g de lipides')).toBeTruthy();
   expect(screen.queryByLabelText('Nom')).toBeNull();
 
+  // A deleted food does not come back: the button asks first, and « Annuler » keeps the food.
   await fireEvent.press(screen.getByText('Supprimer l’aliment'));
+  expect(screen.getByText('Supprimer l’aliment Pain de mie ?')).toBeTruthy();
+  await fireEvent.press(screen.getByText('Annuler'));
+  expect(screen.queryByText('Supprimer l’aliment Pain de mie ?')).toBeNull();
+  expect(customFoods(foods)).toHaveLength(1);
+  await fireEvent.press(screen.getByText('Supprimer l’aliment'));
+  await fireEvent.press(screen.getByText('Supprimer'));
   expect(customFoods(foods)).toEqual([]);
   // Back on the search, which no longer finds it.
   expect(screen.getByLabelText('Rechercher un aliment')).toHaveDisplayValue('pain');
@@ -298,6 +305,7 @@ test('deleting a custom food opened from « Récents » lands on the search', as
   await fireEvent.press(screen.getByText('Récents'));
   await fireEvent.press(screen.getByText('Pain maison'));
   await fireEvent.press(await screen.findByText('Supprimer l’aliment'));
+  await fireEvent.press(screen.getByText('Supprimer'));
 
   expect(customFoods(foods)).toEqual([]);
   expect(isChecked('Recherche')).toBe(true);
@@ -573,4 +581,30 @@ test('a recent whose lookup fails says the search is unavailable, not that the f
   expect(screen.queryByText('Cet aliment n’existe plus.')).toBeNull();
   expect(screen.queryByLabelText('Quantité (g)')).toBeNull();
   expect(warn).toHaveBeenCalledWith(new Error('disk'));
+});
+
+test('what appears under the fields is announced to a screen reader: the empty and failed searches, the quantity error, the macros, the empty recents', async () => {
+  const polite = (node: { props: { accessibilityLiveRegion?: string } }) => node.props.accessibilityLiveRegion;
+  jest.spyOn(console, 'warn').mockImplementation(() => {});
+  await setup();
+  await search('zzz');
+  expect(polite(await screen.findByText('Aucun aliment trouvé.'))).toBe('polite');
+
+  await search('riz');
+  await fireEvent.press(await screen.findByText('Riz blanc, cru'));
+  await fireEvent.changeText(screen.getByLabelText('Quantité (g)'), '6000');
+  expect(polite(screen.getByText('La quantité doit être comprise entre 0 et 5 000 g.'))).toBe('polite');
+  await fireEvent.changeText(screen.getByLabelText('Quantité (g)'), '100');
+  expect(polite(screen.getByText(/de protéines/))).toBe('polite');
+  await fireEvent.press(screen.getByText('Retour'));
+
+  await fireEvent.press(screen.getByText('Récents'));
+  expect(polite(screen.getByText('Aucun aliment récent.'))).toBe('polite');
+});
+
+test('a search that cannot run is announced too', async () => {
+  jest.spyOn(console, 'warn').mockImplementation(() => {});
+  await setup({ catalog: { search: () => Promise.reject(new Error('no database')), get: async () => undefined } });
+  await search('riz');
+  expect((await screen.findByText('Recherche indisponible.')).props.accessibilityLiveRegion).toBe('polite');
 });

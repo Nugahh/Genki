@@ -40,7 +40,7 @@ async function renderToday({ kcal = 0, proteinG = 0 }: { kcal?: number; proteinG
       />
     </PaperProvider>,
   );
-  return { onAddMeal, onOpenMeals };
+  return { onAddMeal, onOpenMeals, water };
 }
 
 test('a quick-add button fills the water gauge', async () => {
@@ -48,6 +48,28 @@ test('a quick-add button fills the water gauge', async () => {
   expect(screen.getByLabelText('Eau : 0 L, sur 2,5 L, reste 2,5 L')).toHaveAccessibilityValue({ text: 'en retard' });
   await fireEvent.press(screen.getByText('+500 ml'));
   expect(screen.getByLabelText('Eau : 0,5 L, sur 2,5 L, reste 2 L')).toBeTruthy();
+});
+
+test('a quick add offers to take the glass back, and « Annuler » does', async () => {
+  const { water } = await renderToday();
+  await fireEvent.press(screen.getByText('+250 ml'));
+  expect(screen.getByText('+250 ml ajoutés')).toBeTruthy();
+  expect(screen.getByLabelText('Eau : 0,25 L, sur 2,5 L, reste 2,25 L')).toBeTruthy();
+
+  await fireEvent.press(screen.getByText('Annuler'));
+  expect(water.entries).toEqual([]);
+  expect(screen.getByLabelText('Eau : 0 L, sur 2,5 L, reste 2,5 L')).toBeTruthy();
+  expect(screen.queryByText('+250 ml ajoutés')).toBeNull();
+});
+
+test('a second quick add replaces the offer: « Annuler » takes back the last glass only', async () => {
+  const { water } = await renderToday();
+  await fireEvent.press(screen.getByText('+250 ml'));
+  await fireEvent.press(screen.getByText('+500 ml'));
+  expect(screen.queryByText('+250 ml ajoutés')).toBeNull();
+
+  await fireEvent.press(screen.getByText('Annuler'));
+  expect(water.entries.map((e) => e.ml)).toEqual([250]);
 });
 
 test('the water gauge opens the day sheet, where a glass can be removed', async () => {

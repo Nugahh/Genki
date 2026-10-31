@@ -8,9 +8,11 @@ export function inMemoryWaterRepository(): WaterRepository & { entries: WaterEnt
 
   const repo = {
     entries: [] as WaterEntry[],
-    async add(entry: NewWaterEntry) {
-      repo.entries = [...repo.entries, { ...entry, id: String(nextId++) }];
+    add(entry: NewWaterEntry) {
+      const id = String(nextId++);
+      repo.entries = [...repo.entries, { ...entry, id }];
       notify();
+      return { id, saved: Promise.resolve() };
     },
     async remove(entry: WaterEntry) {
       repo.entries = repo.entries.filter((e) => e.id !== entry.id);

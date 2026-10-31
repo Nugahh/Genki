@@ -3,9 +3,12 @@ import type { WaterEntry, WaterRepository } from './ports';
 
 export function waterUseCases(repo: WaterRepository, clock: Clock, timezone: string) {
   return {
-    async addWater(ml: number) {
+    /** The glass is in at once: `entry` is what it takes to take it back, `saved` settles once the server has it. */
+    addWater(ml: number) {
       const now = clock.now();
-      return repo.add({ day: dayKey(now, timezone), ml, createdAt: now });
+      const glass = { day: dayKey(now, timezone), ml, createdAt: now };
+      const { id, saved } = repo.add(glass);
+      return { entry: { id, ...glass }, saved };
     },
     removeWater: async (entry: WaterEntry) => repo.remove(entry),
     /** The day's glasses, newest first. */

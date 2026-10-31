@@ -60,8 +60,12 @@ export function FoodSearch({ foods, custom, search, onSearch, onSelect }: Props)
         ))}
       </View>
       {!typed && <Text>Tapez le nom d’un aliment.</Text>}
-      {typed && answer?.found === null && <HelperText type="error">Recherche indisponible.</HelperText>}
-      {typed && custom !== null && answer?.search === search && answer.found !== null && results.length === 0 && <Text>Aucun aliment trouvé.</Text>}
+      {typed && answer?.found === null && (
+        <HelperText type="error" accessibilityLiveRegion="polite">
+          Recherche indisponible.
+        </HelperText>
+      )}
+      {typed && custom !== null && answer?.search === search && answer.found !== null && results.length === 0 && <Text accessibilityLiveRegion="polite">Aucun aliment trouvé.</Text>}
       {results.map((food) => (
         <List.Item
           key={`${food.ref.type}:${food.ref.id}`}

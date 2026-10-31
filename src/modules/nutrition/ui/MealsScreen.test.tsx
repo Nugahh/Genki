@@ -132,12 +132,28 @@ test('« Annuler » closes the actions, which open again on the three choices', 
   expect(screen.getByText('Supprimer')).toBeTruthy();
 });
 
+test('« Supprimer » asks first, and « Annuler » keeps the line and brings the choices back', async () => {
+  const { entries, meals } = await setup();
+  await lunchOfRice(meals);
+
+  await fireEvent.press(screen.getByLabelText('Riz blanc, cru, 200 g'));
+  await fireEvent.press(screen.getByText('Supprimer'));
+  expect(screen.getByText('Supprimer Riz blanc, cru du journal ?')).toBeTruthy();
+  expect(entries.entries).toHaveLength(1);
+
+  await fireEvent.press(screen.getByText('Annuler'));
+  expect(screen.queryByText('Supprimer Riz blanc, cru du journal ?')).toBeNull();
+  expect(screen.getByText('Modifier la quantité')).toBeTruthy();
+  expect(entries.entries).toHaveLength(1);
+});
+
 test('« Supprimer » removes the line and the totals fall back to zero', async () => {
   const { meals } = await setup();
   await lunchOfRice(meals);
 
   await fireEvent.press(screen.getByLabelText('Riz blanc, cru, 200 g'));
   await fireEvent.press(screen.getByText('Supprimer'));
+  await fireEvent.press(screen.getByText('Supprimer')); // the confirmation
 
   expect(screen.queryByText('Supprimer')).toBeNull();
   expect(screen.queryByText('Riz blanc, cru')).toBeNull();
@@ -209,6 +225,7 @@ test('a quantity change, a removal and a favorite are handed to run: nothing is 
   expect(savedFavorites(meals)).toHaveLength(1);
 
   await fireEvent.press(screen.getByLabelText('Riz blanc, cru, 150 g'));
+  await fireEvent.press(screen.getByText('Supprimer'));
   await fireEvent.press(screen.getByText('Supprimer'));
   expect(writes).toHaveLength(3);
   expect(entries.entries).toHaveLength(1);

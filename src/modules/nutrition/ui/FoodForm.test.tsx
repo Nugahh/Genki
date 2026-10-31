@@ -78,6 +78,8 @@ test('a value the rules refuse shows their message in place of saving', async ()
 
   await type('Calories pour 100 g', '901');
   expect(screen.getByText('Plus de 900 kcal pour 100 g n’est pas possible.')).toBeTruthy();
+  // The button went disabled: a screen reader must hear why.
+  expect(screen.getByText('Plus de 900 kcal pour 100 g n’est pas possible.').props.accessibilityLiveRegion).toBe('polite');
   expect(screen.getByText('Enregistrer')).toBeDisabled();
   await fireEvent.press(screen.getByText('Enregistrer'));
   expect(onSubmit).not.toHaveBeenCalled();

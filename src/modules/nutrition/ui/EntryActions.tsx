@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { StyleSheet } from 'react-native';
 import { Button, Dialog, Portal, TextInput } from 'react-native-paper';
 import { isValidGrams, type FoodEntry } from '../domain/food';
+import { ConfirmDelete } from './ConfirmDelete';
 import { asText, parseNumber } from './format';
 
 type Props = {
@@ -16,13 +17,28 @@ type Props = {
 export function EntryActions({ entry, onDismiss, onChangeGrams, onRemove }: Props) {
   // null: the three choices; otherwise the quantity being typed.
   const [text, setText] = useState<string | null>(null);
+  const [confirming, setConfirming] = useState(false);
   if (entry === null) return null;
 
   const grams = parseNumber(text ?? '');
   const close = () => {
     setText(null);
+    setConfirming(false);
     onDismiss();
   };
+
+  if (confirming) {
+    return (
+      <ConfirmDelete
+        title={`Supprimer ${entry.foodName} du journal ?`}
+        onCancel={() => setConfirming(false)}
+        onConfirm={() => {
+          onRemove(entry);
+          close();
+        }}
+      />
+    );
+  }
 
   return (
     <Portal>
@@ -33,14 +49,7 @@ export function EntryActions({ entry, onDismiss, onChangeGrams, onRemove }: Prop
             <Button mode="contained-tonal" contentStyle={styles.button} onPress={() => setText(asText(entry.grams))}>
               Modifier la quantité
             </Button>
-            <Button
-              mode="contained-tonal"
-              contentStyle={styles.button}
-              onPress={() => {
-                onRemove(entry);
-                close();
-              }}
-            >
+            <Button mode="contained-tonal" contentStyle={styles.button} onPress={() => setConfirming(true)}>
               Supprimer
             </Button>
             <Button contentStyle={styles.button} onPress={close}>

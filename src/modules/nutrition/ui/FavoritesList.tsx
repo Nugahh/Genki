@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { Button, Dialog, IconButton, List, Portal, Text } from 'react-native-paper';
+import { IconButton, List, Text } from 'react-native-paper';
 import type { FoodUseCases } from '../application/foodUseCases';
 import type { MealUseCases } from '../application/mealUseCases';
 import type { FavoriteMeal, Food } from '../domain/food';
 import type { Meal } from '../domain/meal';
+import { ConfirmDelete } from './ConfirmDelete';
 
 type Props = {
   meal: Meal;
@@ -57,25 +58,14 @@ export function FavoritesList({ meal, meals, foods, custom, run, onDone }: Props
         </View>
       ))}
       {removing && (
-        <Portal>
-          <Dialog visible onDismiss={() => setRemoving(null)}>
-            <Dialog.Title>{`Supprimer le favori ${removing.name} ?`}</Dialog.Title>
-            <Dialog.Actions>
-              <Button contentStyle={styles.button} onPress={() => setRemoving(null)}>
-                Annuler
-              </Button>
-              <Button
-                contentStyle={styles.button}
-                onPress={() => {
-                  run(() => meals.removeFavorite(removing.id));
-                  setRemoving(null);
-                }}
-              >
-                Supprimer
-              </Button>
-            </Dialog.Actions>
-          </Dialog>
-        </Portal>
+        <ConfirmDelete
+          title={`Supprimer le favori ${removing.name} ?`}
+          onCancel={() => setRemoving(null)}
+          onConfirm={() => {
+            run(() => meals.removeFavorite(removing.id));
+            setRemoving(null);
+          }}
+        />
       )}
     </View>
   );
@@ -86,5 +76,4 @@ const styles = StyleSheet.create({
   item: { flex: 1 },
   // Paper's icon button is 40 dp, and its container clips the extra hit area: 48 dp make the touch target.
   iconButton: { width: 48, height: 48, borderRadius: 24 },
-  button: { minHeight: 48 },
 });

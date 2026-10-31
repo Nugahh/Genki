@@ -91,7 +91,8 @@ Ensuite :
 - **Base Ciqual.** Au premier lancement, l'application copie la base embarquée vers `files/SQLite/ciqual-2025-11-03.db` dans son stockage. Ensuite, en mode avion, chercher « riz » (Repas › Ajouter › Recherche) : les résultats arrivent aussitôt. Avec un build de développement, Metro doit être joignable au tout premier lancement à froid : `Asset.downloadAsync` s'exécute avant de regarder si la base est déjà installée.
 - **Variante prod (release).** Installer la version release, passer en mode avion avant le premier lancement, chercher « riz » : la base est alors copiée depuis l'APK et non depuis Metro.
 - **Repas sur deux téléphones.** Ajouter un repas sur chacun hors-ligne, puis rétablir le réseau : les deux affichent les calories et les protéines additionnées.
-- **Journal.** Modifier la quantité d'une ligne, puis supprimer une ligne : les totaux suivent.
+- **Journal.** Modifier la quantité d'une ligne, puis supprimer une ligne (« Supprimer … du journal ? » demande confirmation) : les totaux suivent.
+- **Annuler un verre.** Sur Aujourd'hui, en mode avion, toucher +250 ml : « +250 ml ajoutés » et « Annuler » apparaissent au-dessus de la barre d'onglets ; « Annuler » retire le verre et la jauge revient. Rétablir le réseau : l'eau du jour est à zéro côté serveur.
 - **« Réessayer ».** Le message d'un enregistrement refusé est visible et utilisable au-dessus de la fenêtre native « Ajouter un aliment ».
 - **Suppression d'un favori.** La boîte « Supprimer le favori … ? » (Favoris › corbeille) apparaît au-dessus de la fenêtre native « Ajouter un aliment » et ses deux boutons répondent.
 - **Mise en page, sur 360 dp et sur 412 dp.** Les libellés « Favoris », « Récents », « Recherche » et « Créer » (deux rangées de deux, une coche sur le segment choisi) ne sont pas tronqués ; la rangée +250 ml, +500 ml, + Repas passe à la ligne proprement ; les textes des jauges tiennent.
