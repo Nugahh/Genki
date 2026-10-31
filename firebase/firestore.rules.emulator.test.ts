@@ -347,6 +347,27 @@ describe('days (nutrition totals)', () => {
     await assertFails(setDoc(doc(db('alice'), 'users/alice/days/2026-10-24'), { proteinG: '12', updatedAt: Timestamp.now() }));
   });
 
+  describe('the steps', () => {
+    const day = () => doc(db('alice'), 'users/alice/days/2026-10-24');
+    const steps = (data: object) => setDoc(day(), { updatedAt: Timestamp.now(), ...data }, { merge: true });
+
+    test('the steps, their source and the time of the sync are merged into the day, next to the totals', async () => {
+      await assertSucceeds(setDoc(day(), { kcal: 1800, updatedAt: Timestamp.now() }));
+      await assertSucceeds(steps({ steps: 8342, stepsSource: 'fitbit', stepsSyncedAt: Timestamp.now() }));
+      await assertSucceeds(steps({ steps: 0, stepsSource: 'phone' }));
+    });
+
+    test.each<[string, object]>([
+      ['negative steps', { steps: -1 }],
+      ['200 001 steps', { steps: 200001 }],
+      ['steps that are a string', { steps: '8000' }],
+      ['a source that is neither', { stepsSource: 'garmin' }],
+      ['a sync time that is not a time', { stepsSyncedAt: 'now' }],
+    ])('rejects %s', async (_, data) => {
+      await assertFails(steps(data));
+    });
+  });
+
   describe('the measures of the body', () => {
     const day = () => doc(db('alice'), 'users/alice/days/2026-10-24');
     const measure = (data: object) => setDoc(day(), { updatedAt: Timestamp.now(), ...data }, { merge: true });
@@ -366,6 +387,29 @@ describe('days (nutrition totals)', () => {
     ])('rejects %s', async (_, data) => {
       await assertFails(measure(data));
     });
+  });
+});
+
+describe('devices', () => {
+  const device = () => ({ name: 'Pixel', stepsWriter: true, lastStepsSyncAt: Timestamp.now() });
+
+  test('the owner notes a device, changes its role and removes it, another user cannot', async () => {
+    const ref = doc(db('alice'), 'users/alice/devices/d1');
+    await assertSucceeds(setDoc(ref, device()));
+    await assertSucceeds(setDoc(ref, { stepsWriter: false }, { merge: true }));
+    await assertFails(setDoc(doc(db('bob'), 'users/alice/devices/d2'), device()));
+    await assertFails(deleteDoc(doc(db('bob'), 'users/alice/devices/d1')));
+    await assertSucceeds(deleteDoc(ref));
+  });
+
+  test.each<[string, object]>([
+    ['an extra field', { note: 'x' }],
+    ['a role that is not a boolean', { stepsWriter: 'yes' }],
+    ['a name of 101 characters', { name: 'x'.repeat(101) }],
+    ['a blank name', { name: '' }],
+    ['a sync time that is not a time', { lastStepsSyncAt: 'now' }],
+  ])('rejects %s', async (_, patch) => {
+    await assertFails(setDoc(doc(db('alice'), 'users/alice/devices/d1'), { ...device(), ...patch }));
   });
 });
 

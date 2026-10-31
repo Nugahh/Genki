@@ -34,3 +34,22 @@ export function hourOfDay(date: Date, timeZone: string): number {
 const DAY_MS = 24 * 60 * 60 * 1000;
 /** The day `n` days after (or before, if negative) a day key: calendar arithmetic, with no time zone or clock change in it. */
 export const addDays = (day: string, n: number) => new Date(Date.parse(`${day}T00:00:00Z`) + n * DAY_MS).toISOString().slice(0, 10);
+
+/**
+ * The instants a day of the profile's time zone starts and ends at: midnight to midnight, `end` excluded. A day is 23 or 25 hours long
+ * the day the clocks change. Found by bisection on `dayKey`, which reads the zone's own rules.
+ */
+export function dayBounds(day: string, timezone: string): { start: Date; end: Date } {
+  const firstInstantOf = (target: string) => {
+    // Offsets of a zone stay within ±14 h of UTC: the first instant of `target` lies in this window.
+    let low = Date.parse(`${target}T00:00:00Z`) - 15 * 3600_000;
+    let high = Date.parse(`${target}T00:00:00Z`) + 15 * 3600_000;
+    while (high - low > 1000) {
+      const mid = Math.floor((low + high) / 2000) * 1000;
+      if (dayKey(new Date(mid), timezone) >= target) high = mid;
+      else low = mid;
+    }
+    return new Date(high);
+  };
+  return { start: firstInstantOf(day), end: firstInstantOf(addDays(day, 1)) };
+}
