@@ -2,6 +2,7 @@ import { fireEvent, render, screen } from '@testing-library/react-native';
 import { PaperProvider } from 'react-native-paper';
 import { inMemoryWaterRepository, waterUseCases } from '@/modules/hydration';
 import { DEFAULT_PROFILE } from '@/modules/settings';
+import { theme } from '@/theme';
 import type { DayTotalsRepository } from '../application/ports';
 import { TodayScreen } from './TodayScreen';
 
@@ -27,7 +28,7 @@ async function renderToday({ kcal = 0, proteinG = 0 }: { kcal?: number; proteinG
   const onAddMeal = jest.fn();
   const onOpenMeals = jest.fn();
   await render(
-    <PaperProvider>
+    <PaperProvider theme={theme}>
       <TodayScreen
         profile={DEFAULT_PROFILE}
         clock={clock}

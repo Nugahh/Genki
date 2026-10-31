@@ -2,6 +2,7 @@ import { fireEvent, renderRouter, screen } from 'expo-router/testing-library';
 import { Appearance } from 'react-native';
 import type { App } from '@/composition';
 import { signInWithGoogle, useAuthUser } from '@/platform/firebase';
+import { theme } from '@/theme';
 
 jest.mock('@/platform/firebase', () => ({ useAuthUser: jest.fn(), signInWithGoogle: jest.fn() }));
 
@@ -78,7 +79,7 @@ test('a phone in dark mode keeps the light theme', async () => {
   jest.spyOn(Appearance, 'getColorScheme').mockReturnValue('dark');
   signedInAs({ uid: 'alice' });
   await renderRouter();
-  expect(screen.getByText('Eau')).toHaveStyle({ color: 'rgba(28, 27, 31, 1)' });
+  expect(screen.getByText('Eau')).toHaveStyle({ color: theme.colors.onSurface });
 });
 
 test('the tabs are Paper’s Material bar: the open tab is the selected one, and the selection follows the route', async () => {

@@ -1,18 +1,67 @@
 import { DefaultTheme } from 'expo-router';
 import { MD3LightTheme } from 'react-native-paper';
 
+/**
+ * The palette: ink blue on ivory paper. Material 3 light scheme from the seed hue 262 / chroma 44 (HCT), with warm neutrals (hue 95, chroma 3),
+ * the page at tone 98 and the surface levels at the container tones 96 / 94 / 92 / 90. Only the primary hue is an accent: the blue is rare by design.
+ */
+const colors = {
+  ...MD3LightTheme.colors,
+  primary: 'rgb(38, 94, 167)',
+  onPrimary: 'rgb(255, 255, 255)',
+  primaryContainer: 'rgb(214, 227, 255)',
+  onPrimaryContainer: 'rgb(0, 27, 60)',
+  secondary: 'rgb(85, 95, 113)',
+  onSecondary: 'rgb(255, 255, 255)',
+  secondaryContainer: 'rgb(217, 227, 248)',
+  onSecondaryContainer: 'rgb(18, 28, 43)',
+  tertiary: 'rgb(111, 86, 117)',
+  onTertiary: 'rgb(255, 255, 255)',
+  tertiaryContainer: 'rgb(249, 216, 254)',
+  onTertiaryContainer: 'rgb(40, 19, 47)',
+  error: 'rgb(186, 26, 26)',
+  onError: 'rgb(255, 255, 255)',
+  errorContainer: 'rgb(255, 218, 214)',
+  onErrorContainer: 'rgb(65, 0, 2)',
+  background: 'rgb(254, 248, 241)',
+  onBackground: 'rgb(29, 27, 23)',
+  surface: 'rgb(254, 248, 241)',
+  onSurface: 'rgb(29, 27, 23)',
+  surfaceVariant: 'rgb(232, 226, 216)',
+  onSurfaceVariant: 'rgb(74, 70, 63)',
+  surfaceDisabled: 'rgba(29, 27, 23, 0.12)',
+  onSurfaceDisabled: 'rgba(29, 27, 23, 0.38)',
+  outline: 'rgb(123, 119, 110)',
+  outlineVariant: 'rgb(204, 198, 188)',
+  inverseSurface: 'rgb(50, 48, 44)',
+  inverseOnSurface: 'rgb(246, 240, 233)',
+  inversePrimary: 'rgb(168, 200, 255)',
+  backdrop: 'rgba(51, 48, 41, 0.4)',
+  elevation: {
+    level0: 'transparent',
+    level1: 'rgb(249, 243, 236)',
+    level2: 'rgb(243, 237, 230)',
+    level3: 'rgb(237, 231, 224)',
+    level4: 'rgb(237, 231, 224)',
+    level5: 'rgb(231, 226, 219)',
+  },
+  // The pace of a gauge (spec §9), outside the Material roles. Each is 3:1 or more on the gauge track (surfaceVariant) and they differ in lightness.
+  pace: { green: '#007334', orange: '#B56A00', red: '#9E1910' },
+};
+
 /** The app is light-only: without a theme of its own, Paper and the navigation chrome follow the phone's dark mode. */
-export const theme = MD3LightTheme;
+export const theme = { ...MD3LightTheme, colors };
+export type AppTheme = typeof theme;
 
 /** The header and the canvas behind the screens, painted from the Paper theme instead of the navigation library's own (iOS blue, gray canvas). */
 export const navigationTheme = {
   ...DefaultTheme,
   colors: {
-    primary: theme.colors.primary,
-    background: theme.colors.background,
-    card: theme.colors.surface,
-    text: theme.colors.onSurface,
-    border: theme.colors.outlineVariant,
-    notification: theme.colors.error,
+    primary: colors.primary,
+    background: colors.background,
+    card: colors.surface,
+    text: colors.onSurface,
+    border: colors.outlineVariant,
+    notification: colors.error,
   },
 };

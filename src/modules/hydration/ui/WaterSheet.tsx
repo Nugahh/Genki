@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet } from 'react-native';
-import { IconButton, List, Modal, Portal, Text } from 'react-native-paper';
+import { IconButton, List, Modal, Portal, Text, useTheme } from 'react-native-paper';
 import type { WaterContainer } from '@/modules/settings';
 import type { WaterEntry } from '../application/ports';
 import type { Hydration } from '../application/waterUseCases';
@@ -19,6 +19,7 @@ type Props = {
 /** Quick-add sheet: the add buttons and the day's glasses, no stats page (spec §6). */
 export function WaterSheet({ visible, onDismiss, day, timezone, containers, hydration, run }: Props) {
   const [entries, setEntries] = useState<WaterEntry[]>([]);
+  const { colors } = useTheme();
   // Listener errors show on the SyncIcon, which watches the same user's data.
   useEffect(() => hydration.observeDay(day, setEntries, () => {}), [hydration, day]);
 
@@ -26,7 +27,7 @@ export function WaterSheet({ visible, onDismiss, day, timezone, containers, hydr
 
   return (
     <Portal>
-      <Modal visible={visible} onDismiss={onDismiss} overlayAccessibilityLabel="Fermer" contentContainerStyle={styles.sheet}>
+      <Modal visible={visible} onDismiss={onDismiss} overlayAccessibilityLabel="Fermer" contentContainerStyle={[styles.sheet, { backgroundColor: colors.elevation.level3 }]}>
         <Text variant="titleLarge">Eau</Text>
         <WaterButtons containers={containers} onAdd={(ml) => run(() => hydration.addWater(ml))} />
         <ScrollView style={styles.list}>
@@ -53,7 +54,7 @@ export function WaterSheet({ visible, onDismiss, day, timezone, containers, hydr
 }
 
 const styles = StyleSheet.create({
-  sheet: { margin: 16, padding: 16, gap: 12, borderRadius: 16, backgroundColor: 'white' },
+  sheet: { margin: 16, padding: 16, gap: 12, borderRadius: 16 },
   list: { maxHeight: 360 },
   // Paper's icon button is 40 dp, and its container clips the extra hit area: 48 dp make the touch target.
   iconButton: { width: 48, height: 48, borderRadius: 24 },
