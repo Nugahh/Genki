@@ -6,6 +6,8 @@ import { signInWithGoogle, useAuthUser } from '@/platform/firebase';
 import { theme } from '@/theme';
 
 jest.mock('@/platform/firebase', () => ({ useAuthUser: jest.fn(), signInWithGoogle: jest.fn() }));
+// The file picker and the share sheet are native: the Data screen is tested on its own, here only that it opens.
+jest.mock('@/platform/files', () => ({ shareTextFile: jest.fn(), pickTextFile: jest.fn() }));
 
 // The real composition needs native Firebase: wire the app on in-memory adapters instead.
 jest.mock('@/composition', () => {
@@ -23,6 +25,7 @@ jest.mock('@/composition', () => {
   const { inMemoryFactsSource, trackingUseCases } = jest.requireActual('@/modules/tracking');
   const { bodyUseCases, inMemoryBodyRepository } = jest.requireActual('@/modules/body');
   const { inMemoryCravingRepository, tobaccoUseCases } = jest.requireActual('@/modules/tobacco');
+  const { dataUseCases, inMemoryDataStore } = jest.requireActual('@/modules/data');
   const clock = { now: () => new Date('2026-10-23T10:00:00Z') }; // 12:00 in Paris: lunch
   const rice = { ref: { type: 'ciqual', id: '9100' }, name: 'Riz blanc, cru', state: 'raw', per100g: { kcal: 350, protein: 7, carbs: 78, fat: 0.6 }, portions: [] };
   return {
@@ -48,6 +51,7 @@ jest.mock('@/composition', () => {
         if (!(globalThis as { firstLaunch?: boolean }).firstLaunch) void repo.saveProfile({ createdAt: new Date('2026-10-01T10:00:00Z') });
         return settingsUseCases(repo);
       })(),
+      data: dataUseCases({ store: inMemoryDataStore(), clock, timezone: DEFAULT_PROFILE.timezone }),
       tobacco: tobaccoUseCases({ repo: inMemoryCravingRepository(), clock, timezone: DEFAULT_PROFILE.timezone }),
       tracking: trackingUseCases({ sources: { days: inMemoryFactsSource(), training: inMemoryFactsSource(), tobacco: inMemoryFactsSource() }, clock, timezone: DEFAULT_PROFILE.timezone }),
       nutrition: {
@@ -186,6 +190,16 @@ test('the gear in the header opens the settings, and a page saves the goals and 
   expect(screen).toHavePathname('/settings');
   // The settings list shows the new goal.
   expect(await screen.findByLabelText(/^Objectifs, 2.000 kcal/)).toBeTruthy();
+});
+
+test('the settings reach the data page, which recomputes the totals', async () => {
+  signedInAs({ uid: 'alice' });
+  await renderRouter(undefined, { initialUrl: '/settings' });
+  await fireEvent.press(screen.getByText('Données'));
+  expect(screen).toHavePathname('/settings/data');
+  await fireEvent.press(screen.getByText('Recalculer les totaux'));
+  await fireEvent.press(screen.getByText('Recalculer'));
+  expect(await screen.findByText('Les totaux de 0 jour étaient justes.')).toBeTruthy();
 });
 
 test('the settings reach the profile and the water containers', async () => {
