@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { Button, Snackbar, Surface, Text, useTheme } from 'react-native-paper';
-import { WaterButtons, WaterSheet, type Hydration, type WaterEntry } from '@/modules/hydration';
+import { WaterAmountDialog, WaterButtons, type Hydration, type WaterEntry } from '@/modules/hydration';
 import type { Profile } from '@/modules/settings';
 import { dayKey, hourOfDay, type Clock } from '@/shared/clock';
 import { useNow } from '@/shared/useNow';
@@ -50,7 +50,7 @@ export function TodayScreen({ profile, userName, clock, dayTotals, hydration, ru
   const day = dayKey(now, profile.timezone);
   const hour = hourOfDay(now, profile.timezone);
   const [totals, setTotals] = useState(NO_TOTALS);
-  const [sheetOpen, setSheetOpen] = useState(false);
+  const [amountOpen, setAmountOpen] = useState(false);
   // Listener errors show on the SyncIcon, which watches the same document.
   useEffect(() => dayTotals.observe(day, (next) => setTotals(next), () => {}), [dayTotals, day]);
 
@@ -86,12 +86,12 @@ export function TodayScreen({ profile, userName, clock, dayTotals, hydration, ru
             value={liters(totals.waterMl)}
             goal={liters(goals.waterMl)}
             remaining={remaining(totals.waterMl, goals.waterMl, liters)}
-            hint="Ouvre les verres du jour"
+            hint="Ajoute une quantité d’eau de ton choix"
             progress={progress(totals.waterMl, goals.waterMl)}
             expected={expected}
             color={paceColor(totals.waterMl, goals.waterMl, hour)}
             icon="plus"
-            onPress={() => setSheetOpen(true)}
+            onPress={() => setAmountOpen(true)}
           />
           <GaugeBar
             label="Calories"
@@ -141,15 +141,7 @@ export function TodayScreen({ profile, userName, clock, dayTotals, hydration, ru
           + Repas
         </Button>
       </Surface>
-      <WaterSheet
-        visible={sheetOpen}
-        onDismiss={() => setSheetOpen(false)}
-        day={day}
-        timezone={profile.timezone}
-        containers={profile.waterContainers}
-        hydration={hydration}
-        run={run}
-      />
+      {amountOpen && <WaterAmountDialog onDismiss={() => setAmountOpen(false)} onAdd={addWater} />}
     </View>
   );
 }

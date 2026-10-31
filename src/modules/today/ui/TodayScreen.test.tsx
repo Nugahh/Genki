@@ -114,14 +114,43 @@ test('a second quick add replaces the offer: « Annuler » takes back the last g
   expect(water.entries.map((e) => e.ml)).toEqual([250]);
 });
 
-test('the water gauge opens the day sheet, where a glass can be removed', async () => {
-  await renderToday();
-  await fireEvent.press(screen.getByText('+250 ml'));
-  await fireEvent.press(screen.getByLabelText('Eau : 0,25 L, sur 2,5 L, reste 2,25 L'));
-  await fireEvent.press(screen.getByLabelText('Supprimer 250 ml de 15:00'));
-  expect(screen.getByText('Aucun verre aujourd’hui.')).toBeTruthy();
-  // The gauge sits behind the open sheet.
-  expect(screen.getByLabelText('Eau : 0 L, sur 2,5 L, reste 2,5 L', { includeHiddenElements: true })).toBeTruthy();
+test('the water gauge opens a small box to type any quantity of water, and adding puts it in the gauge', async () => {
+  const { water } = await renderToday();
+  await fireEvent.press(screen.getByLabelText(/^Eau : /));
+  expect(screen.getByText('Quantité d’eau')).toBeTruthy();
+
+  await fireEvent.changeText(screen.getByLabelText('Quantité (ml)'), '330');
+  await fireEvent.press(screen.getByText('Ajouter'));
+  expect(water.entries.map((e) => e.ml)).toEqual([330]);
+  expect(screen.getByLabelText('Eau : 0,33 L, sur 2,5 L, reste 2,17 L')).toBeTruthy();
+  expect(screen.queryByText('Quantité d’eau')).toBeNull();
+  // The glass can be taken back, as after a quick add.
+  expect(screen.getByText('+330 ml ajoutés')).toBeTruthy();
+});
+
+test('the quantity of water must be above 0 and up to 5 000 ml, with a comma or a point', async () => {
+  const { water } = await renderToday();
+  await fireEvent.press(screen.getByLabelText(/^Eau : /));
+  const field = screen.getByLabelText('Quantité (ml)');
+  expect(screen.getByText('Ajouter')).toBeDisabled();
+  for (const [text, valid] of [['0', false], ['abc', false], ['5001', false], ['5000', true], ['1', true], ['330,5', true]] as const) {
+    await fireEvent.changeText(field, text);
+    if (valid) expect(screen.getByText('Ajouter')).toBeEnabled();
+    else expect(screen.getByText('Ajouter')).toBeDisabled();
+    const reason = screen.queryByText('La quantité doit être comprise entre 1 et 5 000 ml.');
+    if (valid) expect(reason).toBeNull();
+    else expect(reason).toBeTruthy();
+  }
+  expect(water.entries).toEqual([]);
+});
+
+test('« Annuler » closes the box and keeps what was typed out of the day', async () => {
+  const { water } = await renderToday();
+  await fireEvent.press(screen.getByLabelText(/^Eau : /));
+  await fireEvent.changeText(screen.getByLabelText('Quantité (ml)'), '330');
+  await fireEvent.press(screen.getByText('Annuler'));
+  expect(screen.queryByText('Quantité d’eau')).toBeNull();
+  expect(water.entries).toEqual([]);
 });
 
 test('the Calories and Protéines gauges show the day against the goals', async () => {
@@ -132,7 +161,7 @@ test('the Calories and Protéines gauges show the day against the goals', async 
 
 test('each gauge tells a screen reader what a touch does', async () => {
   await renderToday();
-  expect(screen.getByLabelText(/^Eau : /).props.accessibilityHint).toBe('Ouvre les verres du jour');
+  expect(screen.getByLabelText(/^Eau : /).props.accessibilityHint).toBe('Ajoute une quantité d’eau de ton choix');
   expect(screen.getByLabelText(/^Calories : /).props.accessibilityHint).toBe('Ouvre le journal des repas');
   expect(screen.getByLabelText(/^Protéines : /).props.accessibilityHint).toBe('Ouvre le journal des repas');
 });
