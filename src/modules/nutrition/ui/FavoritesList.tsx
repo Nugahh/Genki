@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { IconButton, List, Text } from 'react-native-paper';
+import { Button, Dialog, IconButton, List, Portal, Text } from 'react-native-paper';
 import type { FoodUseCases } from '../application/foodUseCases';
 import type { MealUseCases } from '../application/mealUseCases';
 import type { FavoriteMeal, Food } from '../domain/food';
@@ -16,12 +16,14 @@ type Props = {
   onDone: () => void;
 };
 
-/** The saved meals: a touch adds all their foods to the meal, the bin forgets one. */
+/** The saved meals: a touch adds all their foods to the meal, the bin forgets one once confirmed. */
 export function FavoritesList({ meal, meals, foods, custom, run, onDone }: Props) {
   // null until the first list arrives, so that « Aucun favori. » is never a guess.
   const [favorites, setFavorites] = useState<FavoriteMeal[] | null>(null);
   // Listener errors show on the SyncIcon, which watches the same user's data.
   useEffect(() => meals.observeFavorites(setFavorites, () => {}), [meals]);
+  // The favorite whose bin was touched; null while the confirmation is closed.
+  const [removing, setRemoving] = useState<FavoriteMeal | null>(null);
 
   // Set by the first touch of a row: a second one, before the host has left the screen, must not log the meal again.
   const submitted = useRef(false);
@@ -50,10 +52,31 @@ export function FavoritesList({ meal, meals, foods, custom, run, onDone }: Props
             icon="delete-outline"
             style={styles.iconButton}
             accessibilityLabel={`Supprimer le favori ${favorite.name}`}
-            onPress={() => run(() => meals.removeFavorite(favorite.id))}
+            onPress={() => setRemoving(favorite)}
           />
         </View>
       ))}
+      {removing && (
+        <Portal>
+          <Dialog visible onDismiss={() => setRemoving(null)}>
+            <Dialog.Title>{`Supprimer le favori ${removing.name} ?`}</Dialog.Title>
+            <Dialog.Actions>
+              <Button contentStyle={styles.button} onPress={() => setRemoving(null)}>
+                Annuler
+              </Button>
+              <Button
+                contentStyle={styles.button}
+                onPress={() => {
+                  run(() => meals.removeFavorite(removing.id));
+                  setRemoving(null);
+                }}
+              >
+                Supprimer
+              </Button>
+            </Dialog.Actions>
+          </Dialog>
+        </Portal>
+      )}
     </View>
   );
 }
@@ -63,4 +86,5 @@ const styles = StyleSheet.create({
   item: { flex: 1 },
   // Paper's icon button is 40 dp, and its container clips the extra hit area: 48 dp make the touch target.
   iconButton: { width: 48, height: 48, borderRadius: 24 },
+  button: { minHeight: 48 },
 });

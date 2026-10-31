@@ -23,9 +23,9 @@ const cookedRice: Food = {
 };
 const bread: FoodInput = { name: 'Pain maison', state: 'other', per100g: { kcal: 250, protein: 8, carbs: 48, fat: 2 }, portions: [{ label: '1 tranche', grams: 30 }] };
 
-type Options = { catalog?: FoodCatalog; meal?: Meal; observeCustom?: FoodUseCases['observeCustom'] };
+type Options = { catalog?: FoodCatalog; meal?: Meal; observeCustom?: FoodUseCases['observeCustom']; run?: (write: () => Promise<void>) => void };
 
-async function setup({ catalog = inMemoryFoodCatalog([rawRice, cookedRice]), meal = 'lunch', observeCustom }: Options = {}) {
+async function setup({ catalog = inMemoryFoodCatalog([rawRice, cookedRice]), meal = 'lunch', observeCustom, run = (write) => void write() }: Options = {}) {
   const entries = inMemoryFoodEntryRepository();
   const favorites = inMemoryFavoriteMealRepository();
   const foods = { ...foodUseCases({ catalog, repo: inMemoryFoodRepository() }), ...(observeCustom && { observeCustom }) };
@@ -33,7 +33,7 @@ async function setup({ catalog = inMemoryFoodCatalog([rawRice, cookedRice]), mea
   const onDone = jest.fn();
   await render(
     <PaperProvider>
-      <AddFoodScreen meal={meal} meals={meals} foods={foods} run={(write) => void write()} onDone={onDone} />
+      <AddFoodScreen meal={meal} meals={meals} foods={foods} run={run} onDone={onDone} />
     </PaperProvider>,
   );
   return { entries, favorites, foods, meals, onDone };
@@ -303,7 +303,7 @@ test('deleting a custom food opened from « Récents » lands on the search', as
   expect(screen.getByLabelText('Rechercher un aliment')).toBeTruthy();
 });
 
-test('a favorite is logged into the meal of the screen, and its delete button removes it', async () => {
+test('a favorite is logged into the meal of the screen', async () => {
   const { entries, meals, onDone } = await setup({ meal: 'dinner' });
   await act(async () => {
     await meals.logFood('lunch', rawRice, 200);
@@ -320,11 +320,46 @@ test('a favorite is logged into the meal of the screen, and its delete button re
   await waitFor(() => expect(entries.entries).toHaveLength(2));
   expect(entries.entries[1]).toMatchObject({ meal: 'dinner', foodRef: rawRice.ref, foodName: 'Riz blanc, cru', grams: 200, macros: { kcal: 700, protein: 14, carbs: 156, fat: 1.2 } });
   expect(onDone).toHaveBeenCalledTimes(1);
+});
+
+test('the bin of a favorite asks first: « Annuler » keeps it, « Supprimer » hands the removal to run', async () => {
+  const writes: (() => Promise<void>)[] = [];
+  const { entries, meals } = await setup({ run: (write) => void writes.push(write) });
+  await act(async () => {
+    await meals.logFood('lunch', rawRice, 200);
+  });
+  await act(async () => {
+    await meals.saveFavorite('Riz du midi', entries.entries);
+    await meals.saveFavorite('Pain du soir', entries.entries);
+  });
+  await fireEvent.press(screen.getByText('Favoris'));
 
   await fireEvent.press(screen.getByLabelText('Supprimer le favori Riz du midi'));
+  expect(screen.getByText('Supprimer le favori Riz du midi ?')).toBeTruthy();
+  expect(writes).toHaveLength(0);
+  await fireEvent.press(screen.getByText('Annuler'));
+  expect(screen.queryByText('Supprimer le favori Riz du midi ?')).toBeNull();
+  expect(screen.getByText('Riz du midi')).toBeTruthy();
+  expect(writes).toHaveLength(0);
+
+  // Touching outside the dialog (Paper's backdrop) keeps it too.
+  await fireEvent.press(screen.getByLabelText('Supprimer le favori Riz du midi'));
+  await fireEvent.press(screen.getByLabelText('Close modal'));
+  expect(screen.queryByText('Supprimer le favori Riz du midi ?')).toBeNull();
+  expect(writes).toHaveLength(0);
+
+  await fireEvent.press(screen.getByLabelText('Supprimer le favori Riz du midi'));
+  await fireEvent.press(screen.getByText('Supprimer'));
+  expect(screen.queryByText('Supprimer le favori Riz du midi ?')).toBeNull();
+  // Nothing is deleted until run runs the write.
+  expect(writes).toHaveLength(1);
+  expect(screen.getByText('Riz du midi')).toBeTruthy();
+  await act(async () => {
+    await writes[0]();
+  });
   expect(screen.queryByText('Riz du midi')).toBeNull();
-  expect(screen.getByText('Aucun favori. Enregistrez un repas depuis le journal.')).toBeTruthy();
-  expect(entries.entries).toHaveLength(2);
+  expect(screen.getByText('Pain du soir')).toBeTruthy();
+  expect(entries.entries).toHaveLength(1);
 });
 
 test('a late answer to an earlier search is ignored', async () => {
