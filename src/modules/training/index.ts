@@ -5,4 +5,5 @@ export { trainingUseCases, type TrainingUseCases } from './application/trainingU
 export { ExerciseHistoryScreen } from './ui/ExerciseHistoryScreen';
 export { PlanScreen } from './ui/PlanScreen';
 export { SportScreen } from './ui/SportScreen';
+export { useNextSession } from './ui/useNextSession';
 export { WorkoutScreen } from './ui/WorkoutScreen';

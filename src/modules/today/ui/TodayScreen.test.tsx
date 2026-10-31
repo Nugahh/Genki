@@ -12,7 +12,7 @@ const afternoon = { now: () => new Date('2026-10-23T13:00:00Z') };
 const evening = { now: () => new Date('2026-10-23T18:30:00Z') }; // 20:30 in Paris
 const fr = (n: number) => n.toLocaleString('fr-FR');
 
-async function renderToday({ kcal = 0, proteinG = 0, waterMl = 0, userName, clock = afternoon }: { kcal?: number; proteinG?: number; waterMl?: number; userName?: string; clock?: typeof afternoon } = {}) {
+async function renderToday({ kcal = 0, proteinG = 0, waterMl = 0, userName, clock = afternoon, session }: { kcal?: number; proteinG?: number; waterMl?: number; userName?: string; clock?: typeof afternoon; session?: { title: string; subtitle: string; onStart: () => void } } = {}) {
   const water = inMemoryWaterRepository();
   if (waterMl > 0) water.add({ day: '2026-10-23', ml: waterMl, createdAt: clock.now() });
   // Day totals as Firestore keeps them: the water is the sum of the day's live glasses.
@@ -35,6 +35,7 @@ async function renderToday({ kcal = 0, proteinG = 0, waterMl = 0, userName, cloc
       <TodayScreen
         profile={DEFAULT_PROFILE}
         userName={userName}
+        session={session}
         clock={clock}
         dayTotals={dayTotals}
         hydration={waterUseCases(water, clock, DEFAULT_PROFILE.timezone)}
@@ -62,6 +63,21 @@ test('the quick-add buttons stay outside the scrolling gauges, under the thumb w
   expect(scrolling.queryByText('+ Repas')).toBeNull();
   expect(screen.getByText('+250 ml')).toBeTruthy();
   expect(screen.getByText('+ Repas')).toBeTruthy();
+});
+
+test('shows the session of the day under the gauges, and starts it', async () => {
+  const onStart = jest.fn();
+  await renderToday({ session: { title: 'Séance A — Haut du corps', subtitle: 'Phase 1 — Reprise · semaine 1 sur 4', onStart } });
+  expect(screen.getByText('Séance du jour')).toBeTruthy();
+  expect(screen.getByText('Séance A — Haut du corps')).toBeTruthy();
+  expect(screen.getByText('Phase 1 — Reprise · semaine 1 sur 4')).toBeTruthy();
+  await fireEvent.press(screen.getByLabelText('Démarrer Séance A — Haut du corps'));
+  expect(onStart).toHaveBeenCalledTimes(1);
+});
+
+test('shows no session card when there is none', async () => {
+  await renderToday();
+  expect(screen.queryByText('Séance du jour')).toBeNull();
 });
 
 test('the screen greets by the time of day and by first name', async () => {

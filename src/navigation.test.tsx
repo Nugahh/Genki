@@ -121,6 +121,19 @@ test('starting a session opens the workout with its exercises', async () => {
   expect(await screen.findByText('Squat gobelet')).toBeTruthy();
 });
 
+test('Today offers the next session once there is a programme, and starts it', async () => {
+  signedInAs({ uid: 'alice' });
+  await renderRouter();
+  expect(screen.queryByText('Séance du jour')).toBeNull();
+  await pressTab('Sport');
+  await fireEvent.press(screen.getByText('Partir du modèle'));
+  await pressTab('Aujourd’hui');
+  expect(screen.getByText('Séance du jour')).toBeTruthy();
+  await fireEvent.press(screen.getByLabelText('Démarrer Séance A — Haut du corps'));
+  expect(screen).toHavePathname('/workout');
+  expect(screen).toHaveSearchParams({ session: '0' });
+});
+
 test('« Modifier le programme » opens the editor, and an exercise opens its history', async () => {
   signedInAs({ uid: 'alice' });
   await renderRouter();

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
-import { Button, Snackbar, Surface, Text, useTheme } from 'react-native-paper';
+import { Button, Icon, Snackbar, Surface, Text, useTheme } from 'react-native-paper';
 import { WaterAmountDialog, WaterButtons, type Hydration, type WaterEntry } from '@/modules/hydration';
 import type { Profile } from '@/modules/settings';
 import { dayKey, hourOfDay, type Clock } from '@/shared/clock';
@@ -22,6 +22,8 @@ type Props = {
   onAddMeal: () => void;
   /** The Calories and Protéines gauges: the host opens the day journal. */
   onOpenMeals: () => void;
+  /** The session to do next, when there is a programme in progress: « Démarrer » opens it in the host. */
+  session?: { title: string; subtitle: string; onStart: () => void };
 };
 
 const NO_TOTALS: DayTotals = { waterMl: 0, kcal: 0, proteinG: 0, carbsG: 0, fatG: 0 };
@@ -45,7 +47,7 @@ function encouragement(totals: DayTotals, goals: Profile['goals']) {
 /** A gauge with no goal is drawn full. */
 const progress = (value: number, goal: number) => (goal > 0 ? value / goal : 1);
 
-export function TodayScreen({ profile, userName, clock, dayTotals, hydration, run, onAddMeal, onOpenMeals }: Props) {
+export function TodayScreen({ profile, userName, clock, dayTotals, hydration, run, onAddMeal, onOpenMeals, session }: Props) {
   const now = useNow(clock);
   const day = dayKey(now, profile.timezone);
   const hour = hourOfDay(now, profile.timezone);
@@ -120,6 +122,23 @@ export function TodayScreen({ profile, userName, clock, dayTotals, hydration, ru
             icon="chevron-right"
             onPress={onOpenMeals}
           />
+          {session && (
+            <Surface mode="flat" elevation={1} style={styles.session}>
+              <View style={styles.sessionHead}>
+                <View style={[styles.badge, { backgroundColor: colors.secondaryContainer }]}>
+                  <Icon source="dumbbell" size={20} color={colors.onSecondaryContainer} />
+                </View>
+                <Text variant="labelLarge" style={{ color: colors.onSurfaceVariant }}>Séance du jour</Text>
+              </View>
+              <View style={styles.sessionText}>
+                <Text variant="titleMedium">{session.title}</Text>
+                <Text variant="bodyMedium" style={{ color: colors.onSurfaceVariant }}>{session.subtitle}</Text>
+              </View>
+              <Button mode="contained-tonal" icon="play" accessibilityLabel={`Démarrer ${session.title}`} contentStyle={styles.button} onPress={session.onStart}>
+                Démarrer
+              </Button>
+            </Surface>
+          )}
         </ScrollView>
         {/* Mounted per glass, as the failure message is: Paper's Snackbar misses a message that lands during its fade-out. It rests on the actions below. */}
         {added && (
@@ -152,6 +171,10 @@ const styles = StyleSheet.create({
   readings: { flex: 1 },
   content: { padding: 16, gap: 16 },
   greeting: { gap: 4, paddingHorizontal: 4 },
+  session: { borderRadius: 16, padding: 16, gap: 12 },
+  sessionHead: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  sessionText: { gap: 2 },
+  badge: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
   // The amounts and « + Repas » share one row, which wraps on a large font.
   actions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, padding: 16 },
   grow: { flexGrow: 1 },
