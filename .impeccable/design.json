@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-10-31T11:08:35.942Z",
+  "generatedAt": "2026-10-31T12:09:57.153Z",
   "title": "Design System: Genki",
   "extensions": {
     "colorMeta": {
@@ -327,9 +327,9 @@
       "name": "Tonal Button",
       "kind": "button",
       "refersTo": "button-tonal",
-      "description": "The default action: water amounts, « + Repas », « Ajouter ». Near-pill, 48 dp tall, on Ink Tint.",
-      "html": "<button class=\"ds-btn-tonal\"><svg viewBox=\"0 0 24 24\" width=\"18\" height=\"18\" aria-hidden=\"true\"><path fill=\"currentColor\" d=\"M7 4h10l-1.2 15a1 1 0 0 1-1 .9H9.2a1 1 0 0 1-1-.9L7 4z\"/></svg>+250 ml</button>",
-      "css": ".ds-btn-tonal { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; padding: 0 24px 0 16px; border: 0; border-radius: 20px; background: rgb(217, 227, 248); color: rgb(18, 28, 43); font: 500 14px/20px Roboto, 'Helvetica Neue', Arial, sans-serif; letter-spacing: 0.1px; cursor: pointer; }\n.ds-btn-tonal:hover { background: rgb(201, 211, 232); }\n.ds-btn-tonal:active { background: rgb(193, 203, 223); }\n.ds-btn-tonal:focus-visible { outline: 2px solid rgb(38, 94, 167); outline-offset: 2px; }"
+      "description": "The default action: the quick adds (+250 ml, + Repas) and « Ajouter ». Near-pill, 48 dp tall, on Ink Tint; the quick adds carry no icon.",
+      "html": "<button class=\"ds-btn-tonal\">+250 ml</button>",
+      "css": ".ds-btn-tonal { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; padding: 0 24px; border: 0; border-radius: 20px; background: rgb(217, 227, 248); color: rgb(18, 28, 43); font: 500 14px/20px Roboto, 'Helvetica Neue', Arial, sans-serif; letter-spacing: 0.1px; cursor: pointer; }\n.ds-btn-tonal:hover { background: rgb(201, 211, 232); }\n.ds-btn-tonal:active { background: rgb(193, 203, 223); }\n.ds-btn-tonal:focus-visible { outline: 2px solid rgb(38, 94, 167); outline-offset: 2px; }"
     },
     {
       "name": "Filled Button",
@@ -351,9 +351,9 @@
       "name": "Action Bar",
       "kind": "custom",
       "refersTo": "actions-bar",
-      "description": "The frequent actions, pinned above the tab bar on a flat level-1 surface: the water amounts share a row and grow, « + Repas » is a tonal button below.",
-      "html": "<div class=\"ds-actions\"><div class=\"ds-actions-row\"><button class=\"ds-act\"><svg viewBox=\"0 0 24 24\" width=\"18\" height=\"18\" aria-hidden=\"true\"><path fill=\"currentColor\" d=\"M7 4h10l-1.2 15a1 1 0 0 1-1 .9H9.2a1 1 0 0 1-1-.9L7 4z\"/></svg>+250 ml</button><button class=\"ds-act\"><svg viewBox=\"0 0 24 24\" width=\"18\" height=\"18\" aria-hidden=\"true\"><path fill=\"currentColor\" d=\"M7 4h10l-1.2 15a1 1 0 0 1-1 .9H9.2a1 1 0 0 1-1-.9L7 4z\"/></svg>+500 ml</button></div><button class=\"ds-act\"><svg viewBox=\"0 0 24 24\" width=\"18\" height=\"18\" aria-hidden=\"true\"><path fill=\"currentColor\" d=\"M11 9H9V2H7v7H5V2H3v7c0 2.12 1.66 3.84 3.75 3.97V22h2.5v-9.03C11.34 12.84 13 11.12 13 9V2h-2v7zm5-3v8h2.5v8H21V2c-2.76 0-5 2.24-5 4z\"/></svg>+ Repas</button></div>",
-      "css": ".ds-actions { box-sizing: border-box; display: flex; flex-direction: column; gap: 8px; width: 100%; max-width: 360px; padding: 16px; background: rgb(249, 243, 236); }\n.ds-actions-row { display: flex; gap: 8px; }\n.ds-actions-row .ds-act { flex: 1 1 0; }\n.ds-act { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; padding: 0 16px; border: 0; border-radius: 20px; background: rgb(217, 227, 248); color: rgb(18, 28, 43); font: 500 14px/20px Roboto, 'Helvetica Neue', Arial, sans-serif; letter-spacing: 0.1px; cursor: pointer; }\n.ds-act:hover { background: rgb(201, 211, 232); }\n.ds-act:active { background: rgb(193, 203, 223); }\n.ds-act:focus-visible { outline: 2px solid rgb(38, 94, 167); outline-offset: 2px; }"
+      "description": "The frequent actions, pinned above the tab bar on a flat level-1 surface: the water amounts and « + Repas » share one 48 dp row and grow to fill it; on a large font they wrap.",
+      "html": "<div class=\"ds-actions\"><button class=\"ds-act\">+250 ml</button><button class=\"ds-act\">+500 ml</button><button class=\"ds-act\">+ Repas</button></div>",
+      "css": ".ds-actions { box-sizing: border-box; display: flex; flex-wrap: wrap; gap: 8px; width: 100%; max-width: 360px; padding: 16px; background: rgb(249, 243, 236); }\n.ds-actions .ds-act { flex: 1 1 auto; }\n.ds-act { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; padding: 0 16px; border: 0; border-radius: 20px; background: rgb(217, 227, 248); color: rgb(18, 28, 43); font: 500 14px/20px Roboto, 'Helvetica Neue', Arial, sans-serif; letter-spacing: 0.1px; cursor: pointer; }\n.ds-act:hover { background: rgb(201, 211, 232); }\n.ds-act:active { background: rgb(193, 203, 223); }\n.ds-act:focus-visible { outline: 2px solid rgb(38, 94, 167); outline-offset: 2px; }"
     },
     {
       "name": "Meal Card",

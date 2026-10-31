@@ -278,7 +278,7 @@ Ink blue on ivory paper: a restrained Material 3 scheme with warm neutrals, plus
 
 One column per screen on a phone in portrait. Screens use a 16 dp gutter and a 16 dp gap between blocks; inside a card the padding is 16 dp and the gap 8 dp; a gauge's touch area pads 12 dp with 4 dp between its rows; a form's fields stack with a 12 dp gap and wrapping rows of buttons or chips use 8 dp. The sign-in screen centers its content with 24 dp padding. There are no breakpoints and no tablet layout; the reference width is 360 dp.
 
-Today splits into two groups. The gauges scroll in the upper region. Below them, outside the scroll, the action bar holds the water amounts (sharing a row, wrapping on a large font) and « + Repas »; a take-back snackbar rests on the bar's top edge. The add-food screen opens as a modal with the header « Ajouter un aliment » and a bottom inset, and its four modes sit in two rows of two.
+Today splits into two groups. The gauges scroll in the upper region. Below them, outside the scroll, the action bar holds the water amounts and « + Repas » on one row (wrapping on a large font); a take-back snackbar rests on the bar's top edge. The add-food screen opens as a modal with the header « Ajouter un aliment » and a bottom inset, and its four modes sit in two rows of two.
 
 Navigation is a two-tab bottom bar (Aujourd'hui, Repas) under a header whose right end holds the sync cloud. Every control is at least 48 × 48 dp, with at least 8 dp between neighbouring targets: Paper buttons get a 48 dp content height, icon buttons are sized to 48 × 48, and segment labels are padded to reach 48 dp.
 
@@ -301,7 +301,7 @@ Standard Paper components, restrained: a tonal button, a soft card, a flat field
 
 ### Buttons
 - **Shape:** near-pill, 20 dp radius, 48 dp tall (content height forced to 48).
-- **Tonal (default):** Ink Tint fill, Ink Tint Text label, optional leading icon (cup-water, silverware-fork-knife, plus). Water amounts, « + Repas », « Ajouter » on each meal.
+- **Tonal (default):** Ink Tint fill, Ink Tint Text label, an optional leading icon (plus, on « Ajouter » of each meal). The quick actions « +250 ml », « +500 ml » and « + Repas » carry none: their unit and their word name them, and three of them fit one row.
 - **Filled:** Ink Blue fill, white label. Only a screen's committing action: « Se connecter avec Google » (with a loading state), « Ajouter à {repas} » on a fiche, « Enregistrer » on the custom-food form.
 - **Outlined:** Pencil border, blue label. Secondary actions on a custom food's fiche (« Modifier l'aliment », « Supprimer l'aliment »).
 - **Text:** blue label, no container. Dialog actions, « Retour », « Enregistrer comme favori » (star-outline).
@@ -313,7 +313,7 @@ Standard Paper components, restrained: a tonal button, a soft card, a flat field
 - **Behavior:** the whole block is the target. Its accessibility label reads « Eau : 1,5 L, sur 2,5 L, reste 1 L », its value the pace words, its hint what the tap does (« Ouvre les verres du jour », « Ouvre le journal des repas »).
 
 ### Action bar
-- **Style:** a level-1 flat surface under the gauges, 16 dp padding and 8 dp gap, pinned above the tab bar. The water amounts share a row and grow to fill it; « + Repas » is a tonal button below.
+- **Style:** a level-1 flat surface under the gauges, 16 dp padding and 8 dp gap, pinned above the tab bar. The water amounts and « + Repas » share one 48 dp row and grow to fill it; on a large font they wrap onto a second row.
 - **Snackbar:** the « +250 ml ajoutés · Annuler » take-back rests on its top edge for 4 seconds.
 
 ### Chips

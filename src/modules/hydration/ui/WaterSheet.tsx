@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ScrollView, StyleSheet } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { IconButton, List, Modal, Portal, Text, useTheme } from 'react-native-paper';
 import type { WaterContainer } from '@/modules/settings';
 import type { WaterEntry } from '../application/ports';
@@ -29,7 +29,9 @@ export function WaterSheet({ visible, onDismiss, day, timezone, containers, hydr
     <Portal>
       <Modal visible={visible} onDismiss={onDismiss} overlayAccessibilityLabel="Fermer" contentContainerStyle={[styles.sheet, { backgroundColor: colors.elevation.level3 }]}>
         <Text variant="titleLarge">Eau</Text>
-        <WaterButtons containers={containers} onAdd={(ml) => run(() => hydration.addWater(ml).saved)} />
+        <View style={styles.amounts}>
+          <WaterButtons containers={containers} onAdd={(ml) => run(() => hydration.addWater(ml).saved)} />
+        </View>
         <ScrollView style={styles.list}>
           {entries.length === 0 && <Text>Aucun verre aujourd’hui.</Text>}
           {entries.map((entry) => (
@@ -55,6 +57,7 @@ export function WaterSheet({ visible, onDismiss, day, timezone, containers, hydr
 
 const styles = StyleSheet.create({
   sheet: { margin: 16, padding: 16, gap: 12, borderRadius: 16 },
+  amounts: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   list: { maxHeight: 360 },
   // Paper's icon button is 40 dp, and its container clips the extra hit area: 48 dp make the touch target.
   iconButton: { width: 48, height: 48, borderRadius: 24 },

@@ -115,7 +115,7 @@ export function TodayScreen({ profile, clock, dayTotals, hydration, run, onAddMe
       {/* The frequent actions are pinned under the thumb, whatever the day holds above: the page, these actions, the tab bar are three tonal levels. */}
       <Surface mode="flat" elevation={1} style={styles.actions}>
         <WaterButtons containers={profile.waterContainers} onAdd={addWater} />
-        <Button mode="contained-tonal" icon="silverware-fork-knife" accessibilityLabel="Ajouter un repas" contentStyle={styles.button} onPress={onAddMeal}>
+        <Button mode="contained-tonal" accessibilityLabel="Ajouter un repas" style={styles.grow} contentStyle={styles.button} onPress={onAddMeal}>
           + Repas
         </Button>
       </Surface>
@@ -137,6 +137,8 @@ const styles = StyleSheet.create({
   // The container the take-back snackbar rests at the bottom of: right above the actions.
   readings: { flex: 1 },
   content: { padding: 16, gap: 16 },
-  actions: { padding: 16, gap: 8 },
+  // The amounts and « + Repas » share one row, which wraps on a large font.
+  actions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, padding: 16 },
+  grow: { flexGrow: 1 },
   button: { minHeight: 48 },
 });
