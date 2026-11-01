@@ -72,6 +72,7 @@ describe('the profile document', () => {
     const ref = doc(db('alice'), 'users/alice');
     await assertSucceeds(setDoc(ref, { ui: ui() }, { merge: true }));
     await assertSucceeds(setDoc(ref, { ui: { period: 'year' } }, { merge: true }));
+    await assertSucceeds(setDoc(ref, { ui: { period: 'month' } }, { merge: true }));
     await assertSucceeds(getDoc(ref));
     await assertFails(getDoc(doc(db('bob'), 'users/alice')));
     await assertFails(setDoc(doc(db('bob'), 'users/alice'), { ui: ui() }, { merge: true }));
@@ -81,7 +82,7 @@ describe('the profile document', () => {
   test.each<[string, object]>([
     ['an unknown field of the document', { role: 'admin' }],
     ['an unknown field of ui', { ui: { ...ui(), theme: 'dark' } }],
-    ['a period that is not one', { ui: { period: 'month' } }],
+    ['a period that is not one', { ui: { period: 'quarter' } }],
     ['31 statistics', { ui: { hubMetrics: Array.from({ length: 31 }, (_, i) => `m${i}`) } }],
     ['statistics that are not a list', { ui: { hubMetrics: 'calories' } }],
     ['ui that is not a map', { ui: 'week' }],

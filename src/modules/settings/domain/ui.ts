@@ -1,4 +1,4 @@
-export type UiPeriod = 'day' | 'week' | 'year';
+export type UiPeriod = 'day' | 'week' | 'month' | 'year';
 
 /**
  * How the Suivi screens are set up (spec §4, `users/{uid}.ui`): the ordered statistics of the hub, and the period.
@@ -8,7 +8,7 @@ export type UiPrefs = { hubMetrics?: string[]; period?: UiPeriod };
 
 /** A French message for the first problem with the preferences, or null. The list is bounded as in the Firestore rules. */
 export function validateUi(ui: UiPrefs): string | null {
-  if (ui.period !== undefined && !['day', 'week', 'year'].includes(ui.period)) return 'La période doit être le jour, la semaine ou l’année.';
+  if (ui.period !== undefined && !['day', 'week', 'month', 'year'].includes(ui.period)) return 'La période doit être le jour, la semaine, le mois ou l’année.';
   if (ui.hubMetrics === undefined) return null;
   if (ui.hubMetrics.length > 30) return 'Le tableau de bord a au plus 30 statistiques.';
   if (ui.hubMetrics.some((id) => id.trim() === '' || id.length > 40)) return 'Le nom d’une statistique doit faire entre 1 et 40 caractères.';

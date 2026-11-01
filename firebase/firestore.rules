@@ -69,7 +69,7 @@ service cloud.firestore {
       return ui is map
         && ui.keys().hasOnly(['hubMetrics', 'period'])
         && (!('hubMetrics' in ui) || (ui.hubMetrics is list && ui.hubMetrics.size() <= 30))
-        && (!('period' in ui) || ui.period in ['day', 'week', 'year']);
+        && (!('period' in ui) || ui.period in ['day', 'week', 'month', 'year']);
     }
 
     function isContainer(c) {

@@ -42,13 +42,19 @@ test('saved preferences are merged, so a period change keeps the statistics', as
   expect(await observed(db)).toEqual({ hubMetrics: ['calories', 'water'], period: 'year' });
 });
 
+test('the month is a period that is saved and read back', async () => {
+  const db = phone();
+  await profileOn(db).saveUi({ period: 'month' });
+  expect(await observed(db)).toEqual({ period: 'month' });
+});
+
 test('a second phone sees what the first saved', async () => {
   await profileOn(phone()).saveUi({ hubMetrics: ['steps'] });
   expect(await observed(phone())).toEqual({ hubMetrics: ['steps'] });
 });
 
 test('preferences the rules refuse are rejected', async () => {
-  await expect(profileOn(phone()).saveUi({ period: 'month' as never })).rejects.toThrow();
+  await expect(profileOn(phone()).saveUi({ period: 'quarter' as never })).rejects.toThrow();
 });
 
 const storedProfile = (db: Firestore) =>

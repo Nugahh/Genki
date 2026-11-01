@@ -1,7 +1,7 @@
 import { deleteField, doc, onSnapshot, setDoc, Timestamp, type Firestore } from '@react-native-firebase/firestore';
 import type { ProfilePatch, ProfileRepository, StoredProfile } from '../application/ports';
 
-const PERIODS = ['day', 'week', 'year'];
+const PERIODS = ['day', 'week', 'month', 'year'];
 const num = (value: unknown) => (typeof value === 'number' && Number.isFinite(value) ? value : undefined);
 const text = (value: unknown) => (typeof value === 'string' ? value : undefined);
 // The rules take any short text as a time zone; a name Intl does not know would break every date of the app.
