@@ -1,4 +1,4 @@
-export type Period = 'day' | 'week' | 'year';
+export type Period = 'day' | 'week' | 'month' | 'year';
 /** A stretch of days (inclusive, `YYYY-MM-DD` keys) drawn as one bar or one point. */
 export type Bucket = {
   key: string;
@@ -38,6 +38,15 @@ export function bucketsFor(period: Period, anchor: string): Bucket[] {
     const monday = mondayOf(anchor);
     return Array.from({ length: 7 }, (_, i) => dayBucket(addDays(monday, i)));
   }
+  if (period === 'month') {
+    const month = Number(anchor.slice(5, 7)) - 1;
+    const days = Number(lastDayOfMonth(Number(anchor.slice(0, 4)), month).slice(8, 10));
+    return Array.from({ length: days }, (_, i) => {
+      const n = i + 1;
+      const day = `${anchor.slice(0, 8)}${String(n).padStart(2, '0')}`;
+      return { key: day, label: String(n), spoken: `${n === 1 ? '1er' : n} ${MONTHS[month]}`, from: day, to: day };
+    });
+  }
   const year = Number(anchor.slice(0, 4));
   return MONTHS_SHORT.map((label, month) => {
     const key = `${year}-${String(month + 1).padStart(2, '0')}`;
@@ -47,20 +56,23 @@ export function bucketsFor(period: Period, anchor: string): Bucket[] {
 
 export const rangeOf = (buckets: Bucket[]) => ({ from: buckets[0].from, to: buckets[buckets.length - 1].to });
 
-/** The same place one period earlier (-1) or later (1): a day, a week, or a year. */
+/** The same place one period earlier (-1) or later (1), clamped to the last day of a shorter month. */
 export function shiftAnchor(period: Period, anchor: string, step: -1 | 1): string {
   if (period === 'day') return addDays(anchor, step);
   if (period === 'week') return addDays(anchor, 7 * step);
-  const year = Number(anchor.slice(0, 4)) + step;
-  const month = Number(anchor.slice(5, 7)) - 1;
-  const last = lastDayOfMonth(year, month);
-  return `${year}${anchor.slice(4, 8)}${String(Math.min(Number(anchor.slice(8, 10)), Number(last.slice(8, 10)))).padStart(2, '0')}`;
+  // A month and a year both move whole months: 12 of them for a year.
+  const index = Number(anchor.slice(0, 4)) * 12 + Number(anchor.slice(5, 7)) - 1 + (period === 'month' ? step : 12 * step);
+  const year = Math.floor(index / 12);
+  const month = index % 12;
+  const last = Number(lastDayOfMonth(year, month).slice(8, 10));
+  return `${year}-${String(month + 1).padStart(2, '0')}-${String(Math.min(Number(anchor.slice(8, 10)), last)).padStart(2, '0')}`;
 }
 
 const shortDate = (day: string) => `${Number(day.slice(8, 10))} ${MONTHS_SHORT[Number(day.slice(5, 7)) - 1]}`;
 
 export function periodTitle(period: Period, anchor: string): string {
   if (period === 'year') return anchor.slice(0, 4);
+  if (period === 'month') return `${MONTHS[Number(anchor.slice(5, 7)) - 1]} ${anchor.slice(0, 4)}`;
   if (period === 'week') {
     const monday = mondayOf(anchor);
     return `Semaine du ${shortDate(monday)} au ${shortDate(addDays(monday, 6))}`;

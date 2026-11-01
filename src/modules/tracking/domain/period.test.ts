@@ -36,8 +36,25 @@ describe('bucketsFor', () => {
     expect(buckets[11].to).toBe('2028-12-31');
   });
 
+  test('a month is one numbered bucket per day of the calendar month', () => {
+    const buckets = bucketsFor('month', '2026-11-15');
+    expect(buckets).toHaveLength(30);
+    expect(buckets[0]).toEqual({ key: '2026-11-01', label: '1', spoken: '1er novembre', from: '2026-11-01', to: '2026-11-01' });
+    expect(buckets[2]).toMatchObject({ label: '3', spoken: '3 novembre' });
+    expect(buckets[29]).toMatchObject({ key: '2026-11-30', label: '30' });
+  });
+
+  test.each([
+    ['2026-10-15', 31],
+    ['2026-02-10', 28],
+    ['2028-02-10', 29], // a leap year
+  ])('the month around %s has %i days', (anchor, days) => {
+    expect(bucketsFor('month', anchor)).toHaveLength(days);
+  });
+
   test('rangeOf spans the first day to the last', () => {
     expect(rangeOf(bucketsFor('week', '2026-10-31'))).toEqual({ from: '2026-10-26', to: '2026-11-01' });
+    expect(rangeOf(bucketsFor('month', '2026-11-15'))).toEqual({ from: '2026-11-01', to: '2026-11-30' });
     expect(rangeOf(bucketsFor('year', '2026-10-31'))).toEqual({ from: '2026-01-01', to: '2026-12-31' });
   });
 });
@@ -47,6 +64,13 @@ describe('shiftAnchor', () => {
     ['day', '2026-11-01', -1, '2026-10-31'],
     ['week', '2026-11-01', -1, '2026-10-25'],
     ['week', '2026-11-01', 1, '2026-11-08'],
+    ['month', '2026-11-15', -1, '2026-10-15'],
+    ['month', '2026-11-15', 1, '2026-12-15'],
+    ['month', '2026-12-20', 1, '2027-01-20'], // into the next year
+    ['month', '2026-01-20', -1, '2025-12-20'], // back into the last
+    ['month', '2026-03-31', -1, '2026-02-28'], // February is shorter
+    ['month', '2026-01-31', 1, '2026-02-28'],
+    ['month', '2028-03-31', -1, '2028-02-29'],
     ['year', '2026-10-31', -1, '2025-10-31'],
     ['year', '2028-02-29', 1, '2029-02-28'], // no 29 February next year
   ] as const)('%s from %s by %i is %s', (period, anchor, step, expected) => {
@@ -58,6 +82,8 @@ describe('periodTitle', () => {
   test('names the period the way it is read', () => {
     expect(periodTitle('day', '2026-10-31')).toBe('samedi 31 octobre');
     expect(periodTitle('week', '2026-10-31')).toBe('Semaine du 26 oct. au 1 nov.');
+    expect(periodTitle('month', '2026-11-15')).toBe('novembre 2026');
+    expect(periodTitle('month', '2027-01-03')).toBe('janvier 2027');
     expect(periodTitle('year', '2026-10-31')).toBe('2026');
   });
 });
