@@ -1,8 +1,6 @@
-import { NUTRIENTS, type NutrientInfo } from '@/modules/nutrition';
+import { formatAmount, NUTRIENTS, type NutrientInfo } from '@/modules/nutrition';
 import type { MetricDefinition, SectionId } from '../domain/metric';
 import { METRICS } from '../domain/metrics';
-
-const fr = (value: number, digits: number) => value.toLocaleString('fr-FR', { maximumFractionDigits: digits });
 
 /** A nutrient as a statistic: its amount per day, against the reference of the profile (a ceiling for what is to be limited). */
 function nutrientMetric(n: NutrientInfo): MetricDefinition {
@@ -11,8 +9,7 @@ function nutrientMetric(n: NutrientInfo): MetricDefinition {
     value: (f) => f.nutrients?.[n.id],
     goal: (g) => g.nutrients?.[n.id],
     target: n.group === 'limit' ? 'atMost' : 'atLeast',
-    // Three significant digits at most, as the amounts are stored.
-    format: (v) => `${fr(v, v >= 100 ? 0 : v >= 10 ? 1 : 2)} ${n.unit}`,
+    format: (v) => formatAmount(v, n.unit),
     dayCompare: false,
     emptyHint: 'Ajoute un aliment de la table Ciqual pour voir ce nutriment.',
     incomplete: (f) => f.incomplete?.includes(n.id) ?? false,

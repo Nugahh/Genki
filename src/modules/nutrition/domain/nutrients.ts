@@ -1,4 +1,4 @@
-type Unit = 'g' | 'mg' | 'µg';
+export type NutrientUnit = 'g' | 'mg' | 'µg';
 export type NutrientGroup = 'vitamins' | 'minerals' | 'fiber' | 'limit';
 
 // In display order. `limit` is what to keep under a ceiling; every other group is what to reach.
@@ -32,7 +32,7 @@ const LIST = [
 ] as const;
 
 export type NutrientId = (typeof LIST)[number]['id'];
-export type NutrientInfo = { id: NutrientId; label: string; unit: Unit; group: NutrientGroup };
+export type NutrientInfo = { id: NutrientId; label: string; unit: NutrientUnit; group: NutrientGroup };
 export const NUTRIENTS: readonly NutrientInfo[] = LIST;
 
 /** Amounts by nutrient; a nutrient that is not there is not known (never zero by default). */
@@ -57,3 +57,7 @@ export function sumNutrients(list: (Nutrients | undefined)[]): { totals: Nutrien
   for (const [id, v] of entries(totals)) totals[id] = Number(v.toPrecision(6));
   return { totals, incomplete: NUTRIENTS.map((n) => n.id).filter((id) => list.some((n) => n?.[id] === undefined)) };
 }
+
+/** « 82,5 mg »: about three significant digits, as the amounts are stored. */
+export const formatAmount = (value: number, unit: NutrientUnit) =>
+  `${value.toLocaleString('fr-FR', { maximumFractionDigits: value >= 100 ? 0 : value >= 10 ? 1 : 2 })} ${unit}`;

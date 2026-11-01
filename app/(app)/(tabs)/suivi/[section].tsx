@@ -17,7 +17,7 @@ function TrainingSection({ period, day }: { period: Period; day: string }) {
 }
 
 export default function SuiviSection() {
-  const { section, metric } = useLocalSearchParams<{ section: string; metric?: string }>();
+  const { section, metric, period } = useLocalSearchParams<{ section: string; metric?: string; period?: string }>();
   const { app, profile, run, stepsSync } = useApp();
   const [ui, changeUi] = useUiPrefs(app.settings, run);
   const info = sectionById(section);
@@ -35,6 +35,8 @@ export default function SuiviSection() {
           onUiChange={changeUi}
           clock={app.clock}
           timezone={app.profile.timezone}
+          // From the journal's card, the day: the nutrients of what was eaten today.
+          startOn={period === 'day' ? 'day' : undefined}
           onOpen={(id) => router.push({ pathname: '/suivi/[section]', params: { section: 'micro', metric: id } })}
         />
       ) : (

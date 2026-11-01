@@ -9,6 +9,7 @@ import { foodUseCases, type FoodUseCases } from '../application/foodUseCases';
 import { mealUseCases } from '../application/mealUseCases';
 import type { FoodCatalog } from '../application/ports';
 import type { Food, FoodInput } from '../domain/food';
+import type { Nutrients } from '../domain/nutrients';
 import type { Meal } from '../domain/meal';
 import { AddFoodScreen } from './AddFoodScreen';
 
@@ -23,9 +24,14 @@ const cookedRice: Food = {
 };
 const bread: FoodInput = { name: 'Pain maison', state: 'other', per100g: { kcal: 250, protein: 8, carbs: 48, fat: 2 }, portions: [{ label: '1 tranche', grams: 30 }] };
 
-type Options = { catalog?: FoodCatalog; meal?: Meal; observeCustom?: FoodUseCases['observeCustom']; run?: (write: () => Promise<void>) => void };
+const orange: Food = {
+  ref: { type: 'ciqual', id: '13014' }, name: 'Orange, pulpe, crue', state: 'raw', per100g: { kcal: 45, protein: 0.9, carbs: 9, fat: 0.2 }, portions: [],
+  nutrients: { vitC: 50, fiber: 1.8, salt: 0.01 },
+};
 
-async function setup({ catalog = inMemoryFoodCatalog([rawRice, cookedRice]), meal = 'lunch', observeCustom, run = (write) => void write() }: Options = {}) {
+type Options = { references?: Nutrients; catalog?: FoodCatalog; meal?: Meal; observeCustom?: FoodUseCases['observeCustom']; run?: (write: () => Promise<void>) => void };
+
+async function setup({ catalog = inMemoryFoodCatalog([rawRice, cookedRice, orange]), meal = 'lunch', observeCustom, references, run = (write) => void write() }: Options = {}) {
   const entries = inMemoryFoodEntryRepository();
   const favorites = inMemoryFavoriteMealRepository();
   const foods = { ...foodUseCases({ catalog, repo: inMemoryFoodRepository() }), ...(observeCustom && { observeCustom }) };
@@ -33,7 +39,7 @@ async function setup({ catalog = inMemoryFoodCatalog([rawRice, cookedRice]), mea
   const onDone = jest.fn();
   await render(
     <PaperProvider>
-      <AddFoodScreen meal={meal} meals={meals} foods={foods} run={run} onDone={onDone} />
+      <AddFoodScreen meal={meal} meals={meals} foods={foods} run={run} onDone={onDone} references={references} />
     </PaperProvider>,
   );
   return { entries, favorites, foods, meals, onDone };
@@ -607,4 +613,51 @@ test('a search that cannot run is announced too', async () => {
   await setup({ catalog: { search: () => Promise.reject(new Error('no database')), get: async () => undefined } });
   await search('riz');
   expect((await screen.findByText('Recherche indisponible.')).props.accessibilityLiveRegion).toBe('polite');
+});
+
+describe('the nutrients of a fiche', () => {
+  const references = { vitC: 110, fiber: 30, salt: 5 };
+  const open = async () => {
+    await search('orange');
+    await fireEvent.press(await screen.findByText('Orange, pulpe, crue'));
+  };
+
+  test('are listed for the portion, with the share of the reference, once the list is opened', async () => {
+    await setup({ references });
+    await open();
+    expect(screen.queryByText('Vitamine C')).toBeNull();
+    await fireEvent.press(screen.getByText('Nutriments'));
+    expect(screen.getByLabelText('Vitamine C, 50 mg, 45 % du repère')).toBeTruthy();
+    expect(screen.getByLabelText('Fibres, 1,8 g, 6 % du repère')).toBeTruthy();
+    await type('Quantité (g)', '200');
+    expect(screen.getByLabelText('Vitamine C, 100 mg, 91 % du repère')).toBeTruthy();
+  });
+
+  test('say how many the table does not give', async () => {
+    await setup({ references });
+    await open();
+    await fireEvent.press(screen.getByText('Nutriments'));
+    expect(screen.getByText('23 nutriments ne sont pas renseignés pour cet aliment.')).toBeTruthy();
+  });
+
+  test('have no percentage without references', async () => {
+    await setup();
+    await open();
+    await fireEvent.press(screen.getByText('Nutriments'));
+    expect(screen.getByLabelText('Vitamine C, 50 mg')).toBeTruthy();
+  });
+
+  test('are not offered for a quantity that is not valid', async () => {
+    await setup({ references });
+    await open();
+    await type('Quantité (g)', '0');
+    expect(screen.queryByText('Nutriments')).toBeNull();
+  });
+
+  test('are not there for a food with none: Ciqual missing them, or a food of one’s own', async () => {
+    await setup({ references });
+    await search('riz');
+    await fireEvent.press(await screen.findByText('Riz blanc, cru'));
+    expect(screen.queryByText('Nutriments')).toBeNull();
+  });
 });

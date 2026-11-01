@@ -1,4 +1,4 @@
-import { NUTRIENTS, nutrientsFor, scaleNutrients, sumNutrients } from './nutrients';
+import { formatAmount, NUTRIENTS, nutrientsFor, scaleNutrients, sumNutrients } from './nutrients';
 
 describe('the catalogue', () => {
   test('has 26 distinct nutrients, grouped', () => {
@@ -51,4 +51,14 @@ describe('sumNutrients', () => {
   test('no entry: no totals and nothing incomplete', () => {
     expect(sumNutrients([])).toEqual({ totals: {}, incomplete: [] });
   });
+});
+
+describe('formatAmount', () => {
+  test.each([
+    [184.3, 'mg', '184 mg'],
+    [82.5, 'mg', '82,5 mg'],
+    [8.25, 'mg', '8,25 mg'],
+    [0.16, 'g', '0,16 g'],
+    [0, 'µg', '0 µg'],
+  ] as const)('%s %s reads %s', (value, unit, text) => expect(formatAmount(value, unit)).toBe(text));
 });

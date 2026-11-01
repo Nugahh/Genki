@@ -92,7 +92,7 @@ Tout est rangé sous `users/{uid}`. Les identifiants sont des UUID générés pa
 | Collection | Champs principaux |
 |---|---|
 | `foods/{id}` | `name`, `state` (`raw`, `cooked`, `other`), `per100g` (`kcal`, `protein`, `carbs`, `fat`), `portions` (liste de `{ label, grams }`), `updatedAt`, `deletedAt` |
-| `foodEntries/{id}` | `day`, `meal` (`breakfast`, `lunch`, `dinner`, `snack`), `foodRef` (`{ type: 'ciqual' ou 'custom', id }`), `foodName`, `grams`, `macros` (`kcal`, `protein`, `carbs`, `fat`, figées à la saisie), `createdAt`, `updatedAt`, `deletedAt` |
+| `foodEntries/{id}` | `day`, `meal` (`breakfast`, `lunch`, `dinner`, `snack`), `foodRef` (`{ type: 'ciqual' ou 'custom', id }`), `foodName`, `grams`, `macros` (`kcal`, `protein`, `carbs`, `fat`, figées à la saisie), `nutrients` (facultatif : les valeurs de la portion pour les 26 nutriments que Ciqual détermine, figées à la saisie ; absent pour un aliment perso et pour un repas d'avant), `createdAt`, `updatedAt`, `deletedAt` |
 | `favoriteMeals/{id}` | `name`, `items` (liste de `{ foodRef, foodName, grams }`), `updatedAt` |
 | `waterEntries/{id}` | `day`, `ml`, `createdAt`, `deletedAt` |
 | `days/{YYYY-MM-DD}` | `waterMl`, `kcal`, `proteinG`, `carbsG`, `fatG`, `steps`, `stepsSource`, `stepsSyncedAt`, `weightKg`, `waistCm`, `updatedAt` |
@@ -206,7 +206,8 @@ Programme (phase en cours, semaines, séances) et journal de séance : exercices
 
 | Rubrique | Contenu |
 |---|---|
-| Nutrition | calories, protéines, glucides ou lipides ; répartition des macros ; lien vers le journal du jour ; en vue Jour, détail par repas |
+| Nutrition | calories, protéines, glucides ou lipides ; répartition des macros ; lien vers le journal du jour et vers les micronutriments ; en vue Jour, détail par repas |
+| Micronutriments | 26 nutriments (vitamines, minéraux, fibres, sel, graisses saturées, sucres) par jour, semaine ou mois, avec le pourcentage du repère de l'ANSES du profil ; une courbe par nutriment ; une valeur incomplète est un minimum (« au moins ») |
 | Activité | pas par période, moyenne, jours où l'objectif est atteint, record, source et heure de synchro, bouton Synchroniser |
 | Corps | poids et moyenne sur 7 jours, tour de taille, variation sur la période, saisie rapide |
 | Tabac | jours sans fumer, record, argent économisé, journal et graphique des envies |

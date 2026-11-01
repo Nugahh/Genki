@@ -5,6 +5,7 @@ import type { FoodUseCases } from '../application/foodUseCases';
 import type { MealUseCases } from '../application/mealUseCases';
 import type { Food, FoodInput } from '../domain/food';
 import type { Meal } from '../domain/meal';
+import type { Nutrients } from '../domain/nutrients';
 import { FavoritesList } from './FavoritesList';
 import { FoodDetail } from './FoodDetail';
 import { FoodForm } from './FoodForm';
@@ -24,6 +25,8 @@ type Props = {
   meal: Meal;
   meals: MealUseCases;
   foods: FoodUseCases;
+  /** The reference intakes of the profile, for the nutrients of a fiche. */
+  references?: Nutrients;
   /** Runs a write; a rejected one is offered again with « Réessayer » (spec §8). */
   run: (write: () => Promise<void>) => void;
   /** A food was added: the host leaves the screen. */
@@ -31,7 +34,7 @@ type Props = {
 };
 
 /** Adds a food to a meal: from a favorite, a recent, the search, or a food created on the spot. */
-export function AddFoodScreen({ meal, meals, foods, run, onDone }: Props) {
+export function AddFoodScreen({ meal, meals, foods, references, run, onDone }: Props) {
   const [segment, setSegment] = useState<Segment>('search');
   // The food whose fiche replaces the segments, with the quantity to start from when it comes from « Récents ».
   const [selected, setSelected] = useState<{ food: Food; grams?: number } | null>(null);
@@ -56,6 +59,7 @@ export function AddFoodScreen({ meal, meals, foods, run, onDone }: Props) {
           meal={meal}
           meals={meals}
           foods={foods}
+          references={references}
           run={run}
           onDone={onDone}
           onBack={() => setSelected(null)}

@@ -15,14 +15,14 @@ const MEALS: Record<string, DayFacts> = {
   '2026-10-27': { nutrients: { iron: 11, vitC: 55, salt: 5.5, fiber: 20, calcium: 800 }, incomplete: ['calcium'] },
 };
 
-async function setup(props: { ui?: UiPrefs; meals?: Record<string, DayFacts>; goals?: Goals } = {}) {
+async function setup(props: { startOn?: 'day'; ui?: UiPrefs; meals?: Record<string, DayFacts>; goals?: Goals } = {}) {
   const meals = inMemoryFactsSource(props.meals ?? MEALS);
   const tracking = trackingUseCases({ sources: { days: inMemoryFactsSource(), training: inMemoryFactsSource(), tobacco: inMemoryFactsSource(), meals }, clock, timezone: 'Europe/Paris' });
   const onUiChange = jest.fn();
   const onOpen = jest.fn();
   await render(
     <PaperProvider theme={theme}>
-      <MicronutrientsScreen tracking={tracking} goals={props.goals ?? goals} ui={props.ui ?? {}} onUiChange={onUiChange} clock={clock} timezone="Europe/Paris" onOpen={onOpen} />
+      <MicronutrientsScreen tracking={tracking} goals={props.goals ?? goals} ui={props.ui ?? {}} onUiChange={onUiChange} clock={clock} timezone="Europe/Paris" startOn={props.startOn} onOpen={onOpen} />
     </PaperProvider>,
   );
   return { meals, onUiChange, onOpen };
@@ -94,4 +94,13 @@ test('a day shows its own total, a week the mean of its finished days', async ()
   await setup({ ui: { period: 'day' }, meals: { '2026-10-31': { nutrients: { iron: 3 }, incomplete: [] } } });
   expect(screen.getByText('Total du jour')).toBeTruthy();
   expect(row('Fer')).toBe('Fer, 3 mg, 27 % du repère');
+});
+
+test('can open on the day without touching the preference, until another period is chosen', async () => {
+  const { onUiChange } = await setup({ startOn: 'day', meals: { '2026-10-31': { nutrients: { iron: 3 }, incomplete: [] } } });
+  expect(screen.getByText('Total du jour')).toBeTruthy();
+  expect(onUiChange).not.toHaveBeenCalled();
+  await fireEvent.press(screen.getByText('Semaine'));
+  expect(onUiChange).toHaveBeenCalledWith({ period: 'week' });
+  expect(screen.queryByText('Total du jour')).toBeNull();
 });

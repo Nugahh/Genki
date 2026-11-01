@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Icon, Surface, Text, useTheme } from 'react-native-paper';
 import type { UiPrefs } from '@/modules/settings';
@@ -5,6 +6,7 @@ import type { Clock } from '@/shared/clock';
 import type { AppTheme } from '@/theme';
 import type { MicroRow, TrackingUseCases } from '../application/trackingUseCases';
 import type { Goals, Tone } from '../domain/metric';
+import type { Period } from '../domain/period';
 import { PeriodPicker } from './PeriodPicker';
 import { nutrientPeriod, resolveUi } from './resolveUi';
 import { useMicronutrients } from './useMicronutrients';
@@ -17,6 +19,8 @@ type Props = {
   onUiChange: (next: UiPrefs) => void;
   clock: Clock;
   timezone: string;
+  /** The period to open on (the day, from the journal) until another is chosen; the preference stays untouched. */
+  startOn?: Period;
   /** A nutrient was touched: show its chart. */
   onOpen: (id: string) => void;
 };
@@ -40,9 +44,10 @@ function spoken(row: MicroRow) {
 }
 
 /** The vitamins, minerals, fibre and the nutrients to limit over a day, a week or a month, against the reference intakes of the profile. */
-export function MicronutrientsScreen({ tracking, goals, ui, onUiChange, clock, timezone, onOpen }: Props) {
+export function MicronutrientsScreen({ tracking, goals, ui, onUiChange, clock, timezone, startOn, onOpen }: Props) {
   const { colors } = useTheme<AppTheme>();
-  const period = nutrientPeriod(resolveUi(ui).period);
+  const [started, setStarted] = useState(startOn);
+  const period = started ?? nutrientPeriod(resolveUi(ui).period);
   const { anchor, title, canGoForward, shift } = usePeriodAnchor(period, clock, timezone);
   const { rows, failed } = useMicronutrients(tracking, goals, period, anchor);
   const hasData = rows?.some((r) => r.value !== undefined) ?? false;
@@ -51,7 +56,10 @@ export function MicronutrientsScreen({ tracking, goals, ui, onUiChange, clock, t
 
   return (
     <ScrollView contentContainerStyle={styles.content}>
-      <PeriodPicker period={period} onPeriod={(next) => onUiChange({ period: next })} title={title} onShift={shift} canGoForward={canGoForward} periods={[...NO_YEAR]} />
+      <PeriodPicker period={period} onPeriod={(next) => {
+          setStarted(undefined);
+          onUiChange({ period: next });
+        }} title={title} onShift={shift} canGoForward={canGoForward} periods={[...NO_YEAR]} />
       <Text variant="bodyMedium" style={{ color: colors.onSurfaceVariant }}>
         {period === 'day' ? 'Total du jour' : 'Moyenne par jour, sur les jours terminés'}
       </Text>

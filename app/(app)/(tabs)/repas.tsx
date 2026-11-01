@@ -10,6 +10,7 @@ export default function Meals() {
       clock={app.clock}
       meals={app.nutrition.meals}
       onAdd={(meal) => router.push({ pathname: '/add-food', params: { meal } })}
+      onOpenNutrients={() => router.push({ pathname: '/suivi/[section]', params: { section: 'micro', period: 'day' } })}
       run={run}
     />
   );

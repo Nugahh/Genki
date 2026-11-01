@@ -265,6 +265,11 @@ Ink blue on ivory paper: a restrained Material 3 scheme with warm neutrals, plus
 ### Measure tints (custom, outside the Material roles)
 - **Water Tint** (rgb(214, 227, 255)), **Calories Tint** (rgb(249, 216, 254)) and **Protein Tint** (rgb(178, 237, 235)), each with its dark icon color (rgb(0, 27, 60), rgb(40, 19, 47), rgb(0, 32, 31)): the 32 dp disc under the icon of a gauge (a drop, a flame, a flexed arm). They are pastel and keep clear of green, ochre and brick, so a disc is never read as a pace. They live in the theme as `colors.metric`.
 
+### Nutrient rows
+- **Row:** a 48 dp pressable line: the nutrient's name, its amount (« au moins » before it when a food of the period lacks the nutrient, with a small « partiel ») and its share of the reference in Title Medium, over a 6 dp bar in the pace color of its state (Outline when it has none). The bar caps at 100 %.
+- **Never the color alone:** the percentage is text, and the row's accessibility label ends with the state in words (« dans la cible », « proche de la cible », « loin de la cible »; for salt, saturated fat and sugars « sous la limite », « un peu au-dessus de la limite », « au-dessus de la limite »). A partial amount that falls short of its reference stays Outline: a missing food is not a shortfall.
+- **Chart mark:** the nutrients share one olive, `colors.chart.micro` (rgb(95, 105, 40)), 4.5:1 on Sand.
+
 ### Pace trio (custom, outside the Material roles)
 - **Pace Green** (#007334), **Pace Orange** (#B56A00, an ochre) and **Pace Red** (#9E1910, a brick): the fill of a gauge, meaning « dans le rythme », « un peu en retard », « en retard ». On the calories gauge, orange and red also flag going over the goal (above 105 % and 110 %), which the line under the bar then states as « au-dessus de l'objectif ». Each is 3:1 or more against Sand, and they differ in lightness as well as hue, so red and green stay apart to eyes that confuse them. They live in the theme as `colors.pace`.
 

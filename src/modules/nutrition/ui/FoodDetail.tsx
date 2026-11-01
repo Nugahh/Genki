@@ -5,10 +5,12 @@ import type { FoodUseCases } from '../application/foodUseCases';
 import type { MealUseCases } from '../application/mealUseCases';
 import { isValidGrams, type Food } from '../domain/food';
 import { macrosFor } from '../domain/macros';
+import { nutrientsFor, type Nutrients } from '../domain/nutrients';
 import type { Meal } from '../domain/meal';
 import { ConfirmDelete } from './ConfirmDelete';
 import { FoodForm } from './FoodForm';
 import { asText, gramsText, macrosText, MEAL_LABELS, parseNumber } from './format';
+import { NutrientList } from './NutrientList';
 import { StateChip } from './StateChip';
 
 // A chip is 32 dp tall: 8 dp more above and below make the 48 dp target.
@@ -21,6 +23,8 @@ type Props = {
   meal: Meal;
   meals: MealUseCases;
   foods: FoodUseCases;
+  /** The reference intakes of the profile, to show the share of each nutrient. */
+  references?: Nutrients;
   run: (write: () => Promise<void>) => void;
   onDone: () => void;
   onBack: () => void;
@@ -29,7 +33,7 @@ type Props = {
 };
 
 /** A food chosen from a list: pick a quantity, read the macros, add it to the meal. A custom food can also be changed or deleted here. */
-export function FoodDetail({ food: chosen, grams: last, meal, meals, foods, run, onDone, onBack, onRemoved }: Props) {
+export function FoodDetail({ food: chosen, grams: last, meal, meals, foods, references, run, onDone, onBack, onRemoved }: Props) {
   // Held here so that a saved change shows at once.
   const [food, setFood] = useState(chosen);
   const [text, setText] = useState(asText(last ?? 100));
@@ -91,6 +95,7 @@ export function FoodDetail({ food: chosen, grams: last, meal, meals, foods, run,
           {macrosText(macrosFor(food.per100g, grams))}
         </Text>
       )}
+      {valid && food.nutrients && <NutrientList nutrients={nutrientsFor(food.nutrients, grams)} references={references} />}
       <Button
         mode="contained"
         contentStyle={styles.button}

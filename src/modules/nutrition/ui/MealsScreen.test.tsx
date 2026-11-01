@@ -13,17 +13,17 @@ const yogurt = { ref: { type: 'custom' as const, id: 'c1' }, name: 'Yaourt natur
 // The thousands separator depends on the ICU data, so the expected text is built the way the screen does.
 const goal = (2200).toLocaleString('fr-FR');
 
-async function setup(at = clock, run: (write: () => Promise<void>) => void = (write) => void write()) {
+async function setup(at = clock, run: (write: () => Promise<void>) => void = (write) => void write(), onOpenNutrients = jest.fn()) {
   const entries = inMemoryFoodEntryRepository();
   const favorites = inMemoryFavoriteMealRepository();
   const meals = mealUseCases({ entries, favorites, clock: at, timezone: DEFAULT_PROFILE.timezone });
   const onAdd = jest.fn();
   await render(
     <PaperProvider>
-      <MealsScreen profile={DEFAULT_PROFILE} clock={at} meals={meals} onAdd={onAdd} run={run} />
+      <MealsScreen profile={DEFAULT_PROFILE} clock={at} meals={meals} onAdd={onAdd} run={run} onOpenNutrients={onOpenNutrients} />
     </PaperProvider>,
   );
-  return { entries, favorites, meals, onAdd };
+  return { entries, favorites, meals, onAdd, onOpenNutrients };
 }
 
 const lunchOfRice = (meals: MealUseCases) =>
@@ -261,4 +261,38 @@ test('the day follows the profile time zone, not UTC', async () => {
   });
 
   expect(within(screen.getByTestId('meal-dinner')).getByText('Riz blanc, cru')).toBeTruthy();
+});
+
+describe('the nutrients of the day', () => {
+  const orange = { ref: { type: 'ciqual' as const, id: '13014' }, name: 'Orange', per100g: { kcal: 45, protein: 1, carbs: 9, fat: 0.2 }, nutrients: { vitC: 55, iron: 0.4, fiber: 15 } };
+
+  test('are not shown before a food that has some is eaten', async () => {
+    const { meals } = await setup();
+    expect(screen.queryByText('Nutriments du jour')).toBeNull();
+    await act(async () => {
+      await meals.logFood('lunch', yogurt, 100);
+    });
+    expect(screen.queryByText('Nutriments du jour')).toBeNull();
+  });
+
+  test('name the three to reach that are the least covered of those the foods tell, and open the micronutrients', async () => {
+    const { meals, onOpenNutrients } = await setup();
+    await act(async () => {
+      await meals.logFood('lunch', { ...orange, nutrients: { ...orange.nutrients, calcium: 500, zinc: 9 } }, 100);
+    });
+    // 55 mg of vitamin C is 50 % of 110, 15 g of fibre 50 % of 30, 0.4 mg of iron 4 % of 11, 500 mg of calcium 53 % of 950, 9 mg of zinc 77 % of 11.7.
+    // Nutrients the food does not tell are unknown, not low.
+    const card = screen.getByLabelText('Nutriments du jour : Fer 4 %, Vitamine C 50 %, Fibres 50 %. Ouvrir le détail');
+    await fireEvent.press(card);
+    expect(onOpenNutrients).toHaveBeenCalled();
+  });
+
+  test('say « au moins » for a nutrient that a food of the day lacks', async () => {
+    const { meals } = await setup();
+    await act(async () => {
+      await meals.logFood('lunch', orange, 100);
+      await meals.logFood('lunch', { ...orange, ref: { type: 'ciqual', id: '2' }, nutrients: { vitC: 10 } }, 100);
+    });
+    expect(screen.getByLabelText(/Fer 4 % au moins/)).toBeTruthy();
+  });
 });

@@ -1,13 +1,15 @@
 import { useEffect, useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Button, Dialog, List, Portal, Surface, Text, TextInput } from 'react-native-paper';
 import type { Profile } from '@/modules/settings';
 import { dayKey, type Clock } from '@/shared/clock';
 import { useNow } from '@/shared/useNow';
 import type { MealUseCases } from '../application/mealUseCases';
+import { referencesOf } from '../application/referencesOf';
 import type { FoodEntry } from '../domain/food';
 import { sumMacros } from '../domain/macros';
 import { MEALS, type Meal } from '../domain/meal';
+import { NUTRIENTS, sumNutrients } from '../domain/nutrients';
 import { EntryActions } from './EntryActions';
 import { gramsText, kcalText, MEAL_LABELS } from './format';
 
@@ -16,12 +18,14 @@ type Props = {
   clock: Clock;
   meals: MealUseCases;
   onAdd: (meal: Meal) => void;
+  /** The card of the nutrients of the day was touched: show them all. */
+  onOpenNutrients: () => void;
   /** Runs a write; a rejected one is offered again with « Réessayer » (spec §8). */
   run: (write: () => Promise<void>) => void;
 };
 
 /** Today's journal: the day totals, then one section per meal. */
-export function MealsScreen({ profile, clock, meals, onAdd, run }: Props) {
+export function MealsScreen({ profile, clock, meals, onAdd, onOpenNutrients, run }: Props) {
   const now = useNow(clock);
   const day = dayKey(now, profile.timezone);
   const [entries, setEntries] = useState<FoodEntry[]>([]);
@@ -32,6 +36,14 @@ export function MealsScreen({ profile, clock, meals, onAdd, run }: Props) {
   useEffect(() => meals.observeDay(day, setEntries, () => {}), [meals, day]);
 
   const total = sumMacros(entries.map((e) => e.macros));
+  // The three nutrients to reach that the day's foods tell and that are the furthest from their reference: those they do not tell are unknown, not low.
+  const references = referencesOf(profile);
+  const nutrients = sumNutrients(entries.map((e) => e.nutrients));
+  const least = NUTRIENTS.filter((n) => n.group !== 'limit' && references[n.id] && nutrients.totals[n.id] !== undefined)
+    .map((n) => ({ label: n.label, pct: Math.round((nutrients.totals[n.id]! / references[n.id]!) * 100), atLeast: nutrients.incomplete.includes(n.id) }))
+    .sort((a, b) => a.pct - b.pct)
+    .slice(0, 3);
+  const said = (n: (typeof least)[number]) => `${n.label} ${n.pct} %${n.atLeast ? ' au moins' : ''}`;
   const saveFavorite = ({ meal, name }: { meal: Meal; name: string }) => {
     run(() => meals.saveFavorite(name, entries.filter((e) => e.meal === meal)));
     setFavorite(null);
@@ -44,6 +56,20 @@ export function MealsScreen({ profile, clock, meals, onAdd, run }: Props) {
         <Text variant="titleMedium">{`Protéines : ${gramsText(total.protein)} / ${gramsText(profile.goals.proteinG)} g`}</Text>
         <Text variant="bodyMedium">{`Glucides ${gramsText(total.carbs)} g · Lipides ${gramsText(total.fat)} g`}</Text>
       </Surface>
+      {least.length > 0 && (
+        <Pressable accessibilityRole="button" accessibilityLabel={`Nutriments du jour : ${least.map(said).join(', ')}. Ouvrir le détail`} onPress={onOpenNutrients}>
+          <Surface style={styles.card}>
+            <Text variant="titleMedium">Nutriments du jour</Text>
+            {least.map((n) => (
+              <View key={n.label} style={styles.nutrient}>
+                <Text variant="bodyMedium">{n.label}</Text>
+                <Text variant="titleSmall">{`${n.pct} %${n.atLeast ? ' au moins' : ''}`}</Text>
+              </View>
+            ))}
+            <Text variant="bodySmall">Les moins couverts du jour · Voir le détail</Text>
+          </Surface>
+        </Pressable>
+      )}
       {MEALS.map((meal) => {
         const label = MEAL_LABELS[meal];
         const list = entries.filter((e) => e.meal === meal);
@@ -110,5 +136,6 @@ const styles = StyleSheet.create({
   content: { padding: 16, gap: 16 },
   card: { padding: 16, gap: 8, borderRadius: 12 },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  nutrient: { flexDirection: 'row', justifyContent: 'space-between' },
   button: { minHeight: 48 },
 });
