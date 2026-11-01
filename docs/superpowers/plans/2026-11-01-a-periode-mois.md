@@ -137,7 +137,7 @@ et, dans `bucketsFor`, avant le `return` des mois de l'année :
   - `SectionScreen.test.tsx` : avec `ui={{ period: 'month' }}`, le titre est « novembre 2026 », la flèche précédente mène à « octobre 2026 » (31 jours), la flèche suivante est désactivée sur le mois en cours, et la ligne de variation dit « par rapport au mois précédent ».
   - `SuiviHub.test.tsx` : toucher « Mois » appelle `onUiChange({ period: 'month' })` ; avec `ui.period = 'month'` le titre du hub est « novembre 2026 » et la carte Calories donne la moyenne des jours terminés du mois.
 - [ ] **Step 2:** Rouge. **Step 3: Implémenter** :
-  - `PeriodPicker.tsx` : ajouter `{ value: 'month', label: 'Mois', labelStyle: { paddingVertical: 4 }, showSelectedCheck: true }` entre Semaine et Année ; si le libellé « Semaine » déborde sur 360 dp, mettre `showSelectedCheck: false` sur les quatre (à vérifier sur appareil, noté au README).
+  - `PeriodPicker.tsx` : ajouter `{ value: 'month', label: 'Mois', labelStyle: { paddingVertical: 4 }, showSelectedCheck: true }` entre Semaine et Année. Quatre segments en ligne coupent « Semaine » sur 360 dp (revue : 82 dp par segment, 88 dp nécessaires) : deux rangées de deux comme `AddFoodScreen`, la coche est gardée (à vérifier sur appareil, noté au README).
   - `changeText.ts` : `BEFORE = { day: 'à la veille', week: 'à la semaine précédente', month: 'au mois précédent', year: 'à l’année précédente' }`, et `SectionScreen.tsx` / `MetricCard.tsx` écrivent `par rapport ${BEFORE[period]}` (sans « à »).
   - `SeriesChart.tsx` : remplacer la règle d'espacement `slot < 28 && i % 2 === 1` par `i % labelStep !== 0` avec `const labelStep = slot >= 28 ? 1 : slot >= 14 ? 2 : 5;` (commentaire : « un mois n'a pas la place de ses 31 étiquettes »).
 - [ ] **Step 4:** Vert. **Step 5:** Commit `feat: the Month period in the Suivi screens`.
@@ -152,5 +152,5 @@ et, dans `bucketsFor`, avant le `return` des mois de l'année :
 
 ## Limites connues
 
-- Quatre segments sur 360 dp : à vérifier sur appareil (voir Task 3).
+- Deux rangées de deux sur 360 dp : à vérifier sur appareil (voir Task 3).
 - Un mois lit ~62 jours de documents par statistique (le mois et le précédent) : acceptable, servi par le cache local.

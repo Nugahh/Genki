@@ -16,7 +16,7 @@ Date : 2026-11-01. Complète la spec principale (`2026-10-23-fitness-tracker-des
 - Un mois est le **mois calendaire** de la date choisie : **une barre par jour** (28 à 31). Les flèches reculent de mois en mois, la flèche suivante est désactivée sur le mois en cours. Titre : « novembre 2026 ».
 - Comme pour la semaine : le jour en cours est en pointillé, les moyennes et décomptes « dans la cible » ne comptent que les **jours terminés**, la période d'avant sert à la variation (« par rapport au mois précédent »).
 - Étiquettes sous les barres : le numéro du jour (1…31), **une sur cinq** (1, 6, 11…) pour rester lisible ; le texte lu à voix haute dit « 3 novembre ». La largeur d'une barre se déduit de la place disponible (une barre de ~7 dp sur 360 dp est acceptable : le graphique reste en barres fines).
-- Quatre segments dans le sélecteur : si le libellé « Semaine » déborde sur 360 dp, on retire la coche de sélection des segments ; à vérifier sur appareil.
+- Le sélecteur passe en deux rangées de deux (Jour · Semaine, Mois · Année), comme l'ajout d'aliment : sur 360 dp, quatre segments en ligne coupent « Semaine » (82 dp par segment pour 88 dp de libellé et de marges), et la coche du segment choisi n'y tient pas non plus. À vérifier sur appareil.
 
 ### Domaine (`tracking/domain/period.ts`)
 `bucketsFor('month', anchor)` : un seau par jour du mois (`key` = jour, `label` = numéro, `spoken` = « 3 novembre »). `shiftAnchor('month', anchor, ±1)` : même quantième le mois d'à côté, ramené au dernier jour si le mois est plus court. `periodTitle('month', anchor)` : « novembre 2026 ». `rangeOf` et le reste sont inchangés. Les tests couvrent février bissextile, le 31 qui recule vers un mois de 30 jours, le passage d'année.

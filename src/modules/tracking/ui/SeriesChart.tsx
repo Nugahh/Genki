@@ -102,7 +102,7 @@ export function SeriesChart({ def, points, goal, title, height = 180 }: Props) {
                   testID={`dot-${p.bucket.key}`}
                   cx={centre(i)}
                   cy={y(p.value)}
-                  r={4}
+                  r={Math.min(4, slot / 3)}
                   // Today so far is a hollow dot of the line's color; a finished day a solid one ringed with the page.
                   fill={p.partial ? colors.surface : tint}
                   stroke={p.partial ? tint : colors.surface}

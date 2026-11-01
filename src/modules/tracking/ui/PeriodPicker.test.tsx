@@ -23,3 +23,12 @@ test('touching Mois chooses the month', async () => {
   await fireEvent.press(screen.getByText('Mois'));
   expect(onPeriod).toHaveBeenCalledWith('month');
 });
+
+// Paper marks the chosen segment with `accessibilityState.checked`; its text also holds the glyph of the check.
+const isChecked = (name: string) => screen.getByRole('button', { name: new RegExp(`^${name}|${name}$`) }).props.accessibilityState.checked;
+
+test('the chosen period carries the check, the others do not', async () => {
+  await draw({ period: 'month' });
+  expect(isChecked('Mois')).toBe(true);
+  expect([isChecked('Jour'), isChecked('Semaine'), isChecked('Année')]).toEqual([false, false, false]);
+});

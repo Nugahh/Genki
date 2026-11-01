@@ -363,7 +363,7 @@ Standard Paper components, restrained: a tonal button, a soft card, a flat field
 - **Error:** helper text in Error Red, Body Small, under the field, announced politely to a screen reader (« La quantité doit être comprise entre 0 et 5 000 g. »).
 
 ### Segmented switch
-- **Style:** the four add-food modes (Favoris, Récents, Recherche, Créer) in two rows of two, Pencil borders and 20 dp outer corners. The chosen segment takes Ink Tint and a check, so it is not told by its tint alone. The Cru / Cuit / Autre switch of the custom-food form is one row of three with the same check.
+- **Style:** the four add-food modes (Favoris, Récents, Recherche, Créer) in two rows of two, Pencil borders and 20 dp outer corners. The chosen segment takes Ink Tint and a check, so it is not told by its tint alone. The four Suivi periods (Jour, Semaine, Mois, Année) follow the same two rows of two, since « Semaine » and the check do not fit four in a row on a 360 dp phone. The Cru / Cuit / Autre switch of the custom-food form is one row of three with the same check.
 
 ### Dialogs and sheet
 - **Dialog:** Paper Dialog level 3, 28 dp corners, Headline Small title, text-button actions at the bottom right. For decisions that must interrupt: changing a journal line, naming a favorite, and confirming a delete that cannot be undone (« Supprimer {nom} du journal ? », « Supprimer l'aliment {nom} ? », « Supprimer le favori {nom} ? »), each with the same « Annuler » and « Supprimer ».

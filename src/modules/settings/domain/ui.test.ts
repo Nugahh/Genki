@@ -16,3 +16,7 @@ test.each([
 ])('refuses %s with a message', (_, ui) => {
   expect(validateUi(ui)).toEqual(expect.stringMatching(/\S/));
 });
+
+test('names the periods that exist', () => {
+  expect(validateUi({ period: 'quarter' as never })).toBe('La période doit être le jour, la semaine, le mois ou l’année.');
+});

@@ -77,6 +77,12 @@ describe('a line', () => {
     expect(today).toHaveProp('strokeWidth', 2);
   });
 
+  test('shrinks the dots of a month so that they do not overlap', async () => {
+    const days = bucketsFor('month', '2026-10-15');
+    await draw(<SeriesChart def={weight} points={days.map((bucket): Point => ({ bucket, value: 80, partial: false, tone: 'none' }))} />);
+    expect(Number(screen.getByTestId(`dot-${days[0].key}`).props.r)).toBeLessThan(4);
+  });
+
   test('says there is no data when nothing was recorded', async () => {
     await draw(<SeriesChart def={weight} points={[point(0, {})]} />);
     expect(screen.getByRole('image').props.accessibilityLabel).toBe('Poids : aucune donnée.');
