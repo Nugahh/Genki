@@ -1,5 +1,5 @@
-import { bmr, dailyEnergy, GUARDRAILS, macroGoals, proposeGoals } from './goals';
-import { DEFAULT_PROFILE, type Profile } from './profile';
+import { bmr, dailyEnergy, GUARDRAILS, proposeGoals } from './goals';
+import { DEFAULT_PROFILE, macroGoals, type Profile } from './profile';
 
 const man: Profile = { ...DEFAULT_PROFILE, sex: 'male', birthYear: 1996, heightCm: 180, activityLevel: 'light', goalMode: 'deficit' };
 const woman: Profile = { ...DEFAULT_PROFILE, sex: 'female', birthYear: 1986, heightCm: 155, activityLevel: 'sedentary', goalMode: 'deficit' };

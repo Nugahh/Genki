@@ -27,7 +27,8 @@ export function GoalsWithPortion({ day, portion, goals }: Props) {
         Objectifs avec cette portion
       </Text>
       {rows.map((r) => {
-        const over = r.total > r.goal;
+        // To a tenth: the sum of rounded macros must not pass a goal that it equals.
+        const over = Math.round(r.total * 10) > Math.round(r.goal * 10);
         return (
           <View
             key={r.label}

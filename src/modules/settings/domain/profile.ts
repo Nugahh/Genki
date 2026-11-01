@@ -72,7 +72,16 @@ export function validateProfile(profile: Profile): string | null {
   return null;
 }
 
-/** The stored fields over the defaults; the goals field by field. */
+const roundTo = (n: number, step: number) => Math.round(n / step) * step;
+
+/** Fat is 30 % of the energy (9 kcal a gram); the net carbs are what is left after the protein (4 kcal a gram). Both to the nearest 5 g. */
+export const macroGoals = (kcal: number, proteinG: number) => ({
+  fatG: roundTo((0.3 * kcal) / 9, 5),
+  carbsNetG: Math.max(0, roundTo((0.7 * kcal - 4 * proteinG) / 4, 5)),
+});
+
+/** The stored fields over the defaults; the goals field by field. Fat and net carbs that were never chosen follow the calories and protein that were. */
 export function withDefaults(stored: Partial<Profile>): Profile {
-  return { ...DEFAULT_PROFILE, ...stored, goals: { ...DEFAULT_PROFILE.goals, ...stored.goals } };
+  const goals = { ...DEFAULT_PROFILE.goals, ...stored.goals };
+  return { ...DEFAULT_PROFILE, ...stored, goals: { ...goals, ...macroGoals(goals.kcal, goals.proteinG), ...stored.goals } };
 }

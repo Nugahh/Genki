@@ -279,3 +279,11 @@ describe('the time of an entry', () => {
     expect(latest(entries)).toMatchObject({ grams: 200, day: '2024-01-05' });
   });
 });
+
+test('a change of quantity keeps the day of the entry, even if the zone of the profile says another day by now', async () => {
+  const { entries, meals } = setup();
+  // Logged with a zone that put 2026-10-24 09:00 UTC on the 23rd; the profile zone says the 24th today.
+  await entries.add({ day: '2026-10-23', meal: 'lunch', foodRef: rice.ref, foodName: rice.name, grams: 100, macros: { kcal: 350, protein: 7, carbs: 78, fat: 0.6 }, createdAt: new Date('2026-10-24T09:00:00Z') });
+  await meals.updateEntry(latest(entries), sameTime(latest(entries), 200));
+  expect(latest(entries)).toMatchObject({ grams: 200, day: '2026-10-23' });
+});

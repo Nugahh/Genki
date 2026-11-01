@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { StyleSheet } from 'react-native';
 import { Button } from 'react-native-paper';
 import type { Profile } from '@/modules/settings';
@@ -29,6 +29,8 @@ const SOURCES = { ciqual: 'Ciqual (ANSES)', custom: 'Mon aliment' } as const;
 /** The sheet of a line of the journal: its quantity, group, day and time can change, or the line can be removed (spec §6, instead of swiping). */
 export function EntryDetail({ entry, meals, profile, clock, pickWhen, run, onDone, onBack }: Props) {
   const [removing, setRemoving] = useState(false);
+  // Set by the first touch of « Enregistrer » or of the confirmation: a second one, before the host has left the sheet, must not apply the change twice.
+  const done = useRef(false);
   const portions = [
     { label: '100 g', grams: 100 },
     ...(entry.grams !== 100 ? [{ label: `${gramsText(entry.grams)} g`, grams: entry.grams }] : []),
@@ -53,6 +55,8 @@ export function EntryDetail({ entry, meals, profile, clock, pickWhen, run, onDon
         pickWhen={pickWhen}
         submitLabel={() => 'Enregistrer'}
         onSubmit={({ grams, meal, at }) => {
+          if (done.current) return;
+          done.current = true;
           run(() => meals.updateEntry(entry, { grams, meal, at: at ?? entry.createdAt }));
           onDone();
         }}
@@ -69,6 +73,8 @@ export function EntryDetail({ entry, meals, profile, clock, pickWhen, run, onDon
           title={`Supprimer ${entry.foodName} du journal ?`}
           onCancel={() => setRemoving(false)}
           onConfirm={() => {
+            if (done.current) return;
+            done.current = true;
             run(() => meals.removeEntry(entry));
             onDone();
           }}

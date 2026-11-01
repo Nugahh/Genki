@@ -49,7 +49,7 @@ type Props = {
 
 const totalsOf = (entries: FoodEntry[]) => {
   const macros = sumMacros(entries.map((e) => e.macros));
-  return { ...macros, carbs: entries.reduce((sum, e) => sum + netCarbs(e.macros, e.nutrients).grams, 0) };
+  return { ...macros, carbs: Math.round(entries.reduce((sum, e) => sum + netCarbs(e.macros, e.nutrients).grams, 0) * 10) / 10 };
 };
 
 /** A quantity of a food, for a group, a day and a time: the figures of the portion, the day's goals with it, and the way to log or save it. */
@@ -72,7 +72,8 @@ export function PortionSheet(props: Props) {
   const macros = validGrams ? macrosAt(grams) : ZERO_MACROS;
   const nutrients = validGrams ? nutrientsAt(grams) : undefined;
   const net = netCarbs(macros, nutrients);
-  const dayTotals = totalsOf(dayEntries.filter((e) => e.id !== entryId));
+  // Only the chosen day's: the previous day's entries stay in the state until the next snapshot answers.
+  const dayTotals = totalsOf(dayEntries.filter((e) => e.day === day && e.id !== entryId));
   const references = referencesOf(profile);
 
   return (

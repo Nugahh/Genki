@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { BackHandler, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Button, Dialog, List, Portal, Surface, Text, TextInput } from 'react-native-paper';
 import type { Profile } from '@/modules/settings';
 import { dayKey, type Clock } from '@/shared/clock';
@@ -39,6 +39,16 @@ export function MealsScreen({ profile, clock, meals, onAdd, onOpenNutrients, pic
   // Listener errors show on the SyncIcon, which watches the same user's data.
   useEffect(() => meals.observeDay(day, setEntries, () => {}), [meals, day]);
 
+  // The back button of the phone closes the sheet of a line, like « Retour », instead of leaving the tab.
+  useEffect(() => {
+    if (!selected) return;
+    const listener = BackHandler.addEventListener('hardwareBackPress', () => {
+      setSelected(null);
+      return true;
+    });
+    return () => listener.remove();
+  }, [selected]);
+
   const total = sumMacros(entries.map((e) => e.macros));
   const netCarbsTotal = Math.round(entries.reduce((sum, e) => sum + netCarbs(e.macros, e.nutrients).grams, 0) * 10) / 10;
   // The three nutrients to reach that the day's foods tell and that are the furthest from their reference: those they do not tell are unknown, not low.
@@ -54,17 +64,17 @@ export function MealsScreen({ profile, clock, meals, onAdd, onOpenNutrients, pic
     setFavorite(null);
   };
 
-  // The sheet of a line takes the place of the journal.
+  // The sheet of a line takes the place of the journal. Its own key: the journal's scroll offset must not carry over to the sheet.
   if (selected) {
     return (
-      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      <ScrollView key="sheet" contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <EntryDetail entry={selected} meals={meals} profile={profile} clock={clock} pickWhen={pickWhen} run={run} onDone={() => setSelected(null)} onBack={() => setSelected(null)} />
       </ScrollView>
     );
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.content}>
+    <ScrollView key="journal" contentContainerStyle={styles.content}>
       <Surface style={styles.card}>
         <Text variant="titleMedium">{`Calories : ${kcalText(total.kcal)} / ${kcalText(profile.goals.kcal)} kcal`}</Text>
         <Text variant="titleMedium">{`Protéines : ${gramsText(total.protein)} / ${gramsText(profile.goals.proteinG)} g`}</Text>

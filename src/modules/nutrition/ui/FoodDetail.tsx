@@ -44,25 +44,6 @@ export function FoodDetail({ food: chosen, grams: last, meal, meals, foods, prof
   // Set by the first touch of « Ajouter à … »: a second one, before the host has left the screen, must not log the food again.
   const submitted = useRef(false);
 
-  if (editing) {
-    return (
-      <View style={styles.detail}>
-        <FoodForm
-          initial={food}
-          submitLabel="Enregistrer les modifications"
-          onSubmit={(input) => {
-            run(() => foods.update(food.ref.id, input));
-            setFood({ ref: food.ref, ...input });
-            setEditing(false);
-          }}
-        />
-        <Button contentStyle={styles.button} onPress={() => setEditing(false)}>
-          Annuler
-        </Button>
-      </View>
-    );
-  }
-
   const quantities = [
     ...food.portions.map((portion) => ({ label: `${portion.label} (${gramsText(portion.grams)} g)`, grams: portion.grams })),
     { label: '100 g', grams: 100 },
@@ -71,41 +52,60 @@ export function FoodDetail({ food: chosen, grams: last, meal, meals, foods, prof
 
   return (
     <>
-      <PortionSheet
-        name={food.name}
-        badge={<StateChip state={food.state} />}
-        source={SOURCES[food.ref.type]}
-        portions={quantities}
-        initialGrams={last ?? 100}
-        macrosAt={(grams) => macrosFor(food.per100g, grams)}
-        nutrientsAt={(grams) => food.nutrients && nutrientsFor(food.nutrients, grams)}
-        initialMeal={meal}
-        meals={meals}
-        profile={profile}
-        clock={clock}
-        pickWhen={pickWhen}
-        submitLabel={(chosenMeal) => `Ajouter à ${MEAL_LABELS[chosenMeal]}`}
-        onSubmit={({ grams, meal: chosenMeal, at }) => {
-          if (submitted.current) return;
-          submitted.current = true;
-          run(() => meals.logFood(chosenMeal, food, grams, at));
-          onDone();
-        }}
-      >
-        {food.ref.type === 'custom' && (
-          <>
-            <Button mode="outlined" icon="pencil" contentStyle={styles.button} onPress={() => setEditing(true)}>
-              Modifier l’aliment
-            </Button>
-            <Button mode="outlined" icon="delete-outline" contentStyle={styles.button} onPress={() => setRemoving(true)}>
-              Supprimer l’aliment
-            </Button>
-          </>
-        )}
-        <Button contentStyle={styles.button} onPress={onBack}>
-          Retour
-        </Button>
-      </PortionSheet>
+      {editing && (
+        <View style={styles.detail}>
+          <FoodForm
+            initial={food}
+            submitLabel="Enregistrer les modifications"
+            onSubmit={(input) => {
+              run(() => foods.update(food.ref.id, input));
+              setFood({ ref: food.ref, ...input });
+              setEditing(false);
+            }}
+          />
+          <Button contentStyle={styles.button} onPress={() => setEditing(false)}>
+            Annuler
+          </Button>
+        </View>
+      )}
+      {/* Hidden, not unmounted, while the food is edited: the quantity, group and time typed so far stay. */}
+      <View style={editing ? styles.hidden : undefined}>
+        <PortionSheet
+          name={food.name}
+          badge={<StateChip state={food.state} />}
+          source={SOURCES[food.ref.type]}
+          portions={quantities}
+          initialGrams={last ?? 100}
+          macrosAt={(grams) => macrosFor(food.per100g, grams)}
+          nutrientsAt={(grams) => food.nutrients && nutrientsFor(food.nutrients, grams)}
+          initialMeal={meal}
+          meals={meals}
+          profile={profile}
+          clock={clock}
+          pickWhen={pickWhen}
+          submitLabel={(chosenMeal) => `Ajouter à ${MEAL_LABELS[chosenMeal]}`}
+          onSubmit={({ grams, meal: chosenMeal, at }) => {
+            if (submitted.current) return;
+            submitted.current = true;
+            run(() => meals.logFood(chosenMeal, food, grams, at));
+            onDone();
+          }}
+        >
+          {food.ref.type === 'custom' && (
+            <>
+              <Button mode="outlined" icon="pencil" contentStyle={styles.button} onPress={() => setEditing(true)}>
+                Modifier l’aliment
+              </Button>
+              <Button mode="outlined" icon="delete-outline" contentStyle={styles.button} onPress={() => setRemoving(true)}>
+                Supprimer l’aliment
+              </Button>
+            </>
+          )}
+          <Button contentStyle={styles.button} onPress={onBack}>
+            Retour
+          </Button>
+        </PortionSheet>
+      </View>
       {removing && (
         <ConfirmDelete
           title={`Supprimer l’aliment ${food.name} ?`}
@@ -122,5 +122,6 @@ export function FoodDetail({ food: chosen, grams: last, meal, meals, foods, prof
 
 const styles = StyleSheet.create({
   detail: { gap: 12 },
+  hidden: { display: 'none' },
   button: { minHeight: 48 },
 });

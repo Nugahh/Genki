@@ -56,7 +56,8 @@ export function AddFoodScreen({ meal, meals, foods, profile, clock, pickWhen, ru
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+    // Its own key for the sheet: the scroll offset of the lists must not carry over to it.
+    <ScrollView key={selected ? 'sheet' : 'lists'} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
       {selected ? (
         <FoodDetail
           food={selected.food}

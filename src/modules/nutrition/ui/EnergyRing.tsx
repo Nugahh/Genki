@@ -67,7 +67,7 @@ export function EnergyRing({ kcal, protein, carbs, fat, carbsPartial = false }: 
           </G>
         </Svg>
         <View style={[StyleSheet.absoluteFill, styles.centre]} pointerEvents="none">
-          <Text variant="headlineSmall" style={styles.kcal}>
+          <Text variant="headlineSmall" style={styles.kcal} numberOfLines={1} adjustsFontSizeToFit>
             {kcalText(kcal)}
           </Text>
           <Text variant="labelMedium" style={{ color: colors.onSurfaceVariant }}>
@@ -93,7 +93,8 @@ export function EnergyRing({ kcal, protein, carbs, fat, carbsPartial = false }: 
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: 16 },
   ring: { width: SIZE, height: SIZE },
-  centre: { alignItems: 'center', justifyContent: 'center' },
+  // Inside the ring: its inner circle is about 100 dp wide.
+  centre: { alignItems: 'center', justifyContent: 'center', paddingHorizontal: STROKE + 6 },
   kcal: { fontVariant: ['tabular-nums'] },
   legend: { flex: 1, gap: 8 },
   item: { flexDirection: 'row', alignItems: 'center', gap: 8 },

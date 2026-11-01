@@ -694,7 +694,7 @@ describe('the sheet of a food', () => {
     pickWhen.mockResolvedValueOnce(new Date('2026-10-22T22:30:00Z')); // 00:30 in Paris on the 23rd
     const { entries } = await setup();
     await openRice();
-    await fireEvent.press(screen.getByLabelText('Choisir le jour'));
+    await fireEvent.press(screen.getByLabelText(/^Choisir le jour/));
     expect(screen.getByText('Hier')).toBeTruthy();
     await fireEvent.press(screen.getByText('Ajouter à Déjeuner'));
     expect(entries.entries[0]).toMatchObject({ day: '2026-10-23', createdAt: new Date('2026-10-22T22:30:00Z') });
@@ -711,7 +711,7 @@ describe('the sheet of a food', () => {
     pickWhen.mockResolvedValueOnce(new Date('2026-10-24T11:00:00Z'));
     const { entries } = await setup();
     await openRice();
-    await fireEvent.press(screen.getByLabelText('Choisir l’heure'));
+    await fireEvent.press(screen.getByLabelText(/^Choisir l’heure/));
     expect(screen.getByText('L’heure choisie est dans le futur.')).toBeTruthy();
     expect(screen.getByText('Ajouter à Déjeuner')).toBeDisabled();
     expect(entries.entries).toEqual([]);
@@ -735,4 +735,20 @@ describe('the sheet of a food', () => {
     await openRice();
     expect(screen.getByText('Glucides nets (partiel)')).toBeTruthy();
   });
+});
+
+test('editing a custom food from its sheet keeps the quantity, group and time typed so far', async () => {
+  const { foods } = await setup();
+  await act(async () => {
+    await foods.create(bread);
+  });
+  await search('pain');
+  await fireEvent.press(await screen.findByText('Pain maison'));
+  await type('Quantité (g)', '55');
+  await fireEvent.press(screen.getByText('Dîner'));
+  await fireEvent.press(screen.getByText('Modifier l’aliment'));
+  expect(screen.getByText('Enregistrer les modifications')).toBeTruthy();
+  await fireEvent.press(screen.getByText('Annuler'));
+  expect(screen.getByLabelText('Quantité (g)')).toHaveDisplayValue('55');
+  expect(screen.getByText('Ajouter à Dîner')).toBeTruthy();
 });

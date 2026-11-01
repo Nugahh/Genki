@@ -40,12 +40,14 @@ export function mealUseCases(deps: { entries: FoodEntryRepository; favorites: Fa
     /** Changes the quantity, the group and the time of an entry: its values follow the quantity, from its own frozen ones. */
     async updateEntry(entry: FoodEntry, change: { grams: number; meal: Meal; at: Date }) {
       assertGrams(change.grams);
-      // The time an entry already has is kept as it is, even if it is further back than a new one may be.
-      if (change.at.getTime() !== entry.createdAt.getTime()) assertWhen(change.at, clock.now());
+      // The time an entry already has is kept as it is, even if it is further back than a new one may be, and so is its day
+      // (the zone of the profile may have changed since: a change of quantity must not move the line to another day).
+      const sameTime = change.at.getTime() === entry.createdAt.getTime();
+      if (!sameTime) assertWhen(change.at, clock.now());
       return entries.update(entry, {
         grams: change.grams,
         meal: change.meal,
-        day: dayKey(change.at, timezone),
+        day: sameTime ? entry.day : dayKey(change.at, timezone),
         createdAt: change.at,
         macros: scaleMacros(entry.macros, entry.grams, change.grams),
         ...(entry.nutrients && { nutrients: scaleNutrients(entry.nutrients, entry.grams, change.grams) }),

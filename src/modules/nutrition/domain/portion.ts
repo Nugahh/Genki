@@ -14,7 +14,10 @@ export function energySplit(protein: number, carbs: number, fat: number) {
   const kcal = { protein: protein * 4, carbs: carbs * 4, fat: fat * 9 };
   const total = kcal.protein + kcal.carbs + kcal.fat;
   if (total === 0) return undefined;
-  const proteinPct = Math.round((kcal.protein / total) * 100);
-  const carbsPct = Math.round((kcal.carbs / total) * 100);
-  return { proteinPct, carbsPct, fatPct: 100 - proteinPct - carbsPct };
+  // Largest remainder: whole percents that add up to 100 and are never negative.
+  const raw = [kcal.protein, kcal.carbs, kcal.fat].map((k) => (k / total) * 100);
+  const pct = raw.map(Math.floor);
+  const byRemainder = raw.map((r, i) => i).sort((a, b) => raw[b] - pct[b] - (raw[a] - pct[a]));
+  for (let left = 100 - pct.reduce((sum, n) => sum + n, 0), i = 0; left > 0; left--, i++) pct[byRemainder[i]]++;
+  return { proteinPct: pct[0], carbsPct: pct[1], fatPct: pct[2] };
 }

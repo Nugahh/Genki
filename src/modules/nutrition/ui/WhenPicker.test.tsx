@@ -33,23 +33,34 @@ test('says yesterday, then the date', async () => {
 test('the day button asks the picker for a date, within a year back and now, and keeps the answer', async () => {
   const chosen = new Date('2026-10-22T10:30:00Z');
   const { onChange, pickWhen } = await draw(now, jest.fn(async () => chosen));
-  await fireEvent.press(screen.getByLabelText('Choisir le jour'));
-  expect(pickWhen).toHaveBeenCalledWith('date', now, { min: new Date('2025-10-24T10:30:00Z'), max: now });
+  await fireEvent.press(screen.getByLabelText(/^Choisir le jour/));
+  expect(pickWhen).toHaveBeenCalledWith('date', now, { min: new Date('2025-10-24T10:30:00Z'), max: now }, zone);
   expect(onChange).toHaveBeenCalledWith(chosen);
 });
 
 test('the time button asks for a time', async () => {
   const chosen = new Date('2026-10-24T07:15:00Z');
   const { onChange, pickWhen } = await draw(now, jest.fn(async () => chosen));
-  await fireEvent.press(screen.getByLabelText('Choisir l’heure'));
-  expect(pickWhen).toHaveBeenCalledWith('time', now, expect.anything());
+  await fireEvent.press(screen.getByLabelText(/^Choisir l’heure/));
+  expect(pickWhen).toHaveBeenCalledWith('time', now, expect.anything(), zone);
   expect(onChange).toHaveBeenCalledWith(chosen);
 });
 
 test('a picker that is dismissed changes nothing', async () => {
   const { onChange } = await draw(now);
-  await fireEvent.press(screen.getByLabelText('Choisir l’heure'));
+  await fireEvent.press(screen.getByLabelText(/^Choisir l’heure/));
   expect(onChange).not.toHaveBeenCalled();
+});
+
+test('the buttons say their value to a screen reader', async () => {
+  await draw(now);
+  expect(screen.getByLabelText('Choisir le jour, Aujourd’hui')).toBeTruthy();
+  expect(screen.getByLabelText('Choisir l’heure, 12:30')).toBeTruthy();
+});
+
+test('a time more than a year back is said too', async () => {
+  await draw(new Date('2025-10-24T10:29:00Z'));
+  expect(screen.getByText('L’heure choisie remonte à plus d’un an.')).toBeTruthy();
 });
 
 test('a time in the future is said, as an error', async () => {

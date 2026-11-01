@@ -34,6 +34,19 @@ describe('energySplit', () => {
     }
   });
 
+  test('never has a negative share, even when a macro gives no energy and the others end in a half', () => {
+    // 1 g of protein and 7 g of net carbs: 4 kcal and 28 kcal, 12.5 % and 87.5 %.
+    const { proteinPct, carbsPct, fatPct } = energySplit(1, 7, 0)!;
+    expect(fatPct).toBe(0);
+    expect(proteinPct + carbsPct).toBe(100);
+    for (let p = 0; p <= 10; p += 0.5) for (let c = 0; c <= 10; c += 0.5) {
+      if (p + c === 0) continue;
+      const split = energySplit(p, c, 0)!;
+      expect(split.fatPct).toBe(0);
+      expect(split.proteinPct + split.carbsPct).toBe(100);
+    }
+  });
+
   test('has no share when there is no energy', () => {
     expect(energySplit(0, 0, 0)).toBeUndefined();
   });

@@ -1,4 +1,5 @@
 import { act, fireEvent, render, screen, within } from '@testing-library/react-native';
+import { BackHandler } from 'react-native';
 import { PaperProvider } from 'react-native-paper';
 import { theme } from '@/theme';
 import { DEFAULT_PROFILE } from '@/modules/settings';
@@ -161,6 +162,28 @@ test('« Supprimer » removes the line and the totals fall back to zero', async 
 });
 
 describe('the sheet of a line', () => {
+  test('is closed by the back button of the phone, which otherwise is not listened to', async () => {
+    let handler: (() => boolean | null | undefined) | undefined;
+    const remove = jest.fn();
+    const spy = jest.spyOn(BackHandler, 'addEventListener').mockImplementation((_, listener) => {
+      handler = () => listener({} as never);
+      return { remove };
+    });
+    const { meals } = await setup();
+    await lunchOfRice(meals);
+    expect(spy).not.toHaveBeenCalled();
+
+    await openQuantity();
+    expect(spy).toHaveBeenCalledWith('hardwareBackPress', expect.any(Function));
+    await act(async () => {
+      expect(handler!()).toBe(true);
+    });
+    expect(screen.queryByLabelText('Quantité (g)')).toBeNull();
+    expect(screen.getByText('200 g · 700 kcal')).toBeTruthy();
+    expect(remove).toHaveBeenCalled();
+    spy.mockRestore();
+  });
+
   test('does not count the line twice in the goals of its day', async () => {
     const { meals } = await setup();
     await lunchOfRice(meals);
@@ -176,7 +199,7 @@ describe('the sheet of a line', () => {
     pickWhen.mockResolvedValueOnce(new Date('2026-10-23T18:00:00Z'));
     await openQuantity();
     await fireEvent.press(screen.getByText('Dîner'));
-    await fireEvent.press(screen.getByLabelText('Choisir le jour'));
+    await fireEvent.press(screen.getByLabelText(/^Choisir le jour/));
     await fireEvent.press(screen.getByText('Enregistrer'));
 
     expect(entries.entries[0]).toMatchObject({ meal: 'dinner', day: '2026-10-23', createdAt: new Date('2026-10-23T18:00:00Z') });

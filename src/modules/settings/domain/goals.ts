@@ -1,4 +1,4 @@
-import type { ActivityLevel, Goals, Profile, Sex } from './profile';
+import { macroGoals, type ActivityLevel, type Goals, type Profile, type Sex } from './profile';
 
 /** Constants of the domain, not editable from the interface (spec §9, « Garde-fous »). */
 export const GUARDRAILS = {
@@ -22,12 +22,6 @@ export const bmr = (sex: Sex, weightKg: number, heightCm: number, age: number) =
 /** Energy spent in a day: the basal rate times the activity factor. */
 export const dailyEnergy = (profile: Profile, weightKg: number, year: number) =>
   bmr(profile.sex, weightKg, profile.heightCm, year - profile.birthYear) * ACTIVITY_FACTOR[profile.activityLevel];
-
-/** Fat is 30 % of the energy (9 kcal a gram); the net carbs are what is left after the protein (4 kcal a gram). Both to the nearest 5 g. */
-export const macroGoals = (kcal: number, proteinG: number) => ({
-  fatG: roundTo((0.3 * kcal) / 9, 5),
-  carbsNetG: Math.max(0, roundTo((0.7 * kcal - 4 * proteinG) / 4, 5)),
-});
 
 /** The goals proposed for a profile and a weight, with a French note for each guard-rail that bounded them (spec §9). */
 export function proposeGoals(input: { profile: Profile; weightKg: number; year: number }): { goals: Goals; notes: string[] } {

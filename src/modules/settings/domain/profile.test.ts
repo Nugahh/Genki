@@ -1,4 +1,4 @@
-import { DEFAULT_PROFILE, validateProfile, type Profile } from './profile';
+import { DEFAULT_PROFILE, validateProfile, withDefaults, type Profile } from './profile';
 
 test('the default profile is valid, and keeps the weight (the current gauge colours)', () => {
   expect(validateProfile(DEFAULT_PROFILE)).toBeNull();
@@ -37,4 +37,19 @@ test.each<[string, Profile]>([
   ['a weekly loss of 3 kg', { ...DEFAULT_PROFILE, weeklyLossKg: 3 }],
 ])('refuses %s with a message', (_, profile) => {
   expect(validateProfile(profile)).toEqual(expect.stringMatching(/\S/));
+});
+
+describe('withDefaults', () => {
+  test('nothing stored is the default profile', () => {
+    expect(withDefaults({})).toEqual(DEFAULT_PROFILE);
+  });
+
+  test('goals saved before the fat and the net carbs existed get them from the calories and protein that were chosen', () => {
+    // 30 % of 1 800 kcal is 60 g of fat; (70 % of 1 800 - 4 x 130) / 4 is 185 g of net carbs.
+    expect(withDefaults({ goals: { kcal: 1800, proteinG: 130 } as never }).goals).toEqual({ kcal: 1800, proteinG: 130, fatG: 60, carbsNetG: 185, waterMl: 2500, steps: 8000 });
+  });
+
+  test('a fat or net carbs goal that was chosen is kept', () => {
+    expect(withDefaults({ goals: { kcal: 1800, fatG: 40 } as never }).goals).toMatchObject({ kcal: 1800, fatG: 40, carbsNetG: 185 });
+  });
 });
