@@ -3,11 +3,11 @@ import { Button, Surface, Text, useTheme } from 'react-native-paper';
 import type { AppTheme } from '@/theme';
 import type { MetricView } from '../application/trackingUseCases';
 
-type Props = { split: MetricView['split']; onOpenJournal: () => void };
+type Props = { split: MetricView['split']; onOpenJournal: () => void; onOpenMicro: () => void };
 
-/** Where the energy of the period came from, and the way to the journal. */
+/** Where the energy of the period came from, and the way to the micronutrients and to the journal. */
 // shortcut: the journal opens on the current day only; there is no journal of a past day to open.
-export function NutritionExtras({ split, onOpenJournal }: Props) {
+export function NutritionExtras({ split, onOpenJournal, onOpenMicro }: Props) {
   const { colors } = useTheme<AppTheme>();
   const parts = split
     ? [
@@ -39,6 +39,9 @@ export function NutritionExtras({ split, onOpenJournal }: Props) {
           ))}
         </Surface>
       )}
+<Button mode="outlined" icon="leaf" contentStyle={styles.button} onPress={onOpenMicro}>
+        Micronutriments
+      </Button>
       <Button mode="outlined" icon="silverware-fork-knife" contentStyle={styles.button} onPress={onOpenJournal}>
         Ouvrir le journal du jour
       </Button>

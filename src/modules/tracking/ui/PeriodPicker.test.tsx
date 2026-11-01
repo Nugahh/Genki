@@ -32,3 +32,9 @@ test('the chosen period carries the check, the others do not', async () => {
   expect(isChecked('Mois')).toBe(true);
   expect([isChecked('Jour'), isChecked('Semaine'), isChecked('Année')]).toEqual([false, false, false]);
 });
+
+test('can offer fewer periods', async () => {
+  await draw({ periods: ['day', 'week', 'month'] });
+  expect(screen.queryByText('Année')).toBeNull();
+  expect(screen.getAllByText(/^(Jour|Semaine|Mois)$/)).toHaveLength(3);
+});

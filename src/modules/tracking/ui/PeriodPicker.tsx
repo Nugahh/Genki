@@ -10,20 +10,22 @@ type Props = {
   /** The arrows to earlier and later periods; without it only the title shows. */
   onShift?: (step: -1 | 1) => void;
   canGoForward?: boolean;
+  /** The periods offered, in order; all four by default. */
+  periods?: Period[];
 };
 
 // Paper's segment is 40 dp tall: 4 dp of padding above and below the label make the 48 dp target.
 const option = (value: Period, label: string) => ({ value, label, labelStyle: { paddingVertical: 4 }, showSelectedCheck: true });
 const PERIODS = [option('day', 'Jour'), option('week', 'Semaine'), option('month', 'Mois'), option('year', 'Année')];
 // Two rows of two, as in add-food: four in a row leave « Semaine » 6 dp short on a 360 dp phone, and no room for the check.
-const ROWS = [PERIODS.slice(0, 2), PERIODS.slice(2)];
+const rowsOf = (offered: typeof PERIODS) => [offered.slice(0, 2), offered.slice(2)].filter((row) => row.length > 0);
 
 /** Day, week, month or year (shared by every Suivi screen), and which one: with arrows to go back in time. */
-export function PeriodPicker({ period, onPeriod, title, onShift, canGoForward = false }: Props) {
+export function PeriodPicker({ period, onPeriod, title, onShift, canGoForward = false, periods }: Props) {
   return (
     <View style={styles.box}>
       <View style={styles.segments}>
-        {ROWS.map((buttons, i) => (
+        {rowsOf(periods ? PERIODS.filter((p) => periods.includes(p.value)) : PERIODS).map((buttons, i) => (
           <SegmentedButtons key={i} value={period} onValueChange={(value) => onPeriod(value as Period)} buttons={buttons} />
         ))}
       </View>

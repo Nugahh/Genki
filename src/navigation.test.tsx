@@ -326,6 +326,17 @@ test('the Calories and Protéines gauges on Today open their Suivi', async () =>
   expect(screen).toHavePathname('/suivi');
 });
 
+test('the nutrition section opens the micronutrients, and a nutrient opens its curve', async () => {
+  signedInAs({ uid: 'alice' });
+  await renderRouter(undefined, { initialUrl: '/suivi/nutrition?metric=calories' });
+  await fireEvent.press(await screen.findByText('Micronutriments'));
+  expect(screen).toHavePathname('/suivi/micro');
+  expect(await screen.findByText('Ajoute un aliment de la table Ciqual pour voir tes vitamines et minéraux.')).toBeTruthy();
+  await act(async () => router.push({ pathname: '/suivi/[section]', params: { section: 'micro', metric: 'iron' } }));
+  expect(screen).toHaveSearchParams({ section: 'micro', metric: 'iron' });
+  expect(await screen.findByText('Ajoute un aliment de la table Ciqual pour voir ce nutriment.')).toBeTruthy();
+});
+
 test('the Protéines gauge opens the protein curve', async () => {
   signedInAs({ uid: 'alice' });
   await renderRouter();

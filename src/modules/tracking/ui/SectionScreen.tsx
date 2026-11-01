@@ -2,17 +2,17 @@ import { useState, type ReactNode } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { Chip, Icon, Surface, Text, useTheme } from 'react-native-paper';
 import type { UiPrefs } from '@/modules/settings';
-import { dayKey, type Clock } from '@/shared/clock';
-import { useNow } from '@/shared/useNow';
+import type { Clock } from '@/shared/clock';
 import { metricsIn } from '../application/registry';
 import type { MetricView, TrackingUseCases } from '../application/trackingUseCases';
 import type { Goals, MetricDefinition, SectionId } from '../domain/metric';
-import { bucketsFor, periodTitle, rangeOf, shiftAnchor, type Period } from '../domain/period';
+import { periodTitle, type Period } from '../domain/period';
 import { BEFORE, signed } from './changeText';
 import { PeriodPicker } from './PeriodPicker';
 import { SeriesChart } from './SeriesChart';
-import { resolveUi } from './resolveUi';
+import { nutrientPeriod, resolveUi } from './resolveUi';
 import { useMetricView } from './useMetricView';
+import { usePeriodAnchor } from './usePeriodAnchor';
 
 type Props = {
   section: SectionId;
@@ -28,38 +28,33 @@ type Props = {
   renderExtras?: (context: { period: Period; day: string; def: MetricDefinition; view: MetricView | null }) => ReactNode;
 };
 
+// More statistics than that (the nutrients) are chosen from a list, not from chips.
+const MAX_CHIPS = 6;
+const NO_YEAR: Period[] = ['day', 'week', 'month'];
 // A chip is 32 dp tall: 8 dp more above and below make the 48 dp target.
 const HIT_SLOP = { top: 8, bottom: 8 };
 
 /** One section of Suivi: the period and its arrows, the chips of its statistics, the chart with the goal, the summary, the extras of the section. */
 export function SectionScreen({ section, metricId, tracking, goals, ui, onUiChange, clock, timezone, renderExtras }: Props) {
   const { colors } = useTheme();
-  const today = dayKey(useNow(clock), timezone);
-  const { period } = resolveUi(ui);
-  // null is the period in progress: it follows the clock, so that a screen left open overnight moves on to the new day.
-  const [picked, setPicked] = useState<string | null>(null);
-  const anchor = picked ?? today;
+  const preferred = resolveUi(ui).period;
+  const period = section === 'micro' ? nutrientPeriod(preferred) : preferred;
+  const { anchor, title, canGoForward, shift } = usePeriodAnchor(period, clock, timezone);
   const defs = metricsIn(section);
   const [selected, setSelected] = useState(metricId);
   const def = defs.find((d) => d.id === selected) ?? defs[0];
   const { view, failed } = useMetricView(tracking, def, goals, period, anchor);
 
-  const canGoForward = rangeOf(bucketsFor(period, shiftAnchor(period, anchor, 1))).from <= today;
   const hasData = view?.points.some((p) => p.value !== undefined) ?? false;
   const { summary } = view ?? {};
   // A week with only today in it has no finished day to sum up yet.
   const showSummary = period === 'day' || (summary?.daysCounted ?? 0) > 0;
-  const title = periodTitle(period, anchor);
-  const shift = (step: -1 | 1) => {
-    const next = shiftAnchor(period, anchor, step);
-    setPicked(rangeOf(bucketsFor(period, next)).to >= today ? null : next);
-  };
 
   return (
     <ScrollView contentContainerStyle={styles.content}>
-      <PeriodPicker period={period} onPeriod={(next) => onUiChange({ period: next })} title={title} onShift={shift} canGoForward={canGoForward} />
+      <PeriodPicker period={period} onPeriod={(next) => onUiChange({ period: next })} title={title} onShift={shift} canGoForward={canGoForward} periods={section === 'micro' ? NO_YEAR : undefined} />
 
-      {defs.length > 1 && (
+      {defs.length > 1 && defs.length <= MAX_CHIPS && (
         <View style={styles.chips}>
           {defs.map((d) => (
             <Chip key={d.id} hitSlop={HIT_SLOP} selected={d.id === def.id} onPress={() => setSelected(d.id)}>
@@ -87,6 +82,11 @@ export function SectionScreen({ section, metricId, tracking, goals, ui, onUiChan
           <Surface mode="flat" elevation={1} style={styles.card}>
             <SeriesChart def={def} points={view.points} goal={view.goal} title={title} />
           </Surface>
+          {view.incomplete && (
+            <Text variant="bodyMedium" accessibilityLiveRegion="polite" style={{ color: colors.onSurfaceVariant }}>
+              Valeur partielle : au moins un aliment de la période n’a pas ce nutriment dans sa table, le vrai total est plus haut.
+            </Text>
+          )}
 
           {showSummary && (
             <Surface mode="flat" elevation={1} style={styles.card} testID="summary">

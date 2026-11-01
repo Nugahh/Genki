@@ -5,7 +5,7 @@ import { WaterDay } from '@/modules/hydration';
 import { StepsExtras } from '@/modules/steps';
 import { TobaccoExtras } from '@/modules/tobacco';
 import { useUiPrefs } from '@/modules/settings';
-import { goalsOf, NutritionExtras, sectionById, SectionScreen, TrainingExtras } from '@/modules/tracking';
+import { goalsOf, MicronutrientsScreen, NutritionExtras, sectionById, SectionScreen, TrainingExtras } from '@/modules/tracking';
 import { useNextSession } from '@/modules/training';
 import type { Period } from '@/modules/tracking';
 
@@ -27,27 +27,39 @@ export default function SuiviSection() {
   return (
     <>
       <Stack.Screen options={{ title: info.label }} />
-      <SectionScreen
-        // A new statistic asked for (from Today) starts a new screen: the chip chosen before must not win.
-        key={`${info.id}-${metric}`}
-        section={info.id}
-        metricId={metric}
-        tracking={app.tracking}
-        goals={goalsOf(profile)}
-        ui={ui}
-        onUiChange={changeUi}
-        clock={app.clock}
-        timezone={app.profile.timezone}
-        renderExtras={({ period, day, view }) => {
-          if (info.id === 'nutrition') return <NutritionExtras split={view?.split} onOpenJournal={() => router.navigate('/repas')} />;
-          if (info.id === 'activite') return <StepsExtras outcome={stepsSync.outcome} timezone={profile.timezone} onSync={() => void stepsSync.sync()} onOpenSettings={() => router.push('/settings/steps')} />;
-          if (info.id === 'corps') return <BodyExtras body={app.body} clock={app.clock} timezone={app.profile.timezone} run={run} />;
-          if (info.id === 'tabac') return <TobaccoExtras tobacco={app.tobacco} profile={profile} clock={app.clock} timezone={profile.timezone} day={day} isDay={period === 'day'} run={run} onOpenSettings={() => router.push('/settings/tobacco')} />;
-          if (info.id === 'eau') return period === 'day' ? <WaterDay hydration={app.hydration} day={day} timezone={app.profile.timezone} run={run} /> : null;
-          if (info.id === 'entrainement') return <TrainingSection period={period} day={day} />;
-          return null;
-        }}
-      />
+      {info.id === 'micro' && !metric ? (
+        <MicronutrientsScreen
+          tracking={app.tracking}
+          goals={goalsOf(profile)}
+          ui={ui}
+          onUiChange={changeUi}
+          clock={app.clock}
+          timezone={app.profile.timezone}
+          onOpen={(id) => router.push({ pathname: '/suivi/[section]', params: { section: 'micro', metric: id } })}
+        />
+      ) : (
+        <SectionScreen
+          // A new statistic asked for (from Today) starts a new screen: the chip chosen before must not win.
+          key={`${info.id}-${metric}`}
+          section={info.id}
+          metricId={metric}
+          tracking={app.tracking}
+          goals={goalsOf(profile)}
+          ui={ui}
+          onUiChange={changeUi}
+          clock={app.clock}
+          timezone={app.profile.timezone}
+          renderExtras={({ period, day, view }) => {
+            if (info.id === 'nutrition') return <NutritionExtras split={view?.split} onOpenJournal={() => router.navigate('/repas')} onOpenMicro={() => router.push({ pathname: '/suivi/[section]', params: { section: 'micro' } })} />;
+            if (info.id === 'activite') return <StepsExtras outcome={stepsSync.outcome} timezone={profile.timezone} onSync={() => void stepsSync.sync()} onOpenSettings={() => router.push('/settings/steps')} />;
+            if (info.id === 'corps') return <BodyExtras body={app.body} clock={app.clock} timezone={app.profile.timezone} run={run} />;
+            if (info.id === 'tabac') return <TobaccoExtras tobacco={app.tobacco} profile={profile} clock={app.clock} timezone={profile.timezone} day={day} isDay={period === 'day'} run={run} onOpenSettings={() => router.push('/settings/tobacco')} />;
+            if (info.id === 'eau') return period === 'day' ? <WaterDay hydration={app.hydration} day={day} timezone={app.profile.timezone} run={run} /> : null;
+            if (info.id === 'entrainement') return <TrainingSection period={period} day={day} />;
+            return null;
+          }}
+        />
+      )}
     </>
   );
 }

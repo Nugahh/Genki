@@ -13,7 +13,7 @@ const draw = (ui: React.ReactElement) => render(<PaperProvider theme={theme}>{ui
 describe('NutritionExtras', () => {
   test('shares the energy between protein, carbs and fat, and opens the journal', async () => {
     const onOpenJournal = jest.fn();
-    await draw(<NutritionExtras split={{ proteinPct: 24, carbsPct: 48, fatPct: 27 }} onOpenJournal={onOpenJournal} />);
+    await draw(<NutritionExtras split={{ proteinPct: 24, carbsPct: 48, fatPct: 27 }} onOpenJournal={onOpenJournal} onOpenMicro={() => {}} />);
     expect(screen.getByText('Protéines')).toBeTruthy();
     expect(screen.getByText('24 %')).toBeTruthy();
     expect(screen.getByText('48 %')).toBeTruthy();
@@ -22,8 +22,15 @@ describe('NutritionExtras', () => {
     expect(onOpenJournal).toHaveBeenCalled();
   });
 
+  test('opens the micronutrients', async () => {
+    const onOpenMicro = jest.fn();
+    await draw(<NutritionExtras split={undefined} onOpenJournal={() => {}} onOpenMicro={onOpenMicro} />);
+    await fireEvent.press(screen.getByText('Micronutriments'));
+    expect(onOpenMicro).toHaveBeenCalled();
+  });
+
   test('still opens the journal when no macros were recorded', async () => {
-    await draw(<NutritionExtras split={undefined} onOpenJournal={() => {}} />);
+    await draw(<NutritionExtras split={undefined} onOpenJournal={() => {}} onOpenMicro={() => {}} />);
     expect(screen.queryByText('Répartition de l’énergie')).toBeNull();
     expect(screen.getByText('Ouvrir le journal du jour')).toBeTruthy();
   });

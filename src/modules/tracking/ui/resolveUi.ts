@@ -7,3 +7,6 @@ import type { Period } from '../domain/period';
 export function resolveUi(ui: UiPrefs): { hubMetrics: string[]; period: Period } {
   return { hubMetrics: (ui.hubMetrics ?? DEFAULT_HUB).filter((id) => findMetric(id)), period: ui.period ?? 'week' };
 }
+
+/** The nutrients have no year view (it would read some two thousand meals): the month stands in for a year chosen elsewhere. */
+export const nutrientPeriod = (period: Period): Period => (period === 'year' ? 'month' : period);

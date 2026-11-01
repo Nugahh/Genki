@@ -3,6 +3,7 @@ export { trackingUseCases, type MetricView, type TrackingUseCases } from './appl
 export { sectionById } from './domain/metrics';
 export { goalsOf } from './ui/goalsOf';
 export { NutritionExtras } from './ui/NutritionExtras';
+export { MicronutrientsScreen } from './ui/MicronutrientsScreen';
 export { SectionScreen } from './ui/SectionScreen';
 export { SuiviHub } from './ui/SuiviHub';
 export { TrainingExtras } from './ui/TrainingExtras';

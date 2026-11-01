@@ -20,8 +20,8 @@ const WEEK_FACTS: Record<string, DayFacts> = {
   '2026-10-28': { kcal: 2600, proteinG: 90 },
 };
 
-async function setup(props: { section?: SectionId; metricId?: string; ui?: UiPrefs; facts?: Record<string, DayFacts>; renderExtras?: React.ComponentProps<typeof SectionScreen>['renderExtras'] } = {}) {
-  const tracking = trackingUseCases({ sources: { days: inMemoryFactsSource(props.facts ?? WEEK_FACTS), training: inMemoryFactsSource(), tobacco: inMemoryFactsSource(), meals: inMemoryFactsSource() }, clock, timezone: 'Europe/Paris' });
+async function setup(props: { section?: SectionId; metricId?: string; ui?: UiPrefs; facts?: Record<string, DayFacts>; meals?: Record<string, DayFacts>; goals?: typeof goals; renderExtras?: React.ComponentProps<typeof SectionScreen>['renderExtras'] } = {}) {
+  const tracking = trackingUseCases({ sources: { days: inMemoryFactsSource(props.facts ?? WEEK_FACTS), training: inMemoryFactsSource(), tobacco: inMemoryFactsSource(), meals: inMemoryFactsSource(props.meals) }, clock, timezone: 'Europe/Paris' });
   const onUiChange = jest.fn();
   await render(
     <PaperProvider theme={theme}>
@@ -29,7 +29,7 @@ async function setup(props: { section?: SectionId; metricId?: string; ui?: UiPre
         section={props.section ?? 'nutrition'}
         metricId={props.metricId}
         tracking={tracking}
-        goals={goals}
+        goals={props.goals ?? goals}
         ui={props.ui ?? {}}
         onUiChange={onUiChange}
         clock={clock}
@@ -165,5 +165,35 @@ describe('the month', () => {
     expect(screen.getByLabelText('Période suivante')).toBeEnabled();
     await fireEvent.press(screen.getByLabelText('Période suivante'));
     expect(screen.getByText('octobre 2026')).toBeTruthy();
+  });
+});
+
+describe('a nutrient', () => {
+  const meals: Record<string, DayFacts> = {
+    '2026-10-26': { nutrients: { iron: 11 }, incomplete: [] },
+    '2026-10-27': { nutrients: { iron: 5.5 }, incomplete: ['iron'] },
+  };
+  const withIron = { ...goals, nutrients: { iron: 11 } };
+
+  test('is charted against its reference, with no chips to flip between 26 nutrients', async () => {
+    await setup({ section: 'micro', metricId: 'iron', meals, goals: withIron });
+    expect(chartLabel()).toMatch(/^Fer, Semaine du 26 oct\. au 1 nov\. : /);
+    expect(screen.queryByText('Vitamine C')).toBeNull();
+  });
+
+  test('says when some of its values are minimums', async () => {
+    await setup({ section: 'micro', metricId: 'iron', meals, goals: withIron });
+    expect(screen.getByText(/^Valeur partielle/)).toBeTruthy();
+  });
+
+  test('says nothing of the sort when every meal had it', async () => {
+    await setup({ section: 'micro', metricId: 'iron', meals: { '2026-10-26': meals['2026-10-26'] }, goals: withIron });
+    expect(screen.queryByText(/^Valeur partielle/)).toBeNull();
+  });
+
+  test('has no year: the month stands in', async () => {
+    await setup({ section: 'micro', metricId: 'iron', meals, goals: withIron, ui: { period: 'year' } });
+    expect(screen.queryByText('Année')).toBeNull();
+    expect(chartLabel()).toMatch(/^Fer, octobre 2026 : /);
   });
 });
