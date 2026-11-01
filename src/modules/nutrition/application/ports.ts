@@ -1,3 +1,4 @@
+import type { OffProduct } from '../domain/openFoodFacts';
 import type { EntryChange, FavoriteMeal, Food, FoodEntry, FoodInput, NewFavoriteMeal, NewFoodEntry } from '../domain/food';
 
 type Observe<T> = (onNext: (value: T) => void, onError: (error: Error) => void) => () => void;
@@ -37,6 +38,13 @@ export interface FoodEntryRepository {
    * deleted ones are filtered after the limit; a server-side filter would need a composite index.
    */
   observeRecent(limit: number, onNext: (entries: FoodEntry[]) => void, onError: (error: Error) => void): () => void;
+}
+
+/** Open Food Facts: the products of brands. Both reads stop with the signal. */
+export interface ProductSource {
+  search(query: string, signal: AbortSignal): Promise<OffProduct[]>;
+  /** The product with this barcode; nothing when Open Food Facts does not know it. */
+  byBarcode(code: string, signal: AbortSignal): Promise<OffProduct | undefined>;
 }
 
 export interface FavoriteMealRepository {

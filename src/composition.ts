@@ -1,10 +1,12 @@
 import { firestoreWaterRepository } from '@/modules/hydration/adapters/firestoreWaterRepository';
 import { waterUseCases } from '@/modules/hydration';
 import { ciqualCatalog } from '@/modules/nutrition/adapters/ciqualCatalog';
+import { openFoodFactsClient } from '@/modules/nutrition/adapters/openFoodFactsClient';
 import { firestoreFavoriteMealRepository } from '@/modules/nutrition/adapters/firestoreFavoriteMealRepository';
 import { firestoreFoodEntryRepository } from '@/modules/nutrition/adapters/firestoreFoodEntryRepository';
 import { firestoreFoodRepository } from '@/modules/nutrition/adapters/firestoreFoodRepository';
-import { foodUseCases, mealUseCases } from '@/modules/nutrition';
+import { foodUseCases, mealUseCases, productSearch } from '@/modules/nutrition';
+import { rateLimiter } from '@/modules/nutrition/domain/rateLimiter';
 import { firestoreMilestoneRepository } from '@/modules/training/adapters/firestoreMilestoneRepository';
 import { firestorePlanRepository } from '@/modules/training/adapters/firestorePlanRepository';
 import { firestoreWorkoutRepository } from '@/modules/training/adapters/firestoreWorkoutRepository';
@@ -63,6 +65,8 @@ export function compose(uid: string) {
     nutrition: {
       meals,
       foods: foodUseCases({ catalog: ciqualCatalog(openCiqual), repo: firestoreFoodRepository(db, uid) }),
+      // Open Food Facts allows 10 searches a minute.
+      products: productSearch({ source: openFoodFactsClient(), limiter: rateLimiter(10, 60000, Date.now) }),
     },
   };
 }

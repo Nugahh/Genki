@@ -2,7 +2,9 @@ export { inMemoryFavoriteMealRepository } from './adapters/inMemoryFavoriteMealR
 export { inMemoryFoodCatalog } from './adapters/inMemoryFoodCatalog';
 export { inMemoryFoodEntryRepository } from './adapters/inMemoryFoodEntryRepository';
 export { inMemoryFoodRepository } from './adapters/inMemoryFoodRepository';
+export { inMemoryProductSource } from './adapters/inMemoryProductSource';
 export { foodUseCases, type FoodUseCases } from './application/foodUseCases';
+export { productSearch, type Lookup, type ProductSearch } from './application/productSearch';
 export { referencesOf } from './application/referencesOf';
 export { mealUseCases, type MealUseCases } from './application/mealUseCases';
 export type { Food, FoodEntry } from './domain/food';
