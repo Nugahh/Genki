@@ -120,3 +120,34 @@ test('the latest entries come newest first, whatever the order they were added i
   await entriesOn(db).add(entry({ foodName: 'Riz', createdAt: new Date('2026-10-24T10:00:00Z') }));
   expect((await recent(db, 2)).map((e) => e.foodName)).toEqual(['Pain', 'Pâtes']);
 });
+
+describe('nutrients', () => {
+  const iron = { iron: 1.94, vitC: 0 };
+  const between = (db: Firestore, from: string, to: string) => firstOf((next, fail) => entriesOn(db).observeRange(from, to, next, fail));
+
+  test('an entry keeps the nutrients of its portion, and a change of quantity rewrites them', async () => {
+    const db = phone();
+    await entriesOn(db).add(entry({ nutrients: iron }));
+    const [added] = await journal(db);
+    expect(added.nutrients).toEqual(iron);
+    await entriesOn(db).updateGrams(added, 200, double, { iron: 3.88, vitC: 0 });
+    expect((await journal(db))[0]).toMatchObject({ grams: 200, nutrients: { iron: 3.88, vitC: 0 } });
+  });
+
+  test('an entry without nutrients is added, read and rescaled without a nutrients field', async () => {
+    const db = phone();
+    await entriesOn(db).add(entry());
+    const [added] = await journal(db);
+    expect(added.nutrients).toBeUndefined();
+    await entriesOn(db).updateGrams(added, 200, double);
+    expect((await journal(db))[0].nutrients).toBeUndefined();
+  });
+
+  test('the range lists the live entries of the days from one date to the other, both included', async () => {
+    const db = phone();
+    for (const day of ['2026-10-22', '2026-10-23', '2026-10-24', '2026-10-25']) await entriesOn(db).add(entry({ day, foodName: day }));
+    const [gone] = (await between(db, '2026-10-24', '2026-10-24'));
+    await entriesOn(db).remove(gone);
+    expect((await between(db, '2026-10-23', '2026-10-25')).map((e) => e.foodName).sort()).toEqual(['2026-10-23', '2026-10-25']);
+  });
+});

@@ -20,6 +20,8 @@ export type FoodEntry = {
   grams: number;
   /** Frozen when the entry was logged (spec §4 rule 5). */
   macros: Macros;
+  /** The nutrients of the portion, frozen with the macros; none for a custom food or an entry from before they existed. */
+  nutrients?: Nutrients;
   createdAt: Date;
 };
 export type NewFoodEntry = Omit<FoodEntry, 'id'>;

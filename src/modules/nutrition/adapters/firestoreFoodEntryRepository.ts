@@ -5,6 +5,7 @@ import {
 import type { FoodEntryRepository } from '../application/ports';
 import type { FoodEntry } from '../domain/food';
 import { subtractMacros, ZERO_MACROS, type Macros } from '../domain/macros';
+import type { Nutrients } from '../domain/nutrients';
 
 /** Entries in `users/{uid}/foodEntries`; each write moves `days/{day}` in the same batch (spec §4). */
 export function firestoreFoodEntryRepository(db: Firestore, uid: string): FoodEntryRepository {
@@ -20,7 +21,12 @@ export function firestoreFoodEntryRepository(db: Firestore, uid: string): FoodEn
 
   const toEntry = (d: QueryDocumentSnapshot): FoodEntry => {
     const data = d.data();
-    return { id: d.id, day: data.day, meal: data.meal, foodRef: data.foodRef, foodName: data.foodName, grams: data.grams, macros: data.macros, createdAt: data.createdAt.toDate() };
+    return {
+      id: d.id, day: data.day, meal: data.meal, foodRef: data.foodRef, foodName: data.foodName, grams: data.grams, macros: data.macros,
+      // The SDK refuses an undefined field: an entry without nutrients has no such field at all.
+      ...(data.nutrients && { nutrients: data.nutrients }),
+      createdAt: data.createdAt.toDate(),
+    };
   };
   const live = (docs: QueryDocumentSnapshot[]) => docs.filter((d) => d.data().deletedAt === null).map(toEntry);
 
@@ -30,15 +36,15 @@ export function firestoreFoodEntryRepository(db: Firestore, uid: string): FoodEn
       const at = Timestamp.fromDate(entry.createdAt);
       batch.set(doc(entries), {
         day: entry.day, meal: entry.meal, foodRef: entry.foodRef, foodName: entry.foodName,
-        grams: entry.grams, macros: entry.macros, createdAt: at, updatedAt: at, deletedAt: null,
+        grams: entry.grams, macros: entry.macros, ...(entry.nutrients && { nutrients: entry.nutrients }), createdAt: at, updatedAt: at, deletedAt: null,
       });
       // Rounded like the other two writes, so that adding then removing an entry always nets to zero.
       moveDayTotals(batch, entry.day, subtractMacros(entry.macros, ZERO_MACROS));
       return batch.commit();
     },
-    updateGrams(entry, grams, macros) {
+    updateGrams(entry, grams, macros, nutrients?: Nutrients) {
       const batch = writeBatch(db);
-      batch.update(doc(entries, entry.id), { grams, macros, updatedAt: Timestamp.now() });
+      batch.update(doc(entries, entry.id), { grams, macros, ...(nutrients && { nutrients }), updatedAt: Timestamp.now() });
       moveDayTotals(batch, entry.day, subtractMacros(macros, entry.macros));
       return batch.commit();
     },
@@ -51,6 +57,10 @@ export function firestoreFoodEntryRepository(db: Firestore, uid: string): FoodEn
     },
     observeDay(day, onNext, onError) {
       return onSnapshot(query(entries, where('day', '==', day)), (snapshot) => onNext(live(snapshot.docs)), onError);
+    },
+    observeRange(from, to, onNext, onError) {
+      // Two bounds on one field need no composite index; deleted entries are dropped here, as for the day.
+      return onSnapshot(query(entries, where('day', '>=', from), where('day', '<=', to)), (snapshot) => onNext(live(snapshot.docs)), onError);
     },
     observeRecent(max, onNext, onError) {
       return onSnapshot(query(entries, orderBy('createdAt', 'desc'), limit(max)), (snapshot) => onNext(live(snapshot.docs)), onError);

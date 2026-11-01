@@ -33,6 +33,41 @@ service cloud.firestore {
         && m.fat is number && m.fat >= 0 && m.fat <= 5000;
     }
 
+    // Nutrients of an entry's portion: any of the 26 of the catalogue (nutrition/domain/nutrients.ts), each a number from 0 to 1 000 000.
+    function nutrientOk(n, k) {
+      return !(k in n) || (n[k] is number && n[k] >= 0 && n[k] <= 1000000);
+    }
+    function isEntryNutrients(n) {
+      return n is map
+        && n.keys().hasOnly(['vitA', 'vitD', 'vitE', 'vitK', 'vitC', 'vitB1', 'vitB2', 'vitB3', 'vitB5', 'vitB6', 'vitB9', 'vitB12', 'calcium', 'iron', 'magnesium', 'potassium', 'zinc', 'selenium', 'iodine', 'phosphorus', 'copper', 'manganese', 'fiber', 'salt', 'saturatedFat', 'sugars'])
+        && nutrientOk(n, 'vitA')
+        && nutrientOk(n, 'vitD')
+        && nutrientOk(n, 'vitE')
+        && nutrientOk(n, 'vitK')
+        && nutrientOk(n, 'vitC')
+        && nutrientOk(n, 'vitB1')
+        && nutrientOk(n, 'vitB2')
+        && nutrientOk(n, 'vitB3')
+        && nutrientOk(n, 'vitB5')
+        && nutrientOk(n, 'vitB6')
+        && nutrientOk(n, 'vitB9')
+        && nutrientOk(n, 'vitB12')
+        && nutrientOk(n, 'calcium')
+        && nutrientOk(n, 'iron')
+        && nutrientOk(n, 'magnesium')
+        && nutrientOk(n, 'potassium')
+        && nutrientOk(n, 'zinc')
+        && nutrientOk(n, 'selenium')
+        && nutrientOk(n, 'iodine')
+        && nutrientOk(n, 'phosphorus')
+        && nutrientOk(n, 'copper')
+        && nutrientOk(n, 'manganese')
+        && nutrientOk(n, 'fiber')
+        && nutrientOk(n, 'salt')
+        && nutrientOk(n, 'saturatedFat')
+        && nutrientOk(n, 'sugars');
+    }
+
     function isGrams(value) {
       return value is number && value > 0 && value <= 5000;
     }
@@ -163,13 +198,14 @@ service cloud.firestore {
 
     match /users/{uid}/foodEntries/{entryId} {
       allow create: if isOwner(uid)
-        && request.resource.data.keys().hasOnly(['day', 'meal', 'foodRef', 'foodName', 'grams', 'macros', 'createdAt', 'updatedAt', 'deletedAt'])
+        && request.resource.data.keys().hasOnly(['day', 'meal', 'foodRef', 'foodName', 'grams', 'macros', 'nutrients', 'createdAt', 'updatedAt', 'deletedAt'])
         && isDayKey(request.resource.data.day)
         && request.resource.data.meal in ['breakfast', 'lunch', 'dinner', 'snack']
         && isFoodRef(request.resource.data.foodRef)
         && isShortText(request.resource.data.foodName, 200)
         && isGrams(request.resource.data.grams)
         && isEntryMacros(request.resource.data.macros)
+        && (!('nutrients' in request.resource.data) || isEntryNutrients(request.resource.data.nutrients))
         && request.resource.data.createdAt is timestamp
         && request.resource.data.updatedAt is timestamp
         && request.resource.data.deletedAt == null;
@@ -179,9 +215,10 @@ service cloud.firestore {
         && (
           (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['deletedAt'])
             && request.resource.data.deletedAt is timestamp)
-          || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['grams', 'macros', 'updatedAt'])
+          || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['grams', 'macros', 'nutrients', 'updatedAt'])
             && isGrams(request.resource.data.grams)
             && isEntryMacros(request.resource.data.macros)
+            && (!('nutrients' in request.resource.data) || isEntryNutrients(request.resource.data.nutrients))
             && request.resource.data.updatedAt is timestamp)
         );
     }

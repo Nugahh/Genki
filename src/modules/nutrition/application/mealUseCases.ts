@@ -1,6 +1,7 @@
 import { dayKey, type Clock } from '@/shared/clock';
 import { isValidGrams, type FavoriteMeal, type Food, type FoodEntry, type FoodRef, type RecentFood } from '../domain/food';
 import { macrosFor, scaleMacros } from '../domain/macros';
+import { nutrientsFor, scaleNutrients } from '../domain/nutrients';
 import type { Meal } from '../domain/meal';
 import type { FavoriteMealRepository, FoodEntryRepository } from './ports';
 
@@ -18,17 +19,21 @@ export function mealUseCases(deps: { entries: FoodEntryRepository; favorites: Fa
 
   // Writes are never awaited one after the other: offline, a write only settles once the server has it.
   // `offsetMs` keeps the entries of one favorite in order: same day, creation times 1 ms apart.
-  const log = (meal: Meal, food: Pick<Food, 'ref' | 'name' | 'per100g'>, grams: number, now: Date, offsetMs = 0) =>
-    entries.add({ day: dayKey(now, timezone), meal, foodRef: food.ref, foodName: food.name, grams, macros: macrosFor(food.per100g, grams), createdAt: new Date(now.getTime() + offsetMs) });
+  const log = (meal: Meal, food: Pick<Food, 'ref' | 'name' | 'per100g' | 'nutrients'>, grams: number, now: Date, offsetMs = 0) =>
+    entries.add({
+      day: dayKey(now, timezone), meal, foodRef: food.ref, foodName: food.name, grams, macros: macrosFor(food.per100g, grams),
+      ...(food.nutrients && { nutrients: nutrientsFor(food.nutrients, grams) }),
+      createdAt: new Date(now.getTime() + offsetMs),
+    });
 
   return {
-    async logFood(meal: Meal, food: Pick<Food, 'ref' | 'name' | 'per100g'>, grams: number) {
+    async logFood(meal: Meal, food: Pick<Food, 'ref' | 'name' | 'per100g' | 'nutrients'>, grams: number) {
       assertGrams(grams);
       return log(meal, food, grams, clock.now());
     },
     async changeGrams(entry: FoodEntry, grams: number) {
       assertGrams(grams);
-      return entries.updateGrams(entry, grams, scaleMacros(entry.macros, entry.grams, grams));
+      return entries.updateGrams(entry, grams, scaleMacros(entry.macros, entry.grams, grams), entry.nutrients && scaleNutrients(entry.nutrients, entry.grams, grams));
     },
     async removeEntry(entry: FoodEntry) {
       return entries.remove(entry);
@@ -36,6 +41,10 @@ export function mealUseCases(deps: { entries: FoodEntryRepository; favorites: Fa
     /** The day's entries, oldest first. */
     observeDay(day: string, onNext: (list: FoodEntry[]) => void, onError: (error: Error) => void) {
       return entries.observeDay(day, (list) => onNext([...list].sort(oldestFirst)), onError);
+    },
+    /** The entries of the days `from` to `to` (inclusive), live, in no particular order. */
+    observeBetween(from: string, to: string, onNext: (list: FoodEntry[]) => void, onError: (error: Error) => void) {
+      return entries.observeRange(from, to, onNext, onError);
     },
     /** The distinct foods of the latest entries (the port lists them newest first), each with its last quantity. */
     observeRecent(onNext: (recents: RecentFood[]) => void, onError: (error: Error) => void) {

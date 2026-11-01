@@ -248,6 +248,29 @@ describe('foodEntries', () => {
     await assertFails(updateDoc(ref, { grams: 100, macros, updatedAt: Timestamp.now() }));
   });
 
+  test('an entry may carry the nutrients of its portion', async () => {
+    await assertSucceeds(setDoc(doc(db('alice'), 'users/alice/foodEntries/e1'), { ...foodEntry(), nutrients: { iron: 1.9, vitD: 0, fiber: 1000000 } }));
+    await assertSucceeds(setDoc(doc(db('alice'), 'users/alice/foodEntries/e2'), { ...foodEntry(), nutrients: {} }));
+  });
+
+  test.each<[string, object]>([
+    ['a nutrient is unknown', { nutrients: { vitamin: 1 } }],
+    ['a nutrient is negative', { nutrients: { iron: -0.1 } }],
+    ['a nutrient is above 1 000 000', { nutrients: { iron: 1000001 } }],
+    ['a nutrient is not a number', { nutrients: { iron: '2' } }],
+    ['nutrients is not a map', { nutrients: 5 }],
+  ])('rejects an entry when %s', async (_, override) => {
+    await assertFails(setDoc(doc(db('alice'), 'users/alice/foodEntries/e1'), { ...foodEntry(), ...override }));
+  });
+
+  test('a change of quantity may rewrite the nutrients, within the same bounds', async () => {
+    await seed('users/alice/foodEntries/e1', { ...foodEntry(), nutrients: { iron: 1 } });
+    const ref = doc(db('alice'), 'users/alice/foodEntries/e1');
+    await assertFails(updateDoc(ref, { grams: 200, macros, nutrients: { iron: -2 }, updatedAt: Timestamp.now() }));
+    await assertFails(updateDoc(ref, { grams: 200, macros, nutrients: { calcium: 'x' }, updatedAt: Timestamp.now() }));
+    await assertSucceeds(updateDoc(ref, { grams: 200, macros: { ...macros, kcal: 700 }, nutrients: { iron: 2 }, updatedAt: Timestamp.now() }));
+  });
+
   test('another user cannot update an entry', async () => {
     await seed('users/alice/foodEntries/e1', foodEntry());
     await assertFails(updateDoc(doc(db('bob'), 'users/alice/foodEntries/e1'), { deletedAt: Timestamp.now() }));

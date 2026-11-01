@@ -4,7 +4,9 @@ export { inMemoryFoodEntryRepository } from './adapters/inMemoryFoodEntryReposit
 export { inMemoryFoodRepository } from './adapters/inMemoryFoodRepository';
 export { foodUseCases, type FoodUseCases } from './application/foodUseCases';
 export { mealUseCases, type MealUseCases } from './application/mealUseCases';
-export type { Food } from './domain/food';
+export type { Food, FoodEntry } from './domain/food';
+export { NUTRIENTS, nutrientsFor, sumNutrients, type NutrientId, type NutrientInfo, type Nutrients } from './domain/nutrients';
+export { referencesFor } from './domain/references';
 export { defaultMeal, MEALS, type Meal } from './domain/meal';
 export { AddFoodScreen } from './ui/AddFoodScreen';
 export { MealsScreen } from './ui/MealsScreen';

@@ -190,3 +190,50 @@ test('saveFavorite rejects a blank name and a list of 0 or more than 50 foods', 
   await meals.saveFavorite('Limite', Array(50).fill(entry)); // the bound itself is allowed
   expect(saved).toBe(1);
 });
+
+describe('nutrients', () => {
+  const orange: Food = {
+    ref: { type: 'ciqual', id: '13014' }, name: 'Orange, pulpe, crue', state: 'raw',
+    per100g: { kcal: 45, protein: 0.9, carbs: 9, fat: 0.2 }, portions: [], nutrients: { vitC: 50, fiber: 1.8 },
+  };
+
+  test('logFood freezes the nutrients of the quantity', async () => {
+    const { entries, meals } = setup();
+    await meals.logFood('snack', orange, 200);
+    expect(latest(entries).nutrients).toEqual({ vitC: 100, fiber: 3.6 });
+  });
+
+  test('a food with no nutrients gives an entry with none', async () => {
+    const { entries, meals } = setup();
+    await meals.logFood('lunch', egg, 120);
+    expect(latest(entries)).not.toHaveProperty('nutrients');
+  });
+
+  test('changeGrams rescales them from the frozen values of the entry', async () => {
+    const { entries, meals } = setup();
+    await meals.logFood('snack', orange, 200);
+    await meals.changeGrams(latest(entries), 100);
+    expect(latest(entries).nutrients).toEqual({ vitC: 50, fiber: 1.8 });
+    await meals.logFood('lunch', egg, 100);
+    await meals.changeGrams(latest(entries), 50);
+    expect(latest(entries)).not.toHaveProperty('nutrients');
+  });
+
+  test('a favorite logs the nutrients of the foods it resolves to', async () => {
+    const { entries, meals } = setup();
+    const favorite = { id: 'f1', name: 'Goûter', items: [{ foodRef: orange.ref, foodName: orange.name, grams: 150 }] };
+    await meals.logFavorite(favorite, 'snack', async () => orange);
+    expect(latest(entries).nutrients).toEqual({ vitC: 75, fiber: 2.7 });
+  });
+
+  test('observeBetween lists the entries of the days from one date to another', async () => {
+    const { meals } = setup();
+    await meals.logFood('lunch', orange, 100); // 2026-10-24
+    const seen: number[] = [];
+    const stop = meals.observeBetween('2026-10-24', '2026-10-30', (list) => seen.push(list.length), () => {});
+    const outside: number[] = [];
+    meals.observeBetween('2026-10-25', '2026-10-30', (list) => outside.push(list.length), () => {})();
+    stop();
+    expect([seen, outside]).toEqual([[1], [0]]);
+  });
+});
