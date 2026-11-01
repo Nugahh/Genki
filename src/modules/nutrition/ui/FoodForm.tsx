@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { Button, HelperText, IconButton, SegmentedButtons, TextInput } from 'react-native-paper';
+import { Button, HelperText, IconButton, SegmentedButtons, Text, TextInput } from 'react-native-paper';
 import { validateFood, type FoodInput, type FoodState } from '../domain/food';
 import { asText, parseNumber } from './format';
 
@@ -29,12 +29,14 @@ const draftOf = ({ name, state, per100g: p, portions }: FoodInput): Draft => ({
 type Props = {
   /** The food being changed; a new one when omitted. */
   initial?: FoodInput;
+  /** The barcode of a new food, when it comes from a scan. */
+  barcode?: string;
   submitLabel: string;
   onSubmit: (food: FoodInput) => void;
 };
 
 /** Creates or changes a custom food. « Enregistrer » is active once the rules accept the food; otherwise their message shows. */
-export function FoodForm({ initial, submitLabel, onSubmit }: Props) {
+export function FoodForm({ initial, barcode, submitLabel, onSubmit }: Props) {
   const [draft, setDraft] = useState(initial ? draftOf(initial) : BLANK);
   const change = (patch: Partial<Draft>) => setDraft({ ...draft, ...patch });
   const changePortion = (i: number, patch: Partial<Draft['portions'][number]>) =>
@@ -46,7 +48,7 @@ export function FoodForm({ initial, submitLabel, onSubmit }: Props) {
     ...(initial?.nutrients && { nutrients: initial.nutrients }),
     ...(initial?.source && { source: initial.source }),
     ...(initial?.brand && { brand: initial.brand }),
-    ...(initial?.barcode && { barcode: initial.barcode }),
+    ...((initial?.barcode ?? barcode) && { barcode: initial?.barcode ?? barcode }),
     name: draft.name.trim(),
     state: draft.state,
     per100g: { kcal: parseNumber(p.kcal), protein: parseNumber(p.protein), carbs: parseNumber(p.carbs), fat: parseNumber(p.fat) },
@@ -56,6 +58,7 @@ export function FoodForm({ initial, submitLabel, onSubmit }: Props) {
 
   return (
     <View style={styles.form}>
+      {barcode && !initial && <Text variant="bodyMedium">{`Code-barres : ${barcode}`}</Text>}
       <TextInput label="Nom" accessibilityLabel="Nom" value={draft.name} onChangeText={(name) => change({ name })} />
       <SegmentedButtons value={draft.state} onValueChange={(state) => change({ state })} buttons={STATES} />
       {NUTRIENTS.map(([nutrient, label]) => (

@@ -1,4 +1,5 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { Text } from 'react-native';
 import { PaperProvider } from 'react-native-paper';
 import { theme } from '@/theme';
 import { DEFAULT_PROFILE, type Profile } from '@/modules/settings';
@@ -16,6 +17,7 @@ import type { FoodCatalog, ProductSource } from '../application/ports';
 import type { Food, FoodInput } from '../domain/food';
 import type { Meal } from '../domain/meal';
 import { AddFoodScreen } from './AddFoodScreen';
+import type { ScanCamera } from './ScanScreen';
 
 const clock = { now: () => new Date('2026-10-24T10:00:00Z') }; // 12:00 in Paris
 const pickWhen = jest.fn(async () => undefined as Date | undefined);
@@ -43,13 +45,18 @@ async function setup({ catalog = inMemoryFoodCatalog([rawRice, cookedRice, orang
   const meals = mealUseCases({ entries, favorites, clock, timezone: DEFAULT_PROFILE.timezone });
   // No pause before asking: the tests are not about the typing.
   const products = productSearch({ source: productSource ?? inMemoryProductSource(brandProducts), limiter: rateLimiter(10, 60000, Date.now), pauseMs: 0 });
+  let scan: (code: string) => void = () => {};
+  const camera: ScanCamera = ({ onScan }) => {
+    scan = onScan;
+    return <Text>Caméra</Text>;
+  };
   const onDone = jest.fn();
   await render(
     <PaperProvider theme={theme}>
-      <AddFoodScreen meal={meal} meals={meals} foods={foods} products={products} run={run} onDone={onDone} profile={profile} clock={clock} pickWhen={pickWhen} />
+      <AddFoodScreen meal={meal} meals={meals} foods={foods} products={products} camera={camera} run={run} onDone={onDone} profile={profile} clock={clock} pickWhen={pickWhen} />
     </PaperProvider>,
   );
-  return { entries, favorites, foods, meals, onDone };
+  return { entries, favorites, foods, meals, onDone, scan: (code: string) => act(async () => scan(code)) };
 }
 
 const search = (text: string) => fireEvent.changeText(screen.getByLabelText('Rechercher un aliment'), text);
@@ -878,5 +885,65 @@ describe('the products of brands', () => {
     await setup({ brandProducts: [{ ...cocaCola, nutriments: {} }] });
     await search('coca');
     expect(await screen.findByText('Aucun aliment trouvé.')).toBeTruthy();
+  });
+});
+
+describe('the scan', () => {
+  const cocaProduct: OffProduct = {
+    code: '5449000000996', product_name_fr: 'Coca-Cola', brands: 'Coca-Cola Services', quantity: '330 ml',
+    nutriments: { 'energy-kcal_100g': 42.4, proteins_100g: 0, carbohydrates_100g: 10.6, fat_100g: 0 },
+  };
+
+  test('opens the camera from the add screen, and « Retour » comes back to the lists', async () => {
+    await setup();
+    await fireEvent.press(screen.getByText('Scanner un code-barres'));
+    expect(screen.getByText('Caméra')).toBeTruthy();
+    expect(screen.queryByText('Favoris')).toBeNull();
+    await fireEvent.press(screen.getByText('Retour'));
+    expect(screen.getByText('Favoris')).toBeTruthy();
+    expect(screen.getByLabelText('Rechercher un aliment')).toBeTruthy();
+  });
+
+  test('a barcode of a product of Open Food Facts opens its fiche, to be added to the meal', async () => {
+    const { scan, entries } = await setup({ brandProducts: [cocaProduct] });
+    await fireEvent.press(screen.getByText('Scanner un code-barres'));
+    await scan('5449000000996');
+    expect(await screen.findByText('Source : Open Food Facts')).toBeTruthy();
+    expect(screen.getByText('Coca-Cola')).toBeTruthy();
+    await fireEvent.press(screen.getByText('Ajouter à Déjeuner'));
+    await waitFor(() => expect(entries.entries).toHaveLength(1));
+    expect(entries.entries[0]).toMatchObject({ foodName: 'Coca-Cola', grams: 100 });
+  });
+
+  test('an unknown barcode leads to the form that creates the food, with the barcode, and the food keeps it', async () => {
+    const { scan, foods } = await setup();
+    await fireEvent.press(screen.getByText('Scanner un code-barres'));
+    await scan('3017620422003');
+    await fireEvent.press(await screen.findByText('Créer un aliment'));
+    expect(screen.getByText('Code-barres : 3017620422003')).toBeTruthy();
+    await type('Nom', 'Pâte maison');
+    await type('Calories pour 100 g', '500');
+    await type('Protéines pour 100 g', '5');
+    await type('Glucides pour 100 g', '50');
+    await type('Lipides pour 100 g', '30');
+    await fireEvent.press(screen.getByText('Enregistrer'));
+
+    let mine: Food[] = [];
+    foods.observeCustom((list) => (mine = list), () => {});
+    await waitFor(() => expect(mine).toHaveLength(1));
+    expect(mine[0]).toMatchObject({ name: 'Pâte maison', barcode: '3017620422003' });
+  });
+
+  test('a barcode already used is found among the foods of the user, with no network', async () => {
+    const asked: string[] = [];
+    const source: ProductSource = { search: async () => [], byBarcode: async (code) => (asked.push(code), undefined) };
+    const { scan, foods } = await setup({ productSource: source });
+    await act(async () => {
+      await foods.create({ ...bread, name: 'Mon yaourt', barcode: '3033710065967' });
+    });
+    await fireEvent.press(screen.getByText('Scanner un code-barres'));
+    await scan('3033710065967');
+    expect(await screen.findByText('Source : Mon aliment')).toBeTruthy();
+    expect(asked).toEqual([]);
   });
 });

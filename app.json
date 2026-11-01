@@ -22,6 +22,14 @@
       "@react-native-google-signin/google-signin",
       "react-native-health-connect",
       [
+        "expo-camera",
+        {
+          "cameraPermission": "Genki utilise la caméra pour lire le code-barres d’un produit.",
+          "microphonePermission": false,
+          "recordAudioAndroid": false
+        }
+      ],
+      [
         "expo-build-properties",
         {
           "android": {

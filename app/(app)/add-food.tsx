@@ -2,6 +2,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useApp } from '@/appContext';
 import { AddFoodScreen, MEALS } from '@/modules/nutrition';
+import { BarcodeCamera } from '@/platform/BarcodeCamera';
 import { pickWhen } from '@/platform/dateTimePicker';
 
 export default function AddFood() {
@@ -16,6 +17,7 @@ export default function AddFood() {
         meals={app.nutrition.meals}
         foods={app.nutrition.foods}
         products={app.nutrition.products}
+        camera={BarcodeCamera}
         profile={profile}
         clock={app.clock}
         pickWhen={pickWhen}

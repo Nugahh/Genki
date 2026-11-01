@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
-import { SegmentedButtons } from 'react-native-paper';
+import { Button, SegmentedButtons } from 'react-native-paper';
 import type { Profile } from '@/modules/settings';
 import type { Clock } from '@/shared/clock';
 import type { FoodUseCases } from '../application/foodUseCases';
@@ -13,6 +13,7 @@ import { FoodDetail } from './FoodDetail';
 import { FoodForm } from './FoodForm';
 import { FoodSearch, type Search } from './FoodSearch';
 import { RecentsList } from './RecentsList';
+import { ScanScreen, type ScanCamera } from './ScanScreen';
 import { useBrandProducts } from './useBrandProducts';
 import type { PickWhen } from './WhenPicker';
 
@@ -31,6 +32,8 @@ type Props = {
   foods: FoodUseCases;
   /** The products of brands (Open Food Facts). */
   products: ProductSearch;
+  /** The camera that reads the barcode of a product. */
+  camera: ScanCamera;
   /** The goals, the zone and the references of the sheet of a food. */
   profile: Profile;
   clock: Clock;
@@ -43,12 +46,15 @@ type Props = {
 };
 
 /** Adds a food to a meal: from a favorite, a recent, the search, or a food created on the spot. */
-export function AddFoodScreen({ meal, meals, foods, products, profile, clock, pickWhen, run, onDone }: Props) {
+export function AddFoodScreen({ meal, meals, foods, products, camera, profile, clock, pickWhen, run, onDone }: Props) {
   const [segment, setSegment] = useState<Segment>('search');
   // The food whose fiche replaces the segments, with the quantity to start from when it comes from « Récents ».
   // A product of a brand that is not one of the user's foods yet has no reference.
   const [selected, setSelected] = useState<{ food: Food | FoodInput; grams?: number } | null>(null);
   const [search, setSearch] = useState<Search>({ query: '' });
+  // The scan takes the place of the lists; a barcode it could not find a product for is kept for the form that creates the food.
+  const [scanning, setScanning] = useState(false);
+  const [scanned, setScanned] = useState<string | undefined>();
   // Held here, not by the list: the products of a search are not asked again when the user comes back from a fiche. Raw or cooked leaves them out.
   const brand = useBrandProducts(products, search.query, !search.state);
   // The custom foods, live: the search, the recents and the favorites all look foods up in them. null until the first list.
@@ -60,11 +66,12 @@ export function AddFoodScreen({ meal, meals, foods, products, profile, clock, pi
     run(() => foods.create(food));
     setSearch({ query: food.name });
     setSegment('search');
+    setScanned(undefined);
   };
 
   return (
     // Its own key for the sheet: the scroll offset of the lists must not carry over to it.
-    <ScrollView key={selected ? 'sheet' : 'lists'} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+    <ScrollView key={selected ? 'sheet' : scanning ? 'scan' : 'lists'} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
       {selected ? (
         <FoodDetail
           food={selected.food}
@@ -84,6 +91,23 @@ export function AddFoodScreen({ meal, meals, foods, products, profile, clock, pi
             setSegment('search');
           }}
         />
+      ) : scanning ? (
+        <ScanScreen
+          camera={camera}
+          foods={foods}
+          products={products}
+          custom={custom ?? []}
+          onFound={(choice) => {
+            setScanning(false);
+            setSelected({ food: 'food' in choice ? choice.food : choice.product });
+          }}
+          onCreate={(barcode) => {
+            setScanning(false);
+            setScanned(barcode);
+            setSegment('create');
+          }}
+          onBack={() => setScanning(false)}
+        />
       ) : (
         <>
           <View style={styles.segments}>
@@ -91,14 +115,17 @@ export function AddFoodScreen({ meal, meals, foods, products, profile, clock, pi
               <SegmentedButtons key={i} value={segment} onValueChange={setSegment} buttons={buttons} />
             ))}
           </View>
+          <Button mode="outlined" icon="barcode-scan" contentStyle={styles.scan} onPress={() => setScanning(true)}>
+            Scanner un code-barres
+          </Button>
           {segment === 'favorites' && <FavoritesList meal={meal} meals={meals} foods={foods} custom={custom} run={run} onDone={onDone} />}
           {segment === 'recents' && <RecentsList meals={meals} foods={foods} custom={custom} onPick={(food, grams) => setSelected({ food, grams })} />}
           {segment === 'search' && <FoodSearch foods={foods} custom={custom} brand={brand} search={search} onSearch={setSearch} onSelect={(choice) => setSelected({ food: 'food' in choice ? choice.food : choice.product })} />}
-          {segment === 'create' && <FoodForm submitLabel="Enregistrer" onSubmit={create} />}
+          {segment === 'create' && <FoodForm submitLabel="Enregistrer" barcode={scanned} onSubmit={create} />}
         </>
       )}
     </ScrollView>
   );
 }
 
-const styles = StyleSheet.create({ content: { padding: 16, gap: 16 }, segments: { gap: 8 } });
+const styles = StyleSheet.create({ content: { padding: 16, gap: 16 }, segments: { gap: 8 }, scan: { minHeight: 48 } });
