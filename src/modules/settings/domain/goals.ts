@@ -23,6 +23,12 @@ export const bmr = (sex: Sex, weightKg: number, heightCm: number, age: number) =
 export const dailyEnergy = (profile: Profile, weightKg: number, year: number) =>
   bmr(profile.sex, weightKg, profile.heightCm, year - profile.birthYear) * ACTIVITY_FACTOR[profile.activityLevel];
 
+/** Fat is 30 % of the energy (9 kcal a gram); the net carbs are what is left after the protein (4 kcal a gram). Both to the nearest 5 g. */
+export const macroGoals = (kcal: number, proteinG: number) => ({
+  fatG: roundTo((0.3 * kcal) / 9, 5),
+  carbsNetG: Math.max(0, roundTo((0.7 * kcal - 4 * proteinG) / 4, 5)),
+});
+
 /** The goals proposed for a profile and a weight, with a French note for each guard-rail that bounded them (spec §9). */
 export function proposeGoals(input: { profile: Profile; weightKg: number; year: number }): { goals: Goals; notes: string[] } {
   const { profile, weightKg, year } = input;
@@ -47,5 +53,6 @@ export function proposeGoals(input: { profile: Profile; weightKg: number; year: 
     notes.push('Plancher de 1 500 kcal appliqué.');
   }
   notes.push('Consulte un professionnel avant de changer de régime ou de reprendre une activité intense.');
-  return { goals: { kcal, proteinG: roundTo(1.7 * weightKg, 5), waterMl: 2500, steps: 8000 }, notes };
+  const proteinG = roundTo(1.7 * weightKg, 5);
+  return { goals: { kcal, proteinG, ...macroGoals(kcal, proteinG), waterMl: 2500, steps: 8000 }, notes };
 }

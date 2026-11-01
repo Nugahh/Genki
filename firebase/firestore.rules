@@ -131,9 +131,11 @@ service cloud.firestore {
     // Each goal is optional (the merged document holds the ones that were ever chosen).
     function isGoals(g) {
       return g is map
-        && g.keys().hasOnly(['kcal', 'proteinG', 'waterMl', 'steps'])
+        && g.keys().hasOnly(['kcal', 'proteinG', 'carbsNetG', 'fatG', 'waterMl', 'steps'])
         && (!('kcal' in g) || (g.kcal is number && g.kcal >= 800 && g.kcal <= 10000))
         && (!('proteinG' in g) || (g.proteinG is number && g.proteinG >= 0 && g.proteinG <= 500))
+        && (!('carbsNetG' in g) || (g.carbsNetG is number && g.carbsNetG >= 0 && g.carbsNetG <= 1000))
+        && (!('fatG' in g) || (g.fatG is number && g.fatG >= 0 && g.fatG <= 500))
         && (!('waterMl' in g) || (g.waterMl is number && g.waterMl >= 500 && g.waterMl <= 10000))
         && (!('steps' in g) || (g.steps is number && g.steps >= 0 && g.steps <= 100000));
     }

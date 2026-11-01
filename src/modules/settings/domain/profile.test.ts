@@ -17,6 +17,8 @@ test.each<[string, Profile]>([
   ['799 kcal', withGoals({ kcal: 799 })],
   ['10 001 kcal', withGoals({ kcal: 10001 })],
   ['501 g of protein', withGoals({ proteinG: 501 })],
+  ['1 001 g of net carbs', withGoals({ carbsNetG: 1001 })],
+  ['501 g of fat', withGoals({ fatG: 501 })],
   ['499 ml of water', withGoals({ waterMl: 499 })],
   ['10 001 ml of water', withGoals({ waterMl: 10001 })],
   ['100 001 steps', withGoals({ steps: 100001 })],

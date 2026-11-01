@@ -70,6 +70,24 @@ describe('GoalsScreen', () => {
     expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ goals: expect.objectContaining({ kcal: 1400 }) }));
   });
 
+  test('has a field for the net carbs and the fat, and « Proposer » fills them', async () => {
+    await setup();
+    expect(screen.getByLabelText('Glucides nets (g par jour)')).toHaveDisplayValue('255');
+    expect(screen.getByLabelText('Lipides (g par jour)')).toHaveDisplayValue('75');
+    await type('Poids (kg)', '80');
+    await fireEvent.press(screen.getByText('Proposer à partir de mon profil'));
+    expect(screen.getByLabelText('Lipides (g par jour)')).not.toHaveDisplayValue('75');
+  });
+
+  test('refuses fat and net carbs out of range', async () => {
+    await setup();
+    await type('Lipides (g par jour)', '501');
+    expect(screen.getByText('Les lipides sont compris entre 0 et 500 g par jour.')).toBeTruthy();
+    await type('Lipides (g par jour)', '75');
+    await type('Glucides nets (g par jour)', '1001');
+    expect(screen.getByText('Les glucides nets sont compris entre 0 et 1 000 g par jour.')).toBeTruthy();
+  });
+
   test('refuses a value out of range with its message', async () => {
     await setup();
     await type('Eau (ml par jour)', '100');
@@ -83,7 +101,7 @@ describe('GoalsScreen', () => {
     await type('Perte visée (kg par semaine)', '0,5');
     await type('Calories (kcal par jour)', '1900');
     await fireEvent.press(screen.getByText('Enregistrer'));
-    expect(onSave).toHaveBeenCalledWith({ goalMode: 'deficit', weeklyLossKg: 0.5, goals: { kcal: 1900, proteinG: 130, waterMl: 2500, steps: 8000 } });
+    expect(onSave).toHaveBeenCalledWith({ goalMode: 'deficit', weeklyLossKg: 0.5, goals: { kcal: 1900, proteinG: 130, carbsNetG: 255, fatG: 75, waterMl: 2500, steps: 8000 } });
   });
 
   test('a loss left in the hidden field does not block the screen outside a deficit', async () => {

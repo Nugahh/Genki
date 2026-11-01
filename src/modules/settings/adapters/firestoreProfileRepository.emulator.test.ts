@@ -73,8 +73,8 @@ describe('the profile', () => {
   test('saved fields come back, the goals merged field by field, and the creation time as a date', async () => {
     const db = phone();
     await profileOn(db).saveProfile({ heightCm: 182, goalMode: 'deficit', goals: { kcal: 2000 } as never });
-    await profileOn(db).saveProfile({ goals: { steps: 9000 } as never, createdAt: new Date('2026-11-01T10:00:00Z') });
-    expect(await storedProfile(db)).toEqual({ heightCm: 182, goalMode: 'deficit', goals: { kcal: 2000, steps: 9000 }, createdAt: new Date('2026-11-01T10:00:00Z') });
+    await profileOn(db).saveProfile({ goals: { steps: 9000, carbsNetG: 255, fatG: 75 } as never, createdAt: new Date('2026-11-01T10:00:00Z') });
+    expect(await storedProfile(db)).toEqual({ heightCm: 182, goalMode: 'deficit', goals: { kcal: 2000, steps: 9000, carbsNetG: 255, fatG: 75 }, createdAt: new Date('2026-11-01T10:00:00Z') });
   });
 
   test('a field set to null is taken off', async () => {

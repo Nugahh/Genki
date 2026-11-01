@@ -32,18 +32,18 @@ export function SetupScreen({ profile, year, onDone, onSkip }: Props) {
   const [weight, setWeight] = useState('');
   const [activity, setActivity] = useState<ActivityLevel>(profile.activityLevel);
   const [mode, setMode] = useState<GoalMode>('deficit');
-  const [goalFields, setGoalFields] = useState({ kcal: '', proteinG: '', waterMl: '', steps: '' });
+  const [goalFields, setGoalFields] = useState({ kcal: '', proteinG: '', carbsNetG: '', fatG: '', waterMl: '', steps: '' });
   const [notes, setNotes] = useState<string[]>([]);
 
   const you = { sex, birthYear: parseNumber(birthYear), heightCm: parseNumber(height), activityLevel: activity, goalMode: mode };
   const weightKg = parseNumber(weight);
   const youProblem = validateProfile({ ...profile, ...you }) ?? (weightKg > 20 && weightKg < 400 ? null : 'Le poids est compris entre 20 et 400 kg.');
-  const goals = { kcal: parseNumber(goalFields.kcal), proteinG: parseNumber(goalFields.proteinG), waterMl: parseNumber(goalFields.waterMl), steps: parseNumber(goalFields.steps) };
+  const goals = { kcal: parseNumber(goalFields.kcal), proteinG: parseNumber(goalFields.proteinG), carbsNetG: parseNumber(goalFields.carbsNetG), fatG: parseNumber(goalFields.fatG), waterMl: parseNumber(goalFields.waterMl), steps: parseNumber(goalFields.steps) };
   const goalsProblem = validateProfile({ ...profile, ...you, goals });
 
   const seeGoals = () => {
     const proposal = proposeGoals({ profile: { ...profile, ...you }, weightKg, year });
-    setGoalFields({ kcal: asText(proposal.goals.kcal), proteinG: asText(proposal.goals.proteinG), waterMl: asText(proposal.goals.waterMl), steps: asText(proposal.goals.steps) });
+    setGoalFields({ kcal: asText(proposal.goals.kcal), proteinG: asText(proposal.goals.proteinG), carbsNetG: asText(proposal.goals.carbsNetG), fatG: asText(proposal.goals.fatG), waterMl: asText(proposal.goals.waterMl), steps: asText(proposal.goals.steps) });
     setNotes(proposal.notes);
     setStep('goals');
   };
@@ -60,6 +60,8 @@ export function SetupScreen({ profile, year, onDone, onSkip }: Props) {
         </Text>
         <TextInput label="Calories (kcal par jour)" accessibilityLabel="Calories (kcal par jour)" value={goalFields.kcal} onChangeText={field('kcal')} keyboardType="number-pad" />
         <TextInput label="Protéines (g par jour)" accessibilityLabel="Protéines (g par jour)" value={goalFields.proteinG} onChangeText={field('proteinG')} keyboardType="number-pad" />
+        <TextInput label="Glucides nets (g par jour)" accessibilityLabel="Glucides nets (g par jour)" value={goalFields.carbsNetG} onChangeText={field('carbsNetG')} keyboardType="number-pad" />
+        <TextInput label="Lipides (g par jour)" accessibilityLabel="Lipides (g par jour)" value={goalFields.fatG} onChangeText={field('fatG')} keyboardType="number-pad" />
         <TextInput label="Eau (ml par jour)" accessibilityLabel="Eau (ml par jour)" value={goalFields.waterMl} onChangeText={field('waterMl')} keyboardType="number-pad" />
         <TextInput label="Pas (par jour)" accessibilityLabel="Pas (par jour)" value={goalFields.steps} onChangeText={field('steps')} keyboardType="number-pad" />
         <Surface mode="flat" elevation={1} style={styles.card}>

@@ -36,7 +36,7 @@ function storedOf(data: Record<string, any> | undefined): StoredProfile {
       ? data.waterContainers.filter((c: any) => typeof c?.label === 'string' && num(c?.ml) !== undefined).map((c: any) => ({ label: c.label, ml: c.ml }))
       : undefined,
     createdAt: data.createdAt?.toDate?.() as Date | undefined,
-    goals: { kcal: num(goals.kcal), proteinG: num(goals.proteinG), waterMl: num(goals.waterMl), steps: num(goals.steps) },
+    goals: { kcal: num(goals.kcal), proteinG: num(goals.proteinG), carbsNetG: num(goals.carbsNetG), fatG: num(goals.fatG), waterMl: num(goals.waterMl), steps: num(goals.steps) },
   };
   const defined = (o: object) => Object.fromEntries(Object.entries(o).filter(([, value]) => value !== undefined));
   return { ...defined(fields), goals: defined(fields.goals) } as StoredProfile;

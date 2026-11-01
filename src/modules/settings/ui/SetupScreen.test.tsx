@@ -45,6 +45,9 @@ test('proposes the goals for the profile and the mode, with the notes', async ()
   // A 30-year-old woman, 180 cm, 80 kg, moderately active, in a deficit: 1 614 x 1.375 - 400, to the nearest 10.
   expect(screen.getByLabelText('Calories (kcal par jour)')).toHaveDisplayValue('1820');
   expect(screen.getByLabelText('Protéines (g par jour)')).toHaveDisplayValue('135');
+  // Fat is 30 % of the energy, the net carbs are what is left after the protein.
+  expect(screen.getByLabelText('Lipides (g par jour)')).toHaveDisplayValue('60');
+  expect(screen.getByLabelText('Glucides nets (g par jour)')).toHaveDisplayValue('185');
   expect(screen.getByText(/Consulte un professionnel/)).toBeTruthy();
 });
 
@@ -56,7 +59,7 @@ test('lets the goals be changed, then finishes with the profile, the goals and t
   await type('Eau (ml par jour)', '3000');
   await fireEvent.press(screen.getByText('Terminer'));
   expect(onDone).toHaveBeenCalledWith(
-    { sex: 'male', birthYear: 1996, heightCm: 180, activityLevel: 'light', goalMode: 'maintenance', weeklyLossKg: null, goals: { kcal: 2450, proteinG: 135, waterMl: 3000, steps: 8000 }, createdAt: expect.any(Date) },
+    { sex: 'male', birthYear: 1996, heightCm: 180, activityLevel: 'light', goalMode: 'maintenance', weeklyLossKg: null, goals: { kcal: 2450, proteinG: 135, carbsNetG: 295, fatG: 80, waterMl: 3000, steps: 8000 }, createdAt: expect.any(Date) },
     80,
   );
 });

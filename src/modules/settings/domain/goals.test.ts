@@ -1,4 +1,4 @@
-import { bmr, dailyEnergy, GUARDRAILS, proposeGoals } from './goals';
+import { bmr, dailyEnergy, GUARDRAILS, macroGoals, proposeGoals } from './goals';
 import { DEFAULT_PROFILE, type Profile } from './profile';
 
 const man: Profile = { ...DEFAULT_PROFILE, sex: 'male', birthYear: 1996, heightCm: 180, activityLevel: 'light', goalMode: 'deficit' };
@@ -25,7 +25,7 @@ describe('proposeGoals', () => {
   test('gaining is the energy plus 250', () => expect(kcal({ ...man, goalMode: 'surplus' })).toBe(2700));
 
   test('protein is 1.7 g per kg, to the nearest 5 g, with the water and the steps of the spec', () => {
-    expect(proposeGoals({ profile: man, weightKg: 80, year: 2026 }).goals).toEqual({ kcal: 2050, proteinG: 135, waterMl: 2500, steps: 8000 });
+    expect(proposeGoals({ profile: man, weightKg: 80, year: 2026 }).goals).toEqual({ kcal: 2050, proteinG: 135, carbsNetG: 225, fatG: 70, waterMl: 2500, steps: 8000 });
   });
 
   test('a loss rate asked for sets the deficit: 1 100 kcal a day for each kg a week', () => {
@@ -51,5 +51,23 @@ describe('proposeGoals', () => {
 
   test('the guard-rails are the spec values', () => {
     expect(GUARDRAILS).toMatchObject({ minKcal: 1500, maxWeeklyLossPct: 1, deficitKcal: 400 });
+  });
+});
+
+describe('the macros of the proposal', () => {
+  test('fat is 30 % of the energy and the net carbs are what is left after the protein, to the nearest 5 g', () => {
+    for (const weightKg of [50, 80, 120]) {
+      const { kcal, proteinG, fatG, carbsNetG } = proposeGoals({ profile: { ...man, goalMode: 'maintenance' }, weightKg, year: 2026 }).goals;
+      expect(Math.abs(fatG * 9 - 0.3 * kcal)).toBeLessThanOrEqual(22.5); // half a step of 5 g
+      expect(Math.abs(carbsNetG * 4 - (0.7 * kcal - 4 * proteinG))).toBeLessThanOrEqual(10);
+    }
+  });
+
+  test('2 200 kcal and 130 g of protein give 75 g of fat and 255 g of net carbs', () => {
+    expect(macroGoals(2200, 130)).toEqual({ fatG: 75, carbsNetG: 255 });
+  });
+
+  test('net carbs never go below zero', () => {
+    expect(macroGoals(1500, 400).carbsNetG).toBe(0); // 1 600 kcal of protein alone are more than the 1 500 kcal
   });
 });

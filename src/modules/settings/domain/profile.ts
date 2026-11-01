@@ -3,7 +3,8 @@ export type Sex = 'male' | 'female';
 export type ActivityLevel = 'sedentary' | 'light' | 'active';
 /** What the calories goal is for: eating less than the energy spent, as much, or more. It decides the colors of the calories gauge. */
 export type GoalMode = 'deficit' | 'maintenance' | 'surplus';
-export type Goals = { kcal: number; proteinG: number; waterMl: number; steps: number };
+/** `carbsNetG` is the carbohydrates minus the fibre. */
+export type Goals = { kcal: number; proteinG: number; carbsNetG: number; fatG: number; waterMl: number; steps: number };
 
 /** `users/{uid}` (spec §4). A field that was never chosen has its default, so the app works before the setup screen. */
 export type Profile = {
@@ -34,7 +35,7 @@ export const DEFAULT_PROFILE: Profile = {
   heightCm: 175,
   activityLevel: 'light',
   goalMode: 'maintenance',
-  goals: { waterMl: 2500, kcal: 2200, proteinG: 130, steps: 8000 },
+  goals: { waterMl: 2500, kcal: 2200, proteinG: 130, carbsNetG: 255, fatG: 75, steps: 8000 },
   packSize: 20,
   waterContainers: [
     { label: 'Verre', ml: 250 },
@@ -53,6 +54,8 @@ export function validateProfile(profile: Profile): string | null {
   const { goals } = profile;
   if (!within(goals.kcal, 800, 10000)) return 'Les calories sont comprises entre 800 et 10 000 par jour.';
   if (!within(goals.proteinG, 0, 500)) return 'Les protéines sont comprises entre 0 et 500 g par jour.';
+  if (!within(goals.carbsNetG, 0, 1000)) return 'Les glucides nets sont compris entre 0 et 1 000 g par jour.';
+  if (!within(goals.fatG, 0, 500)) return 'Les lipides sont compris entre 0 et 500 g par jour.';
   if (!within(goals.waterMl, 500, 10000)) return 'L’eau est comprise entre 0,5 et 10 L par jour.';
   if (!within(goals.steps, 0, 100000)) return 'Les pas sont compris entre 0 et 100 000 par jour.';
   if (profile.weeklyLossKg !== undefined && !within(profile.weeklyLossKg, 0.1, 2)) return 'La perte visée est comprise entre 0,1 et 2 kg par semaine.';
