@@ -1,4 +1,4 @@
-import { convertCiqual } from './convert';
+import { convertCiqual, NUTRIENT_CODES } from './convert';
 
 const alim = (rows: [string, string][]) =>
   `<TABLE>${rows.map(([id, name]) => `<ALIM><alim_code> ${id} </alim_code><alim_nom_fr> ${name} </alim_nom_fr></ALIM>`).join('')}</TABLE>`;
@@ -109,4 +109,41 @@ test.each([
 ])('%s is %s', (name, state) => {
   const [food] = convertCiqual(alim([['1', name]]), compo([['1', KCAL, '100']]));
   expect(food.state).toBe(state);
+});
+
+describe('the nutrients', () => {
+  const FIBER = '34100';
+  const VIT_C = '55100';
+  const VIT_D = '52100';
+  const VIT_E_ALPHA = '71010';
+  const VIT_E = '53100';
+  const SALT = '10004';
+  const base: [string, string, string][] = [['1', KCAL, '100']];
+  const nutrientsOf = (rows: [string, string, string][]) => convertCiqual(alim([['1', 'Orange, pulpe, crue']]), compo([...base, ...rows]))[0].nutrients;
+
+  test('keeps the amounts per 100 g under the identifier of the catalogue, with three significant digits', () => {
+    expect(nutrientsOf([['1', FIBER, '1,8'], ['1', VIT_C, '53,2468'], ['1', VIT_D, '0,000123']])).toEqual({ fiber: 1.8, vitC: 53.2, vitD: 0.000123 });
+  });
+
+  test('an empty case is an absent nutrient, never a zero; traces and "< x" are zero', () => {
+    expect(nutrientsOf([['1', FIBER, '-'], ['1', VIT_C, 'traces'], ['1', SALT, '&lt; 0,1']])).toEqual({ vitC: 0, salt: 0 });
+  });
+
+  test('a food with no nutrient at all has no nutrients', () => {
+    expect(nutrientsOf([['1', FIBER, '-']])).toBeUndefined();
+    expect(nutrientsOf([])).toBeUndefined();
+  });
+
+  test('vitamin E is the alpha-tocopherol, else the vitamin E', () => {
+    expect(nutrientsOf([['1', VIT_E_ALPHA, '2,5'], ['1', VIT_E, '3']])).toEqual({ vitE: 2.5 });
+    expect(nutrientsOf([['1', VIT_E_ALPHA, '-'], ['1', VIT_E, '3']])).toEqual({ vitE: 3 });
+    expect(nutrientsOf([['1', VIT_E_ALPHA, '-'], ['1', VIT_E, '-']])).toBeUndefined();
+  });
+
+  test('no Ciqual code serves two nutrients, and every nutrient has one', () => {
+    const codes = Object.values(NUTRIENT_CODES).flat();
+    expect(new Set(codes).size).toBe(codes.length);
+    expect(Object.values(NUTRIENT_CODES).every((list) => list.length > 0)).toBe(true);
+    expect(Object.keys(NUTRIENT_CODES)).toHaveLength(26);
+  });
 });

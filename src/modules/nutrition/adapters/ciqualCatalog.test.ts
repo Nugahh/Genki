@@ -71,7 +71,7 @@ test('a failed open does not stick: the next call opens again', async () => {
 test('ranks names starting with the first term, then words starting with it, then the rest, shorter first', async () => {
   const fixture = new DatabaseSync(':memory:');
   fixture.exec((db.prepare("SELECT sql FROM sqlite_master WHERE name = 'foods'").get() as { sql: string }).sql);
-  const insert = fixture.prepare("INSERT INTO foods VALUES (?, ?, ?, 'other', 100, 0, 0, 0)");
+  const insert = fixture.prepare("INSERT INTO foods VALUES (?, ?, ?, 'other', 100, 0, 0, 0, NULL)");
   ['Riz soufflé', 'Riz au lait vanille', 'Pain de riz complet', 'Brizzi', 'Riz et pain frais'].forEach((name, i) =>
     insert.run(String(i), name, normalizeSearch(name)),
   );
@@ -83,4 +83,12 @@ test('ranks names starting with the first term, then words starting with it, the
   // the first term decides the tier, not the last one
   expect(await order('pain riz')).toEqual(['Pain de riz complet', 'Riz et pain frais']);
   fixture.close();
+});
+
+test('a food carries the nutrients per 100 g that Ciqual determines', async () => {
+  const rice = await catalog.get('9100');
+  expect(rice!.nutrients).toMatchObject({ iron: 1.94, magnesium: 27.7, fiber: 1.53 });
+  expect(rice!.nutrients).not.toHaveProperty('vitB9'); // not determined for this food: absent, not 0
+  const [first] = await catalog.search('riz blanc cru');
+  expect(first.nutrients).toBeDefined();
 });

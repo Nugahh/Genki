@@ -1,4 +1,5 @@
 // Run by Node 24 (type stripping), so imports carry their .ts extension.
+import type { NutrientId, Nutrients } from '../../src/modules/nutrition/domain/nutrients.ts';
 import { normalizeSearch } from '../../src/modules/nutrition/domain/normalize.ts';
 
 export type CiqualFood = {
@@ -10,6 +11,8 @@ export type CiqualFood = {
   protein: number;
   carbs: number;
   fat: number;
+  /** Per 100 g; only the nutrients Ciqual determines, and absent when it determines none. */
+  nutrients?: Nutrients;
 };
 
 // Ciqual 2025 constituent codes (const_*.xml).
@@ -18,7 +21,16 @@ const PROTEIN = '25003'; // Protéines, N x 6.25 (g/100 g)
 const CARBS = '31000'; // Glucides (g/100 g)
 const FAT = '40000'; // Lipides (g/100 g)
 const ALCOHOL = '60000'; // Alcool (éthanol) (g/100 g)
-const WANTED = new Set([KCAL, PROTEIN, CARBS, FAT, ALCOHOL]);
+
+// The first code with a value wins: vitamin E is the alpha-tocopherol, else the vitamin E that Ciqual gives for fewer foods.
+export const NUTRIENT_CODES: Record<NutrientId, string[]> = {
+  fiber: ['34100'], sugars: ['32000'], saturatedFat: ['40302'], salt: ['10004'],
+  vitA: ['51104'], vitD: ['52100'], vitE: ['71010', '53100'], vitK: ['54101'], vitC: ['55100'],
+  vitB1: ['56100'], vitB2: ['56200'], vitB3: ['56310'], vitB5: ['56400'], vitB6: ['56500'], vitB9: ['56700'], vitB12: ['56600'],
+  calcium: ['10200'], iron: ['10260'], magnesium: ['10120'], potassium: ['10190'], zinc: ['10300'],
+  selenium: ['10340'], iodine: ['10530'], phosphorus: ['10150'], copper: ['10290'], manganese: ['10251'],
+};
+const WANTED = new Set([KCAL, PROTEIN, CARBS, FAT, ALCOHOL, ...Object.values(NUTRIENT_CODES).flat()]);
 
 // Both files list a food's fields in this order; convertCiqual's caller checks the count.
 const ALIM = /<ALIM>\s*<alim_code>\s*(\d+)\s*<\/alim_code>\s*<alim_nom_fr>\s*([\s\S]*?)\s*<\/alim_nom_fr>/g;
@@ -27,6 +39,7 @@ const COMPO = /<COMPO>\s*<alim_code>\s*(\d+)\s*<\/alim_code>\s*<const_code>\s*(\
 const ENTITIES: Record<string, string> = { apos: "'", quot: '"', lt: '<', gt: '>', amp: '&' };
 const decode = (s: string) => s.replace(/&(apos|quot|lt|gt|amp);/g, (_, e: string) => ENTITIES[e]);
 const round1 = (n: number) => Math.round(n * 10) / 10;
+const sig3 = (n: number) => Number(n.toPrecision(3));
 
 /** A teneur as a number: "12,5" → 12.5, "traces" and "< 0,5" → 0, "-" (not determined) → undefined. Anything else throws. */
 function amount(teneur: string): number | undefined {
@@ -67,6 +80,16 @@ function energy(v: Record<string, number | undefined>): number | undefined {
   return 4 * p + 4 * c + 9 * f + 7 * a;
 }
 
+/** The nutrients Ciqual determines for a food: an undetermined one ("-") is left out, not counted as 0. */
+function nutrientsOf(v: Record<string, number | undefined>): Nutrients | undefined {
+  const found: Nutrients = {};
+  for (const [id, codes] of Object.entries(NUTRIENT_CODES) as [NutrientId, string[]][]) {
+    const value = codes.map((code) => v[code]).find((n) => n !== undefined);
+    if (value !== undefined) found[id] = sig3(value);
+  }
+  return Object.keys(found).length > 0 ? found : undefined;
+}
+
 export function convertCiqual(alimXml: string, compoXml: string): CiqualFood[] {
   const values = new Map<string, Record<string, number | undefined>>();
   for (const [, id, code, teneur] of compoXml.matchAll(COMPO)) {
@@ -81,6 +104,7 @@ export function convertCiqual(alimXml: string, compoXml: string): CiqualFood[] {
     const kcal = energy(v);
     if (kcal === undefined) continue;
     const name = decode(rawName).replace(/\s+/g, ' ').normalize('NFC');
+    const nutrients = nutrientsOf(v);
     foods.push({
       id,
       name,
@@ -90,6 +114,7 @@ export function convertCiqual(alimXml: string, compoXml: string): CiqualFood[] {
       protein: round1(v[PROTEIN] ?? 0),
       carbs: round1(v[CARBS] ?? 0),
       fat: round1(v[FAT] ?? 0),
+      ...(nutrients && { nutrients }),
     });
   }
   return foods;

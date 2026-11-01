@@ -5,8 +5,8 @@ import { normalizeSearch } from '../domain/normalize';
 /** The one method of expo-sqlite's database this adapter needs, so tests can run on Node's SQLite. */
 export type SqlReader = { getAllAsync<T>(sql: string, params: (string | number)[]): Promise<T[]> };
 
-type Row = { id: string; name: string; state: FoodState; kcal: number; protein: number; carbs: number; fat: number };
-const COLUMNS = 'id, name, state, kcal, protein, carbs, fat';
+type Row = { id: string; name: string; state: FoodState; kcal: number; protein: number; carbs: number; fat: number; nutrients: string | null };
+const COLUMNS = 'id, name, state, kcal, protein, carbs, fat, nutrients';
 
 const toFood = (r: Row): Food => ({
   ref: { type: 'ciqual', id: r.id },
@@ -14,6 +14,7 @@ const toFood = (r: Row): Food => ({
   state: r.state,
   per100g: { kcal: r.kcal, protein: r.protein, carbs: r.carbs, fat: r.fat },
   portions: [],
+  ...(r.nutrients && { nutrients: JSON.parse(r.nutrients) }),
 });
 
 /** The embedded Ciqual table. `open` runs on first use and its database is kept. */
