@@ -265,6 +265,11 @@ Ink blue on ivory paper: a restrained Material 3 scheme with warm neutrals, plus
 ### Measure tints (custom, outside the Material roles)
 - **Water Tint** (rgb(214, 227, 255)), **Calories Tint** (rgb(249, 216, 254)) and **Protein Tint** (rgb(178, 237, 235)), each with its dark icon color (rgb(0, 27, 60), rgb(40, 19, 47), rgb(0, 32, 31)): the 32 dp disc under the icon of a gauge (a drop, a flame, a flexed arm). They are pastel and keep clear of green, ochre and brick, so a disc is never read as a pace. They live in the theme as `colors.metric`.
 
+### Energy ring and goal lines
+- **Ring:** 128 dp, 14 dp stroke on a Sand-Variant track, three arcs from the top: protein, net carbs and fat in `colors.chart.protein`, `carbs` and `fat`, each arc 3 dp short of the next so a gap shows. The portion's calories sit at the centre in Headline Small, tabular, with « kcal » under them.
+- **Never alone:** beside the ring, one line per macro with its grams and its share in Title Small; the ring's accessibility label says the calories and the three shares (« Énergie : 290 kcal. Protéines 28 %, glucides nets 41 %, lipides 31 % »), and « (partiel) » when the fibre is not known and the net carbs are only the carbohydrates.
+- **Goal lines (« Objectifs avec cette portion »):** four lines (énergie, protéines, glucides nets, lipides): the name, « total / objectif unité » in Title Small, and a 6 dp bar in the tint of the measure, capped at the goal. Over the goal, only the label says so (« au-dessus de l’objectif »): the bar does not turn red.
+
 ### Nutrient rows
 - **Row:** a 48 dp pressable line: the nutrient's name, its amount (« au moins » before it when a food of the period lacks the nutrient, with a small « partiel ») and its share of the reference in Title Medium, over a 6 dp bar in the pace color of its state (Outline when it has none). The bar caps at 100 %.
 - **Never the color alone:** the percentage is text, and the row's accessibility label ends with the state in words (« dans la cible », « proche de la cible », « loin de la cible »; for salt, saturated fat and sugars « sous la limite », « un peu au-dessus de la limite », « au-dessus de la limite »). A partial amount that falls short of its reference stays Outline: a missing food is not a shortfall.

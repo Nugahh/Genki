@@ -85,7 +85,7 @@ L'application parle directement à Firestore par le SDK. REST n'apparaîtra que 
 Tout est rangé sous `users/{uid}`. Les identifiants sont des UUID générés par l'application pour pouvoir créer des données hors-ligne sans collision.
 
 ### Document `users/{uid}` (profil)
-`timezone` (défaut `Europe/Paris`), `sex` (`male` ou `female`, pour la formule des objectifs), `birthYear`, `heightCm`, `activityLevel` (`sedentary`, `light` ou `active`), `goals` (`kcal`, `proteinG`, `waterMl`, `steps`), `quitDate` (optionnel), `cigarettesPerDay` (optionnel), `packSize` (défaut 20), `packPrice` (optionnel), `goalMode` (`deficit`, `maintenance` ou `surplus` : ce à quoi sert l'objectif de calories, il décide des couleurs de la jauge), `weeklyLossKg` (optionnel, perte visée par semaine), `ui` (`hubMetrics` : liste ordonnée d'identifiants de métriques, `period` : `day`, `week`, `month` ou `year`), `waterContainers` (liste de `{ label, ml }`, défaut 250 et 500), `createdAt`.
+`timezone` (défaut `Europe/Paris`), `sex` (`male` ou `female`, pour la formule des objectifs), `birthYear`, `heightCm`, `activityLevel` (`sedentary`, `light` ou `active`), `goals` (`kcal`, `proteinG`, `carbsNetG` : glucides moins fibres, `fatG`, `waterMl`, `steps`), `quitDate` (optionnel), `cigarettesPerDay` (optionnel), `packSize` (défaut 20), `packPrice` (optionnel), `goalMode` (`deficit`, `maintenance` ou `surplus` : ce à quoi sert l'objectif de calories, il décide des couleurs de la jauge), `weeklyLossKg` (optionnel, perte visée par semaine), `ui` (`hubMetrics` : liste ordonnée d'identifiants de métriques, `period` : `day`, `week`, `month` ou `year`), `waterContainers` (liste de `{ label, ml }`, défaut 250 et 500), `createdAt`.
 
 ### Sous-collections
 
@@ -195,7 +195,7 @@ L'option `backBehavior="history"` des onglets doit faire revenir de Suivi à Auj
 Un chevron signale « ouvre », un plus signale « ajoute ». Les zones touchables font au moins 48 dp, avec un effet d'appui et un libellé d'accessibilité.
 
 ### Repas
-Journal du jour par repas (petit-déjeuner, déjeuner, dîner, collations) avec les totaux. « Ajouter » ouvre quatre entrées : Favoris, Récents, Recherche (Ciqual en local, instantanée), Créer un aliment. Après le choix : état cru ou cuit, portion (puces comme « 1 œuf » ou « 100 g », ou grammes libres), aperçu des macros, ajout. Glisser une ligne permet de la modifier ou de la supprimer.
+Journal du jour par repas (petit-déjeuner, déjeuner, dîner, collations) avec les totaux. « Ajouter » ouvre quatre entrées : Favoris, Récents, Recherche (Ciqual en local, instantanée), Créer un aliment. Après le choix, la fiche : source, état cru ou cuit, portion (puces comme « 1 œuf » ou « 100 g », ou grammes libres), groupe, jour et heure (sélecteurs natifs, pas dans le futur, pas plus d'un an en arrière), aperçu des macros, anneau de l'énergie, objectifs de macros avec cette portion, nutriments, ajout. Toucher une ligne du journal ouvre la même fiche pour changer sa quantité, son groupe, son jour ou son heure, ou la supprimer.
 
 ### Sport
 Programme (phase en cours, semaines, séances) et journal de séance : exercices, séries pré-remplies avec la dernière valeur (kg et reps), chrono de repos, bouton Terminer. À la fin, l'application affiche la progression suggérée et les paliers atteints. Historique par exercice.
@@ -221,7 +221,7 @@ Un registre unique alimente l'accueil, le hub et les détails. Chaque entrée es
 La période choisie (Jour, Semaine, Mois ou Année) est partagée entre les écrans et vaut Semaine au départ. Semaine : la semaine calendaire (lundi à dimanche), avec des flèches pour remonter aux semaines précédentes. Mois : le mois calendaire, une barre par jour, avec des flèches de mois en mois. Année : l'année civile, une barre par mois (moyenne journalière du mois). Jour : le détail de la journée quand il existe (repas, verres d'eau, séance) ; pour les pas, le poids et le tour de taille, qui n'ont qu'une valeur par jour, la vue affiche la valeur du jour et la compare à la veille. Une rubrique sans données propose l'action utile (par exemple, pour les pas : connecter le Fitbit ou autoriser Health Connect, avec un lien vers Réglages › Pas).
 
 ### Réglages
-Objectifs (calories, protéines, eau, pas), fuseau horaire, contenants d'eau, prix du paquet, Pas (voir section 7), Sécurité (verrouillage biométrique optionnel), Données (export et import JSON, recalcul des totaux, suppression du compte et des données), connexion.
+Objectifs (calories, protéines, glucides nets, lipides, eau, pas), fuseau horaire, contenants d'eau, prix du paquet, Pas (voir section 7), Sécurité (verrouillage biométrique optionnel), Données (export et import JSON, recalcul des totaux, suppression du compte et des données), connexion.
 
 ### Première configuration
 Écran court : poids, taille, année de naissance, sexe (pour la formule des objectifs), niveau d'activité, objectif. Si l'utilisateur fume, il renseigne aussi le nombre de cigarettes par jour, la taille du paquet et son prix. L'application propose des objectifs (règles en section 9), que l'utilisateur peut modifier.
@@ -315,6 +315,7 @@ Pour un jour terminé : vert à partir de 90 % de l'objectif, orange de 60 % à 
 - Dépense estimée : Mifflin-St Jeor multipliée par le facteur d'activité (sédentaire 1,2, légèrement actif 1,375, actif 1,55).
 - Calories proposées : dépense moins 400 kcal.
 - Protéines : 1,7 g par kg de poids, arrondi à 5 g.
+- Lipides : 30 % des calories (9 kcal par gramme), arrondis à 5 g. Glucides nets : le reste des calories après les protéines (4 kcal par gramme), arrondis à 5 g.
 - Eau : 2,5 L par défaut.
 - Pas : 8 000 par défaut.
 - L'utilisateur peut saisir ses propres valeurs.
