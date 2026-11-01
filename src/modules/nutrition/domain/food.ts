@@ -6,10 +6,16 @@ import type { Nutrients } from './nutrients';
 export type FoodState = 'raw' | 'cooked' | 'other';
 export type FoodRef = { type: 'ciqual' | 'custom'; id: string };
 export type Portion = { label: string; grams: number };
-/** `nutrients` are per 100 g, from Ciqual; a custom food has none. */
-export type Food = { ref: FoodRef; name: string; state: FoodState; per100g: Macros; portions: Portion[]; nutrients?: Nutrients };
-/** What the user types to create or edit a custom food. */
-export type FoodInput = Omit<Food, 'ref' | 'nutrients'>;
+/**
+ * `nutrients` are per 100 g: from Ciqual, or from the product of Open Food Facts that became a food of one's own (`source: 'off'`, with its `brand`
+ * and `barcode`). A food the user typed has none of them.
+ */
+export type Food = {
+  ref: FoodRef; name: string; state: FoodState; per100g: Macros; portions: Portion[];
+  nutrients?: Nutrients; source?: 'off'; brand?: string; barcode?: string;
+};
+/** What the user types to create or edit a custom food, or what a product of Open Food Facts gives. */
+export type FoodInput = Omit<Food, 'ref'>;
 
 export type FoodEntry = {
   id: string;
