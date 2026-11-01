@@ -18,6 +18,8 @@ describe('SettingsScreen', () => {
     expect(screen.getByLabelText(/^Objectifs, 2.200 kcal · maintien/)).toBeTruthy();
     expect(screen.getByLabelText('Tabac, Arrêt le 1 octobre 2026')).toBeTruthy();
     expect(screen.getByText('Europe/Paris')).toBeTruthy();
+    expect(screen.getByText('Sources des aliments')).toBeTruthy();
+    expect(screen.getByText(/Ciqual de l’Anses.*Open Food Facts \(licence ODbL\)/)).toBeTruthy();
     await fireEvent.press(screen.getByText('Eau'));
     expect(onOpen).toHaveBeenCalledWith('water');
   });

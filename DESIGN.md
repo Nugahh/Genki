@@ -265,6 +265,10 @@ Ink blue on ivory paper: a restrained Material 3 scheme with warm neutrals, plus
 ### Measure tints (custom, outside the Material roles)
 - **Water Tint** (rgb(214, 227, 255)), **Calories Tint** (rgb(249, 216, 254)) and **Protein Tint** (rgb(178, 237, 235)), each with its dark icon color (rgb(0, 27, 60), rgb(40, 19, 47), rgb(0, 32, 31)): the 32 dp disc under the icon of a gauge (a drop, a flame, a flexed arm). They are pastel and keep clear of green, ochre and brick, so a disc is never read as a pace. They live in the theme as `colors.metric`.
 
+### Search result rows
+- **Row:** a two-line list item at least 48 dp tall: the name (two lines at most) and under it the quantity line, « 350 kcal / 100 g » for Ciqual and one's own foods, « 330 ml · Coca-Cola · 42 kcal / 100 g » for a product of a brand. At the right, the cooked or raw pill, or for a product of a brand its source in Label Small, « Open Food Facts ».
+- **Waiting and absence:** a line « Recherche de produits… » with a small activity indicator stays under the list while the network is asked, announced politely; when the products cannot be reached, a line says « Produits de marque indisponibles hors-ligne. » and the rest of the list stays. No spinner replaces the list.
+
 ### Energy ring and goal lines
 - **Ring:** 128 dp, 14 dp stroke on a Sand-Variant track, three arcs from the top: protein, net carbs and fat in `colors.chart.protein`, `carbs` and `fat`, each arc 3 dp short of the next so a gap shows. The portion's calories sit at the centre in Headline Small, tabular, with « kcal » under them.
 - **Never alone:** beside the ring, one line per macro with its grams and its share in Title Small; the ring's accessibility label says the calories and the three shares (« Énergie : 290 kcal. Protéines 28 %, glucides nets 41 %, lipides 31 % »), and « (partiel) » when the fibre is not known and the net carbs are only the carbohydrates.

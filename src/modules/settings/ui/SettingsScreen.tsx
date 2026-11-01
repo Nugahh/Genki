@@ -33,6 +33,12 @@ export function SettingsScreen({ profile, onOpen }: Props) {
       <Divider />
       {/* shortcut: the use cases fix the time zone at composition; it becomes editable once the app composes after reading the profile. */}
       <List.Item title="Fuseau horaire" description={profile.timezone} left={(props) => <List.Icon {...props} icon="map-clock-outline" />} />
+      <List.Item
+        title="Sources des aliments"
+        description="Table Ciqual de l’Anses (Licence Ouverte Etalab 2.0) · produits de marque d’Open Food Facts (licence ODbL)"
+        descriptionNumberOfLines={4}
+        left={(props) => <List.Icon {...props} icon="database-search-outline" />}
+      />
     </ScrollView>
   );
 }
