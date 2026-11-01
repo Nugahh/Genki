@@ -76,11 +76,12 @@ export function fromOpenFoodFacts(product: OffProduct): OffConversion {
   const serving = portionOf('Portion', product.serving_size);
   const pack = portionOf('Emballage', product.quantity);
   const portions = [serving, pack && pack.grams !== serving?.grams ? pack : undefined].filter((p): p is Portion => p !== undefined);
-  const brand = product.brands?.split(',')[0].trim();
+  const brand = product.brands?.split(',')[0].trim().slice(0, 100);
   const barcode = product.code && /^\d{8,14}$/.test(product.code) ? product.code : undefined;
 
   const food: FoodInput = {
-    name: product.product_name_fr?.trim() || product.product_name?.trim() || 'Produit sans nom',
+    // The name of a food is 100 characters at most (the rules too).
+    name: (product.product_name_fr?.trim() || product.product_name?.trim() || 'Produit sans nom').slice(0, 100),
     state: 'other',
     per100g: { kcal: round1(kcal), protein: round1(protein), carbs: round1(carbs), fat: round1(fat) },
     portions,

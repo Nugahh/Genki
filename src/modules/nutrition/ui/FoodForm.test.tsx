@@ -175,3 +175,14 @@ test('an existing food comes back as it was typed, and the button carries the la
     portions: [{ label: '1 tranche', grams: 37.5 }],
   });
 });
+
+test('a product of Open Food Facts keeps its source, brand, barcode and nutrients when its figures are corrected', async () => {
+  const product: FoodInput = {
+    name: 'Coca-Cola', state: 'other', per100g: { kcal: 42.4, protein: 0, carbs: 10.6, fat: 0 }, portions: [],
+    nutrients: { sugars: 10.6 }, source: 'off', brand: 'Coca-Cola Services', barcode: '5449000000996',
+  };
+  const { onSubmit } = await setup({ initial: product, submitLabel: 'Enregistrer les modifications' });
+  await type('Nom', 'Coca-Cola, canette');
+  await fireEvent.press(screen.getByText('Enregistrer les modifications'));
+  expect(onSubmit).toHaveBeenCalledWith({ ...product, name: 'Coca-Cola, canette' });
+});

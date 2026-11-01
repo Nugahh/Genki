@@ -48,3 +48,47 @@ test('resolve finds a Ciqual food in the catalog and a custom one in the list th
   expect(await foods.resolve({ type: 'custom', id: 'c1' }, [custom])).toEqual(custom);
   expect(await foods.resolve({ type: 'custom', id: 'gone' }, [custom])).toBeUndefined();
 });
+
+describe('adopt: a product of Open Food Facts becomes a food of one\'s own', () => {
+  const coca: FoodInput = {
+    name: 'Coca-Cola', state: 'other', per100g: { kcal: 42.4, protein: 0, carbs: 10.6, fat: 0 }, portions: [{ label: 'Portion 330 ml ≈ 330 g', grams: 330 }],
+    nutrients: { sugars: 10.6 }, source: 'off', brand: 'Coca-Cola Services', barcode: '5449000000996',
+  };
+
+  test('is written and listed, its reference known at once', async () => {
+    const { foods } = setup();
+    const { food, written } = foods.adopt(coca, []);
+    await written;
+    let custom: Food[] = [];
+    foods.observeCustom((list) => (custom = list), () => {});
+    expect(food.ref).toEqual({ type: 'custom', id: expect.any(String) });
+    expect(custom).toEqual([food]);
+    expect(custom[0]).toMatchObject({ source: 'off', brand: 'Coca-Cola Services', barcode: '5449000000996', nutrients: { sugars: 10.6 } });
+  });
+
+  test('is not written twice for the same barcode: the food already there is used', async () => {
+    const { foods } = setup();
+    const first = foods.adopt(coca, []);
+    await first.written;
+    let custom: Food[] = [];
+    foods.observeCustom((list) => (custom = list), () => {});
+    const again = foods.adopt({ ...coca, name: 'Coca-Cola (autre fiche)' }, custom);
+    expect(again.food).toBe(custom[0]);
+    expect(custom).toHaveLength(1);
+  });
+
+  test('refuses what the rules would refuse, before any write', async () => {
+    const { foods } = setup();
+    expect(() => foods.adopt({ ...coca, name: ' ' }, [])).toThrow(/nom/i);
+    let custom: Food[] = [];
+    foods.observeCustom((list) => (custom = list), () => {});
+    expect(custom).toEqual([]);
+  });
+
+  test('findByBarcode looks among the foods of the user', () => {
+    const { foods } = setup();
+    const mine: Food = { ref: { type: 'custom', id: '1' }, ...coca };
+    expect(foods.findByBarcode('5449000000996', [mine])).toBe(mine);
+    expect(foods.findByBarcode('1', [mine])).toBeUndefined();
+  });
+});

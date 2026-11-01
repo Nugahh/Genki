@@ -319,6 +319,33 @@ describe('foods', () => {
     await assertFails(deleteDoc(ref));
   });
 
+  test('a food may come from Open Food Facts, with its brand, barcode and nutrients', async () => {
+    await assertSucceeds(setDoc(doc(db('alice'), 'users/alice/foods/f1'), { ...customFood(), source: 'off', brand: 'Coca-Cola', barcode: '5449000000996', nutrients: { sugars: 10.6, vitC: 0 } }));
+    await assertSucceeds(setDoc(doc(db('alice'), 'users/alice/foods/f2'), { ...customFood(), barcode: '12345678' }));
+  });
+
+  test.each<[string, object]>([
+    ['the barcode is not numeric', { barcode: '54490abc' }],
+    ['the barcode has 7 digits', { barcode: '1234567' }],
+    ['the barcode has 15 digits', { barcode: '123456789012345' }],
+    ['the barcode is a number', { barcode: 5449000000996 }],
+    ['the source is unknown', { source: 'usda' }],
+    ['the brand is not text', { brand: 12 }],
+    ['the brand is 101 characters', { brand: 'x'.repeat(101) }],
+    ['a nutrient is unknown', { nutrients: { vitamin: 1 } }],
+    ['a nutrient is above 1 000 000', { nutrients: { iron: 1000001 } }],
+  ])('rejects a food when %s', async (_, override) => {
+    await assertFails(setDoc(doc(db('alice'), 'users/alice/foods/f1'), { ...customFood(), ...override }));
+  });
+
+  test('the source, brand and barcode of a food are not changed afterwards', async () => {
+    await seed('users/alice/foods/f1', { ...customFood(), source: 'off', brand: 'Coca-Cola', barcode: '5449000000996' });
+    const ref = doc(db('alice'), 'users/alice/foods/f1');
+    await assertFails(updateDoc(ref, { barcode: '12345678', updatedAt: Timestamp.now() }));
+    await assertFails(updateDoc(ref, { source: 'off', brand: 'Autre', updatedAt: Timestamp.now() }));
+    await assertSucceeds(updateDoc(ref, { name: 'Coca-Cola, canette', brand: 'Coca-Cola', updatedAt: Timestamp.now() }));
+  });
+
   test.each<[string, object]>([
     ['the name is empty', { name: '' }],
     ['the state is unknown', { state: 'frozen' }],

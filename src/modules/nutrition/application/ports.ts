@@ -10,7 +10,8 @@ export interface FoodCatalog {
 
 /** The user's own foods. Writes settle once the server has them; observers see them at once. */
 export interface FoodRepository {
-  create(food: FoodInput): Promise<void>;
+  /** The id is known at once; `written` settles once the server has the food. */
+  add(food: FoodInput): { id: string; written: Promise<void> };
   update(id: string, food: FoodInput): Promise<void>;
   /** Soft delete. */
   remove(id: string): Promise<void>;

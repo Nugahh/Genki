@@ -83,6 +83,14 @@ service cloud.firestore {
         && m.fat is number && m.fat >= 0 && m.fat <= 100;
     }
 
+    // What a product of Open Food Facts adds to a food of one's own (all optional).
+    function isFoodExtras(d) {
+      return (!('source' in d) || d.source == 'off')
+        && (!('brand' in d) || isShortText(d.brand, 100))
+        && (!('barcode' in d) || (d.barcode is string && d.barcode.matches('^[0-9]{8,14}$')))
+        && (!('nutrients' in d) || isEntryNutrients(d.nutrients));
+    }
+
     function isFoodFields(d) {
       return isShortText(d.name, 100)
         && d.state in ['raw', 'cooked', 'other']
@@ -232,8 +240,9 @@ service cloud.firestore {
 
     match /users/{uid}/foods/{foodId} {
       allow create: if isOwner(uid)
-        && request.resource.data.keys().hasOnly(['name', 'state', 'per100g', 'portions', 'updatedAt', 'deletedAt'])
+        && request.resource.data.keys().hasOnly(['name', 'state', 'per100g', 'portions', 'nutrients', 'source', 'brand', 'barcode', 'updatedAt', 'deletedAt'])
         && isFoodFields(request.resource.data)
+        && isFoodExtras(request.resource.data)
         && request.resource.data.deletedAt == null;
       allow update: if isOwner(uid)
         && resource.data.deletedAt == null

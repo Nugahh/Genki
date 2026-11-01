@@ -9,9 +9,11 @@ export function inMemoryFoodRepository(): FoodRepository {
   const notify = () => listeners.forEach((listener) => listener());
 
   return {
-    async create(food: FoodInput) {
-      foods = [...foods, { ref: { type: 'custom', id: String(nextId++) }, ...food }];
+    add(food: FoodInput) {
+      const id = String(nextId++);
+      foods = [...foods, { ref: { type: 'custom', id }, ...food }];
       notify();
+      return { id, written: Promise.resolve() };
     },
     async update(id: string, food: FoodInput) {
       foods = foods.map((f) => (f.ref.id === id ? { ref: { type: 'custom', id }, ...food } : f));

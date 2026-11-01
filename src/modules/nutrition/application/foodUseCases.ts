@@ -20,8 +20,21 @@ export function foodUseCases(deps: { catalog: FoodCatalog; repo: FoodRepository 
     },
     observeCustom: repo.observeAll,
     async create(food: FoodInput) {
-      return repo.create(checked(food));
+      return repo.add(checked(food)).written;
     },
+    /**
+     * Uses a product of Open Food Facts as a food of one's own: the one the user already has for its barcode, else a new one (written, not awaited:
+     * offline it settles with the server). Its reference is known at once, for the line of the journal.
+     */
+    adopt(product: FoodInput, custom: Food[]): { food: Food; written: Promise<void> } {
+      const existing = product.barcode ? custom.find((f) => f.barcode === product.barcode) : undefined;
+      if (existing) return { food: existing, written: Promise.resolve() };
+      const valid = checked(product);
+      const { id, written } = repo.add(valid);
+      return { food: { ref: { type: 'custom', id }, ...valid }, written };
+    },
+    /** The food of one's own with this barcode, from the live list the caller holds. */
+    findByBarcode: (code: string, custom: Food[]) => custom.find((f) => f.barcode === code),
     async update(id: string, food: FoodInput) {
       return repo.update(id, checked(food));
     },

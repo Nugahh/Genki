@@ -37,13 +37,13 @@ const foods = (db: Firestore) =>
 
 test('a created food is listed with a generated id, its values and its portions intact', async () => {
   const db = phone();
-  await foodsOn(db).create(bread());
+  await foodsOn(db).add(bread()).written;
   expect(await foods(db)).toEqual([{ ref: { type: 'custom', id: expect.any(String) }, ...bread() }]);
 });
 
 test('updating a food changes it in the list', async () => {
   const db = phone();
-  await foodsOn(db).create(bread());
+  await foodsOn(db).add(bread()).written;
   const [created] = await foods(db);
   await foodsOn(db).update(created.ref.id, { ...bread(), name: 'Pain de mie' });
   expect(await foods(db)).toEqual([{ ...created, name: 'Pain de mie' }]);
@@ -51,12 +51,51 @@ test('updating a food changes it in the list', async () => {
 
 test('a removed food leaves the list', async () => {
   const db = phone();
-  await foodsOn(db).create(bread());
+  await foodsOn(db).add(bread()).written;
   const [created] = await foods(db);
   await foodsOn(db).remove(created.ref.id);
   expect(await foods(db)).toEqual([]);
 });
 
 test('a food the rules refuse is rejected', async () => {
-  await expect(foodsOn(phone()).create({ ...bread(), per100g: { kcal: 1000, protein: 8, carbs: 48, fat: 2 } })).rejects.toThrow();
+  await expect(foodsOn(phone()).add({ ...bread(), per100g: { kcal: 1000, protein: 8, carbs: 48, fat: 2 } }).written).rejects.toThrow();
+});
+
+const coca = () => ({
+  name: 'Coca-Cola', state: 'other' as const, per100g: { kcal: 42.4, protein: 0, carbs: 10.6, fat: 0 },
+  portions: [{ label: 'Portion 330 ml ≈ 330 g', grams: 330 }],
+  nutrients: { sugars: 10.6, salt: 0 }, source: 'off' as const, brand: 'Coca-Cola Services', barcode: '5449000000996',
+});
+
+test('the id of a new food is known before it is written', async () => {
+  const db = phone();
+  const { id, written } = foodsOn(db).add(bread());
+  expect(id).toEqual(expect.any(String));
+  await written;
+  expect((await foods(db))[0].ref.id).toBe(id);
+});
+
+test('a product of Open Food Facts keeps its source, brand, barcode and nutrients', async () => {
+  const db = phone();
+  await foodsOn(db).add(coca()).written;
+  expect(await foods(db)).toEqual([{ ref: { type: 'custom', id: expect.any(String) }, ...coca() }]);
+});
+
+test('editing such a food keeps what it came with', async () => {
+  const db = phone();
+  await foodsOn(db).add(coca()).written;
+  const [created] = await foods(db);
+  await foodsOn(db).update(created.ref.id, { ...coca(), name: 'Coca-Cola, canette' });
+  expect(await foods(db)).toEqual([{ ...created, name: 'Coca-Cola, canette' }]);
+});
+
+test.each([
+  ['a barcode that is not numeric', { barcode: 'abc12345' }],
+  ['a barcode of 7 digits', { barcode: '1234567' }],
+  ['a barcode of 15 digits', { barcode: '123456789012345' }],
+  ['a source that is unknown', { source: 'usda' as never }],
+  ['a nutrient that is not in the catalogue', { nutrients: { vitamin: 1 } as never }],
+  ['a nutrient below zero', { nutrients: { iron: -1 } }],
+])('the rules refuse %s', async (_, patch) => {
+  await expect(foodsOn(phone()).add({ ...coca(), ...patch }).written).rejects.toThrow();
 });

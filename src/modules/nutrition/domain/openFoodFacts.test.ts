@@ -72,6 +72,11 @@ describe('fromOpenFoodFacts', () => {
     expect(fromOpenFoodFacts(tooMuch).ok).toBe(false);
   });
 
+  test('a name or a brand longer than the rules allow is cut', () => {
+    const result = fromOpenFoodFacts({ ...COCA, product_name_fr: 'x'.repeat(150), brands: 'y'.repeat(150) });
+    expect(result.ok && [result.food.name.length, result.food.brand?.length]).toEqual([100, 100]);
+  });
+
   test('a code that is not 8 to 14 digits is not kept', () => {
     expect(fromOpenFoodFacts({ ...COCA, code: 'abc' })).toMatchObject({ ok: true, food: expect.not.objectContaining({ barcode: expect.anything() }) });
   });

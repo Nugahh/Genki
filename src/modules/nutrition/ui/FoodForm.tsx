@@ -42,6 +42,11 @@ export function FoodForm({ initial, submitLabel, onSubmit }: Props) {
 
   const p = draft.per100g;
   const food: FoodInput = {
+    // What a product of Open Food Facts came with stays when its figures are corrected.
+    ...(initial?.nutrients && { nutrients: initial.nutrients }),
+    ...(initial?.source && { source: initial.source }),
+    ...(initial?.brand && { brand: initial.brand }),
+    ...(initial?.barcode && { barcode: initial.barcode }),
     name: draft.name.trim(),
     state: draft.state,
     per100g: { kcal: parseNumber(p.kcal), protein: parseNumber(p.protein), carbs: parseNumber(p.carbs), fat: parseNumber(p.fat) },
