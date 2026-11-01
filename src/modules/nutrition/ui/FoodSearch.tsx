@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { ActivityIndicator, Chip, HelperText, List, Text, TextInput } from 'react-native-paper';
+import { ActivityIndicator, Button, Chip, HelperText, List, Text, TextInput } from 'react-native-paper';
 import type { FoodUseCases } from '../application/foodUseCases';
 import { matchCustom, type Food, type FoodInput } from '../domain/food';
 import { relevance } from '../domain/relevance';
@@ -9,7 +9,12 @@ import { StateChip } from './StateChip';
 import type { BrandProducts } from './useBrandProducts';
 
 /** What is typed and filtered; the screen keeps it, so it survives a visit to a food's fiche. */
-export type Search = { query: string; state?: 'raw' | 'cooked' };
+export type Search = {
+  query: string;
+  state?: 'raw' | 'cooked';
+  /** Set when the screen filled the field itself (the name of a food just created): no products are asked for what the user did not type. */
+  quiet?: boolean;
+};
 
 /** What a result opens: a food of the user's or of Ciqual, or a product of a brand that is not one of the user's foods yet. */
 export type Choice = { food: Food } | { product: FoodInput };
@@ -78,7 +83,7 @@ export function FoodSearch({ foods, custom, brand, search, onSearch, onSelect }:
         label="Rechercher un aliment"
         accessibilityLabel="Rechercher un aliment"
         value={search.query}
-        onChangeText={(query) => onSearch({ ...search, query })}
+        onChangeText={(query) => onSearch({ query, state: search.state })}
       />
       <View style={styles.filters}>
         {FILTERS.map(({ label, state }) => (
@@ -113,12 +118,23 @@ export function FoodSearch({ foods, custom, brand, search, onSearch, onSelect }:
         />
       ))}
       {brand.status === 'pending' && (
-        <View style={styles.status} accessible accessibilityLiveRegion="polite" accessibilityLabel="Recherche de produits en cours">
+        <View style={styles.status} accessible accessibilityLiveRegion="polite">
           <ActivityIndicator size="small" />
           <Text>Recherche de produits…</Text>
         </View>
       )}
-      {brand.status === 'failed' && <Text accessibilityLiveRegion="polite">Produits de marque indisponibles hors-ligne.</Text>}
+      {brand.status === 'failed' && (
+        <View style={styles.status}>
+          <Text accessibilityLiveRegion="polite" style={styles.statusText}>
+            Produits de marque indisponibles pour le moment (hors-ligne ou service occupé).
+          </Text>
+          {brand.retry && (
+            <Button compact contentStyle={styles.button} onPress={brand.retry}>
+              Réessayer
+            </Button>
+          )}
+        </View>
+      )}
       {typed && custom !== null && answer?.search === search && answer.found !== null && results.length === 0 && brand.status !== 'pending' && (
         <Text accessibilityLiveRegion="polite">Aucun aliment trouvé.</Text>
       )}
@@ -131,4 +147,6 @@ const styles = StyleSheet.create({
   filters: { flexDirection: 'row', gap: 8 },
   status: { flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 48 },
   source: { alignSelf: 'center' },
+  statusText: { flex: 1 },
+  button: { minHeight: 48 },
 });

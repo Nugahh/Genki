@@ -1,4 +1,4 @@
-import { validateFood, type FoodInput, type Portion } from './food';
+import { isValidGrams, validateFood, type FoodInput, type Portion } from './food';
 import type { NutrientId, Nutrients } from './nutrients';
 
 /** The fields of a product that Open Food Facts is asked for (api/v2/product, cgi/search.pl). A value can be a string: nothing is trusted. */
@@ -39,14 +39,17 @@ const NUTRIENT_KEYS: Record<string, [NutrientId, number]> = {
 
 /** A reading that is a finite number of zero or more; Open Food Facts sometimes sends text. */
 const reading = (value: number | string | undefined) => {
-  const n = typeof value === 'string' ? Number(value) : value;
+  // « » is not a zero.
+  const n = typeof value === 'string' ? (value.trim() === '' ? undefined : Number(value)) : value;
   return typeof n === 'number' && Number.isFinite(n) && n >= 0 ? n : undefined;
 };
+// Open Food Facts is filled by contributors: a field that should be text is not trusted to be.
+const text = (value: unknown) => (typeof value === 'string' ? value : undefined);
 const round1 = (n: number) => Math.round(n * 10) / 10;
 const sig3 = (n: number) => Number(n.toPrecision(3));
 
-function portionOf(kind: 'Portion' | 'Emballage', text: string | undefined): Portion | undefined {
-  const quantity = text === undefined ? undefined : parseQuantity(text);
+function portionOf(kind: 'Portion' | 'Emballage', label: unknown): Portion | undefined {
+  const quantity = typeof label === 'string' ? parseQuantity(label) : undefined;
   if (!quantity) return undefined;
   return { label: `${kind} ${quantity.amount}${quantity.approx ? ` ≈ ${quantity.grams} g` : ''}`, grams: quantity.grams };
 }
@@ -69,19 +72,20 @@ export function fromOpenFoodFacts(product: OffProduct): OffConversion {
   const nutrients: Nutrients = {};
   for (const [key, [id, factor]] of Object.entries(NUTRIENT_KEYS)) {
     const value = reading(n[key]);
-    // The rules bound a nutrient to 1 000 000: a reading above is a mistake of the contributor.
-    if (value !== undefined && value * factor <= 1000000) nutrients[id] = sig3(value * factor);
+    // The rules bound a nutrient to 1 000 000, and what is given in grams for 100 g cannot pass 100: a reading above is a mistake of the contributor.
+    if (value !== undefined && value * factor <= (factor === 1 ? 100 : 1000000)) nutrients[id] = sig3(value * factor);
   }
 
   const serving = portionOf('Portion', product.serving_size);
   const pack = portionOf('Emballage', product.quantity);
-  const portions = [serving, pack && pack.grams !== serving?.grams ? pack : undefined].filter((p): p is Portion => p !== undefined);
-  const brand = product.brands?.split(',')[0].trim().slice(0, 100);
+  // A portion that cannot be (0 g, a pack of 25 kg) is left out, not the product; 100 g is always offered already.
+  const portions = [serving, pack && pack.grams !== serving?.grams ? pack : undefined].filter((p): p is Portion => p !== undefined && isValidGrams(p.grams) && p.grams !== 100);
+  const brand = text(product.brands)?.split(',')[0].trim().slice(0, 100);
   const barcode = product.code && /^\d{8,14}$/.test(product.code) ? product.code : undefined;
 
   const food: FoodInput = {
     // The name of a food is 100 characters at most (the rules too).
-    name: (product.product_name_fr?.trim() || product.product_name?.trim() || 'Produit sans nom').slice(0, 100),
+    name: (text(product.product_name_fr)?.trim() || text(product.product_name)?.trim() || 'Produit sans nom').slice(0, 100),
     state: 'other',
     per100g: { kcal: round1(kcal), protein: round1(protein), carbs: round1(carbs), fat: round1(fat) },
     portions,

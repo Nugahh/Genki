@@ -11,9 +11,13 @@ export function inMemoryFoodRepository(): FoodRepository {
   return {
     add(food: FoodInput) {
       const id = String(nextId++);
-      foods = [...foods, { ref: { type: 'custom', id }, ...food }];
-      notify();
-      return { id, written: Promise.resolve() };
+      return {
+        id,
+        write: async () => {
+          foods = [...foods.filter((f) => f.ref.id !== id), { ref: { type: 'custom', id }, ...food }];
+          notify();
+        },
+      };
     },
     async update(id: string, food: FoodInput) {
       foods = foods.map((f) => (f.ref.id === id ? { ref: { type: 'custom', id }, ...food } : f));

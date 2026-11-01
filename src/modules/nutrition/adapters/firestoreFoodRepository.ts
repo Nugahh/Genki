@@ -17,7 +17,7 @@ export function firestoreFoodRepository(db: Firestore, uid: string): FoodReposit
   return {
     add(food) {
       const ref = doc(foods);
-      return { id: ref.id, written: setDoc(ref, { ...fields(food), deletedAt: null }) };
+      return { id: ref.id, write: () => setDoc(ref, { ...fields(food), deletedAt: null }) };
     },
     update: (id, food) => updateDoc(doc(foods, id), fields(food)),
     remove: (id) => updateDoc(doc(foods, id), { deletedAt: Timestamp.now() }),

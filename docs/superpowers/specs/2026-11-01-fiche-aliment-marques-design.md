@@ -62,7 +62,7 @@ La carte du journal (`MealsScreen`) ajoute « Glucides nets : x / y g » et « L
 - Ciqual et les aliments de l'utilisateur répondent **tout de suite**, hors-ligne. Les produits de marque arrivent quand le réseau répond et **se placent à leur rang** ; une ligne d'attente « Recherche de produits… » reste en bas de la liste pendant l'appel.
 - La recherche réseau part après **700 ms sans frappe** et à partir de **3 caractères** ; elle est annulée si la requête change ; un **limiteur côté client** garantit au plus **10 requêtes par minute** (la limite d'Open Food Facts) ; délai d'attente de 8 s.
 - Chaque ligne : le nom, et **dessous** la quantité (« 100 g », « 330 ml · Coca-Cola ») ; à droite, un petit libellé de source seulement pour les produits de marque.
-- Hors-ligne ou erreur réseau : la liste ne montre que Ciqual et l'utilisateur, avec une ligne « Produits de marque indisponibles hors-ligne » (texte, annoncé).
+- Hors-ligne ou erreur réseau : la liste ne montre que Ciqual et l'utilisateur, avec une ligne « Produits de marque indisponibles pour le moment (hors-ligne ou service occupé) » (texte, annoncé) et un bouton « Réessayer » : le point de recherche anonyme d'Open Food Facts répond parfois 503, constaté à la revue.
 
 ### 3.4 Scan
 - Un bouton **caméra** dans l'écran d'ajout (`expo-camera`, `CameraView`), types EAN-13, EAN-8, UPC-A, UPC-E. La permission de la caméra n'est demandée **qu'au premier scan** ; un refus affiche comment la rendre dans les réglages d'Android.

@@ -82,6 +82,16 @@ describe('byBarcode', () => {
     expect(await setup(async () => json({ status: 1 })).client.byBarcode('5449000000996', signal())).toBeUndefined();
   });
 
+  test('a barcode it does not know is answered with an HTTP 404, which is not a failure', async () => {
+    const { client } = setup(async () => json({ status: 0, status_verbose: 'product not found' }, { ok: false, status: 404 }));
+    expect(await client.byBarcode('2222222222220', signal())).toBeUndefined();
+  });
+
+  test('any other HTTP error is a failure', async () => {
+    const { client } = setup(async () => json({}, { ok: false, status: 503 }));
+    await expect(client.byBarcode('5449000000996', signal())).rejects.toThrow('HTTP 503');
+  });
+
   test('a code that is not 8 to 14 digits is never sent', async () => {
     const { client, fetchMock } = setup();
     await expect(client.byBarcode('../../etc', signal())).rejects.toThrow('code-barres');

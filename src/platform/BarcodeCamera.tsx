@@ -1,13 +1,21 @@
 import { CameraView, useCameraPermissions } from 'expo-camera';
-import { Linking, StyleSheet, View } from 'react-native';
+import { useEffect } from 'react';
+import { AppState, Linking, StyleSheet, View } from 'react-native';
 import { Button, Text } from 'react-native-paper';
 
 /**
  * The camera of the phone reading the barcodes of products (EAN-13, EAN-8, UPC-A, UPC-E; a QR code is not read). The permission is asked here,
  * the first time the scan opens, after a word about why.
  */
-export function BarcodeCamera({ onScan }: { onScan: (code: string) => void }) {
-  const [permission, request] = useCameraPermissions();
+export function BarcodeCamera({ onScan }: { onScan: (code: string, type?: string) => void }) {
+  const [permission, request, refresh] = useCameraPermissions();
+  // The permission is read once: after the settings of Android, where it may have been given, it is read again.
+  useEffect(() => {
+    const listener = AppState.addEventListener('change', (state) => {
+      if (state === 'active') void refresh();
+    });
+    return () => listener.remove();
+  }, [refresh]);
   // The state of the permission is not read yet.
   if (!permission) return null;
 
@@ -38,7 +46,7 @@ export function BarcodeCamera({ onScan }: { onScan: (code: string) => void }) {
       facing="back"
       accessibilityLabel="Caméra : place le code-barres du produit dans le cadre"
       barcodeScannerSettings={{ barcodeTypes: ['ean13', 'ean8', 'upc_a', 'upc_e'] }}
-      onBarcodeScanned={({ data }) => onScan(data)}
+      onBarcodeScanned={({ data, type }) => onScan(data, type)}
     />
   );
 }

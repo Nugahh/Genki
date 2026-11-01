@@ -63,11 +63,11 @@ export function validateFood(food: FoodInput): string | null {
   return null;
 }
 
-/** The custom foods matching every term of `query` (accents and case ignored), by name. */
+/** The custom foods matching every term of `query` (accents and case ignored) in their name or their brand, by name. */
 export function matchCustom(foods: Food[], query: string, state?: 'raw' | 'cooked'): Food[] {
   const terms = normalizeSearch(query).split(' ').filter(Boolean);
   if (terms.length === 0) return [];
   return foods
-    .filter((f) => (!state || f.state === state) && terms.every((t) => normalizeSearch(f.name).includes(t)))
+    .filter((f) => (!state || f.state === state) && terms.every((t) => normalizeSearch(f.name).includes(t) || normalizeSearch(f.brand ?? '').includes(t)))
     .sort((a, b) => a.name.localeCompare(b.name, 'fr'));
 }

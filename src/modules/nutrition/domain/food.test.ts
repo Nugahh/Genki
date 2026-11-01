@@ -78,3 +78,10 @@ describe('isValidLoggedAt', () => {
     expect(isValidLoggedAt(new Date(now.getTime() + 60000), now)).toBe(false);
   });
 });
+
+test('matchCustom finds a food by its brand too', () => {
+  const nutella = { ref: { type: 'custom' as const, id: '1' }, name: 'Pâte à tartiner', state: 'other' as const, per100g: { kcal: 539, protein: 6, carbs: 58, fat: 31 }, portions: [], brand: 'Nutella' };
+  expect(matchCustom([nutella], 'nutella').map((f) => f.name)).toEqual(['Pâte à tartiner']);
+  expect(matchCustom([nutella], 'nutella tartiner').map((f) => f.name)).toEqual(['Pâte à tartiner']);
+  expect(matchCustom([nutella], 'nutella chocolat')).toEqual([]);
+});

@@ -7,7 +7,8 @@ import type { Food } from '../domain/food';
 import type { Choice } from './FoodSearch';
 
 /** The camera preview of the phone, reading barcodes: it calls `onScan` with the text of each code it reads, as often as it reads it. */
-export type ScanCamera = (props: { onScan: (code: string) => void }) => ReactElement | null;
+/** `type` is the kind of code the camera says it read (« ean13 », « upc_e »…). */
+export type ScanCamera = (props: { onScan: (code: string, type?: string) => void }) => ReactElement | null;
 
 type Props = {
   camera: ScanCamera;
@@ -26,8 +27,22 @@ type State =
   | { phase: 'looking' }
   | { phase: 'message'; code: string; text: string; again: boolean };
 
-/** The barcode of a product (EAN-8, EAN-13, UPC-A) from what the camera read; a UPC-A of 12 digits is an EAN-13 with a leading zero. */
-function barcodeOf(text: string): string | undefined {
+/** The 12 digits of the UPC-A that a UPC-E (8 digits, the zeros left out) stands for. */
+function upcEToA(e: string): string {
+  const d = e.split('');
+  const last = d[6];
+  if ('012'.includes(last)) return `${d[0]}${d[1]}${d[2]}${last}0000${d[3]}${d[4]}${d[5]}${d[7]}`;
+  if (last === '3') return `${d[0]}${d[1]}${d[2]}${d[3]}00000${d[4]}${d[5]}${d[7]}`;
+  if (last === '4') return `${d[0]}${d[1]}${d[2]}${d[3]}${d[4]}00000${d[5]}${d[7]}`;
+  return `${d[0]}${d[1]}${d[2]}${d[3]}${d[4]}${d[5]}0000${last}${d[7]}`;
+}
+
+/**
+ * The barcode of a product as Open Food Facts keeps it (an EAN-13) from what the camera read. An EAN-8 and an EAN-13 are as they are; a UPC-A of 12
+ * digits has a leading zero; a UPC-E, which the camera names, is first spelled out as a UPC-A.
+ */
+function barcodeOf(text: string, type?: string): string | undefined {
+  if (type === 'upc_e' && /^\d{8}$/.test(text)) return `0${upcEToA(text)}`;
   if (!/^\d{8}$|^\d{12,14}$/.test(text)) return undefined;
   return text.length === 12 ? `0${text}` : text;
 }
@@ -59,8 +74,8 @@ export function ScanScreen({ camera: Camera, foods, products, custom, onFound, o
     }
   }
 
-  const onScan = (text: string) => {
-    const code = barcodeOf(text);
+  const onScan = (text: string, type?: string) => {
+    const code = barcodeOf(text, type);
     if (code && !busy.current) void look(code);
   };
 

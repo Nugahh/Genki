@@ -57,8 +57,8 @@ describe('adopt: a product of Open Food Facts becomes a food of one\'s own', () 
 
   test('is written and listed, its reference known at once', async () => {
     const { foods } = setup();
-    const { food, written } = foods.adopt(coca, []);
-    await written;
+    const { food, write } = foods.adopt(coca, []);
+    await write();
     let custom: Food[] = [];
     foods.observeCustom((list) => (custom = list), () => {});
     expect(food.ref).toEqual({ type: 'custom', id: expect.any(String) });
@@ -66,10 +66,20 @@ describe('adopt: a product of Open Food Facts becomes a food of one\'s own', () 
     expect(custom[0]).toMatchObject({ source: 'off', brand: 'Coca-Cola Services', barcode: '5449000000996', nutrients: { sugars: 10.6 } });
   });
 
+  test('writing it again, as a retry does, is still one food', async () => {
+    const { foods } = setup();
+    const adoption = foods.adopt(coca, []);
+    await adoption.write();
+    await adoption.write();
+    let custom: Food[] = [];
+    foods.observeCustom((list) => (custom = list), () => {});
+    expect(custom).toHaveLength(1);
+  });
+
   test('is not written twice for the same barcode: the food already there is used', async () => {
     const { foods } = setup();
     const first = foods.adopt(coca, []);
-    await first.written;
+    await first.write();
     let custom: Food[] = [];
     foods.observeCustom((list) => (custom = list), () => {});
     const again = foods.adopt({ ...coca, name: 'Coca-Cola (autre fiche)' }, custom);

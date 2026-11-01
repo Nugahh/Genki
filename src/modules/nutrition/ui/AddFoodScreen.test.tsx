@@ -822,9 +822,39 @@ describe('the products of brands', () => {
     jest.spyOn(console, 'warn').mockImplementation(() => {});
     await setup({ productSource: source });
     await search('riz');
-    expect(await screen.findByText('Produits de marque indisponibles hors-ligne.')).toBeTruthy();
+    expect(await screen.findByText('Produits de marque indisponibles pour le moment (hors-ligne ou service occupé).')).toBeTruthy();
     expect(screen.getByText('Riz blanc, cru')).toBeTruthy();
     expect(screen.queryByText('Aucun aliment trouvé.')).toBeNull();
+  });
+
+  test('can be asked again after a failure', async () => {
+    jest.spyOn(console, 'warn').mockImplementation(() => {});
+    const search_ = jest.fn().mockRejectedValueOnce(new Error('HTTP 503')).mockResolvedValueOnce([cocaCola]);
+    await setup({ productSource: { search: search_, byBarcode: async () => undefined } });
+    await search('coca');
+    await fireEvent.press(await screen.findByText('Réessayer'));
+    expect(await screen.findByText('Coca-Cola')).toBeTruthy();
+    expect(screen.queryByText(/indisponibles/)).toBeNull();
+    expect(search_).toHaveBeenCalledTimes(2);
+  });
+
+  test('are not asked for the name of a food that has just been created: the user did not type it', async () => {
+    const asked: string[] = [];
+    const source: ProductSource = { search: async (q) => (asked.push(q), []), byBarcode: async () => undefined };
+    await setup({ productSource: source });
+    await fireEvent.press(screen.getByText('Créer'));
+    await type('Nom', 'Gâteau maison');
+    await type('Calories pour 100 g', '300');
+    await type('Protéines pour 100 g', '5');
+    await type('Glucides pour 100 g', '40');
+    await type('Lipides pour 100 g', '12');
+    await fireEvent.press(screen.getByText('Enregistrer'));
+    expect(await screen.findByText('Gâteau maison')).toBeTruthy();
+    await new Promise((r) => setTimeout(r, 20));
+    expect(asked).toEqual([]);
+    // What the user types next is asked.
+    await search('gâteau');
+    await waitFor(() => expect(asked).toEqual(['gâteau']));
   });
 
   test('are not asked for under three characters, nor with the raw or cooked filter', async () => {
@@ -868,6 +898,31 @@ describe('the products of brands', () => {
     expect(mine).toHaveLength(1);
     expect(mine[0]).toMatchObject({ name: 'Coca-Cola', source: 'off', brand: 'Coca-Cola Services', barcode: '5449000000996' });
     expect(entries.entries[0]).toMatchObject({ foodRef: mine[0].ref, foodName: 'Coca-Cola', grams: 330, macros: { kcal: 139.9 } });
+  });
+
+  test('« Réessayer » after a refused write makes no second food: the retry writes the same one', async () => {
+    const writes: (() => Promise<void>)[] = [];
+    const { foods } = await setup({ brandProducts: [cocaCola], run: (write) => void writes.push(write) });
+    await search('coca');
+    await fireEvent.press(await screen.findByText('Coca-Cola'));
+    await fireEvent.press(screen.getByText('Ajouter à Déjeuner'));
+    expect(writes).toHaveLength(1);
+    await act(async () => {
+      await writes[0]();
+      await writes[0](); // « Réessayer »
+    });
+    let mine: Food[] = [];
+    foods.observeCustom((list) => (mine = list), () => {});
+    expect(mine).toHaveLength(1);
+  });
+
+  test('a product the user already has is found by its brand too, even when the network has nothing', async () => {
+    const { foods } = await setup({ brandProducts: [] });
+    await act(async () => {
+      await foods.create({ ...bread, name: 'Pâte à tartiner', barcode: '3017620422003', source: 'off', brand: 'Nutella' });
+    });
+    await search('nutella');
+    expect(await screen.findByText('Pâte à tartiner')).toBeTruthy();
   });
 
   test('a product the user already has is shown as theirs, not twice', async () => {

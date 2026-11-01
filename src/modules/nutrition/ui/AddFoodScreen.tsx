@@ -56,7 +56,7 @@ export function AddFoodScreen({ meal, meals, foods, products, camera, profile, c
   const [scanning, setScanning] = useState(false);
   const [scanned, setScanned] = useState<string | undefined>();
   // Held here, not by the list: the products of a search are not asked again when the user comes back from a fiche. Raw or cooked leaves them out.
-  const brand = useBrandProducts(products, search.query, !search.state);
+  const brand = useBrandProducts(products, search.query, !search.state && !search.quiet);
   // The custom foods, live: the search, the recents and the favorites all look foods up in them. null until the first list.
   const [custom, setCustom] = useState<Food[] | null>(null);
   // Listener errors show on the SyncIcon, which watches the same user's data.
@@ -64,7 +64,8 @@ export function AddFoodScreen({ meal, meals, foods, products, camera, profile, c
 
   const create = (food: FoodInput) => {
     run(() => foods.create(food));
-    setSearch({ query: food.name });
+    // The name is put in the field to show the food just created: it is not something the user typed, so it is not sent to Open Food Facts.
+    setSearch({ query: food.name, quiet: true });
     setSegment('search');
     setScanned(undefined);
   };

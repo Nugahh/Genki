@@ -95,12 +95,17 @@ export function FoodDetail({ food: chosen, grams: last, meal, meals, foods, cust
           onSubmit={({ grams, meal: chosenMeal, at }) => {
             if (submitted.current) return;
             submitted.current = true;
-            run(async () => {
-            if (owned) return meals.logFood(chosenMeal, owned, grams, at);
-            // A product becomes a food of the user's (written, not awaited one after the other: offline they settle together), then the line refers to it.
-            const { food: adopted, written } = foods.adopt(food, custom);
-            await Promise.all([written, meals.logFood(chosenMeal, adopted, grams, at)]);
-          });
+            if (owned) {
+              run(() => meals.logFood(chosenMeal, owned, grams, at));
+            } else {
+              // A product becomes a food of the user's, and the line refers to it. Made once, on the first run: a retry writes the same food again,
+              // never a second one. The two writes are not awaited one after the other: offline they settle together.
+              let adoption: ReturnType<typeof foods.adopt> | undefined;
+              run(async () => {
+                adoption ??= foods.adopt(food, custom);
+                await Promise.all([adoption.write(), meals.logFood(chosenMeal, adoption.food, grams, at)]);
+              });
+            }
             onDone();
           }}
         >

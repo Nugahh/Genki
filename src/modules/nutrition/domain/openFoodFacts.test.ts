@@ -72,6 +72,30 @@ describe('fromOpenFoodFacts', () => {
     expect(fromOpenFoodFacts(tooMuch).ok).toBe(false);
   });
 
+  test('a portion that cannot be is left out and the product is kept', () => {
+    for (const [serving_size, quantity] of [['0 g', '330 ml'], ['1 portion (330 ml)', '25 kg'], ['6 l', '5001 g']] as const) {
+      const result = fromOpenFoodFacts({ ...COCA, serving_size, quantity });
+      expect(result.ok).toBe(true);
+      expect(result.ok && result.food.portions.every((p) => p.grams > 0 && p.grams <= 5000)).toBe(true);
+    }
+    expect(fromOpenFoodFacts({ ...COCA, serving_size: '0 g', quantity: '25 kg' })).toMatchObject({ ok: true, food: { portions: [] } });
+  });
+
+  test('a portion of 100 g is not listed: it is always offered', () => {
+    expect(fromOpenFoodFacts({ ...COCA, serving_size: '100 g', quantity: '100 g' })).toMatchObject({ ok: true, food: { portions: [] } });
+  });
+
+  test('an empty reading is not a zero, and a field that is not text does not break the product', () => {
+    expect(fromOpenFoodFacts({ ...COCA, nutriments: { ...COCA.nutriments, carbohydrates_100g: '' } }).ok).toBe(false);
+    const odd = { ...COCA, product_name_fr: 42 as never, product_name: ['x'] as never, brands: 7 as never, serving_size: 330 as never };
+    expect(fromOpenFoodFacts(odd)).toMatchObject({ ok: true, food: { name: 'Produit sans nom' } });
+  });
+
+  test('a nutrient in grams for 100 g cannot pass 100 g', () => {
+    const result = fromOpenFoodFacts({ ...COCA, nutriments: { ...COCA.nutriments, salt_100g: 5000, fiber_100g: 3 } });
+    expect(result.ok && result.food.nutrients).toEqual({ sugars: 10.6, saturatedFat: 0, fiber: 3 });
+  });
+
   test('a name or a brand longer than the rules allow is cut', () => {
     const result = fromOpenFoodFacts({ ...COCA, product_name_fr: 'x'.repeat(150), brands: 'y'.repeat(150) });
     expect(result.ok && [result.food.name.length, result.food.brand?.length]).toEqual([100, 100]);

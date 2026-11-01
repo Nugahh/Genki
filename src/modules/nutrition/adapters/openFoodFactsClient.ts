@@ -9,7 +9,8 @@ const TIMEOUT_MS = 8000;
 
 /** Open Food Facts over `fetch`. Only the text searched or the barcode leaves the phone, with no identifier of the account. */
 export function openFoodFactsClient(fetchFn: typeof fetch = fetch): ProductSource {
-  async function get(url: string, caller: AbortSignal): Promise<unknown> {
+  /** `notFound` is what to give for an HTTP 404: Open Food Facts answers 404 with `{ status: 0 }` for a barcode it does not know. */
+  async function get(url: string, caller: AbortSignal, notFound?: unknown): Promise<unknown> {
     const controller = new AbortController();
     let timedOut = false;
     const timer = setTimeout(() => {
@@ -21,6 +22,7 @@ export function openFoodFactsClient(fetchFn: typeof fetch = fetch): ProductSourc
     caller.addEventListener('abort', stop);
     try {
       const response = await fetchFn(url, { headers: HEADERS, signal: controller.signal });
+      if (response.status === 404 && notFound !== undefined) return notFound;
       if (!response.ok) throw new Error(`Open Food Facts : HTTP ${response.status}`);
       return await response.json();
     } catch (error) {
@@ -40,7 +42,7 @@ export function openFoodFactsClient(fetchFn: typeof fetch = fetch): ProductSourc
     },
     async byBarcode(code, signal) {
       if (!/^\d{8,14}$/.test(code)) throw new Error('Ce code-barres n’est pas valide.');
-      const body = (await get(`${BASE}/api/v2/product/${code}.json?fields=${FIELDS}`, signal)) as { status?: number; product?: OffProduct };
+      const body = (await get(`${BASE}/api/v2/product/${code}.json?fields=${FIELDS}`, signal, { status: 0 })) as { status?: number; product?: OffProduct };
       return body.status === 1 && body.product ? body.product : undefined;
     },
   };

@@ -17,7 +17,7 @@ const mine: Food = {
 };
 
 async function setup({ source = inMemoryProductSource([COCA]), custom = [] as Food[] } = {}) {
-  let scan: (code: string) => void = () => {};
+  let scan: (code: string, type?: string) => void = () => {};
   const Camera: ScanCamera = ({ onScan }) => {
     scan = onScan;
     return <Text>Caméra</Text>;
@@ -32,7 +32,7 @@ async function setup({ source = inMemoryProductSource([COCA]), custom = [] as Fo
       <ScanScreen camera={Camera} foods={foods} products={products} custom={custom} onFound={onFound} onCreate={onCreate} onBack={onBack} />
     </PaperProvider>,
   );
-  return { read: (code: string) => act(async () => scan(code)), onFound, onCreate, onBack };
+  return { read: (code: string, type?: string) => act(async () => scan(code, type)), onFound, onCreate, onBack };
 }
 
 test('shows the camera, and « Retour » leaves', async () => {
@@ -118,4 +118,31 @@ test('offline, for a product never used: a clear message, and « Réessayer » a
   expect(screen.getByText('Impossible de joindre Open Food Facts. Ce produit n’a encore jamais été utilisé : il faut du réseau.').props.accessibilityLiveRegion).toBe('polite');
   await fireEvent.press(screen.getByText('Réessayer'));
   expect(onFound).toHaveBeenCalledWith({ product: expect.objectContaining({ name: 'Coca-Cola' }) });
+});
+
+test('a UPC-E code is spelled out as a UPC-A and asked as the EAN-13 that Open Food Facts keeps', async () => {
+  const byBarcode = jest.fn(async () => undefined);
+  const { read } = await setup({ source: { search: async () => [], byBarcode } });
+  // 04252614 is the short form of the UPC-A 042100005264.
+  await read('04252614', 'upc_e');
+  expect(byBarcode).toHaveBeenCalledWith('0042100005264', expect.anything());
+});
+
+test.each([
+  ['0, 1 or 2 (here 2): the manufacturer ends with it, then 0000', '04252622', '0042200005262'],
+  ['3: the manufacturer is the first three digits, then 00 and 000', '04252631', '0042500000261'],
+  ['4: the manufacturer is the first four digits, then 0 and 0000', '04252640', '0042520000060'],
+  ['5 to 9 (here 6): the product ends with it, after 0000', '01234565', '0012345000065'],
+])('the UPC-E rule for a last digit of %s', async (_, upcE, ean13) => {
+  const byBarcode = jest.fn(async () => undefined);
+  const { read } = await setup({ source: { search: async () => [], byBarcode } });
+  await read(upcE, 'upc_e');
+  expect(byBarcode).toHaveBeenCalledWith(ean13, expect.anything());
+});
+
+test('the same 8 digits read as an EAN-8 stay as they are', async () => {
+  const byBarcode = jest.fn(async () => undefined);
+  const { read } = await setup({ source: { search: async () => [], byBarcode } });
+  await read('04252614', 'ean8');
+  expect(byBarcode).toHaveBeenCalledWith('04252614', expect.anything());
 });
