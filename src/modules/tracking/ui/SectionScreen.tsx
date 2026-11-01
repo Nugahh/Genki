@@ -94,14 +94,14 @@ export function SectionScreen({ section, metricId, tracking, goals, ui, onUiChan
                 <>
                   <Row label="Valeur du jour" value={view.headline === undefined ? '—' : def.format(view.headline)} />
                   {view.change !== undefined && (
-                    <Text variant="bodyLarge" style={{ color: colors.onSurfaceVariant }}>{`${signed(def, view.change)} par rapport à ${BEFORE.day}`}</Text>
+                    <Text variant="bodyLarge" style={{ color: colors.onSurfaceVariant }}>{`${signed(def, view.change)} par rapport ${BEFORE.day}`}</Text>
                   )}
                 </>
               ) : (
                 summary && (
                   <>
                     <Row label="Moyenne" value={summary.average === undefined ? '—' : def.format(summary.average)} />
-                    {view.change !== undefined && <Row label="Variation" value={`${signed(def, view.change)} par rapport à ${BEFORE[period]}`} />}
+                    {view.change !== undefined && <Row label="Variation" value={`${signed(def, view.change)} par rapport ${BEFORE[period]}`} />}
                     {def.target !== 'none' && <Row label="Dans la cible" value={`${summary.daysInTarget} sur ${summary.daysCounted}`} />}
                     {summary.best && <Row label="Meilleur jour" value={`${def.format(summary.best.value)} · ${periodTitle('day', summary.best.day)}`} />}
                   </>

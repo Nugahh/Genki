@@ -35,6 +35,7 @@ export function SeriesChart({ def, points, goal, title, height = 180 }: Props) {
   const plotHeight = base - PAD.top;
   const slot = (width - 2 * PAD.side) / points.length;
   const centre = (i: number) => PAD.side + slot * (i + 0.5);
+  const labelStep = slot >= 28 ? 1 : slot >= 14 ? 2 : 5;
 
   const values = points.flatMap((p) => (p.value === undefined ? [] : [p.value]));
   // Bars stand on zero; a line zooms on its own range, with room above and below.
@@ -112,9 +113,9 @@ export function SeriesChart({ def, points, goal, title, height = 180 }: Props) {
           : null}
 
         {points.map((p, i) =>
-          // Twelve months do not fit under a narrow chart: one label in two.
-          slot < 28 && i % 2 === 1 ? null : (
-            <SvgText key={p.bucket.key} x={centre(i)} y={height - 6} fontSize={11} fontFamily={fontFamily} fill={colors.onSurfaceVariant} textAnchor="middle">
+          // Twelve months, or thirty-one days, do not fit under a narrow chart: one label in two, or in five.
+          i % labelStep !== 0 ? null : (
+            <SvgText key={p.bucket.key} testID={`label-${p.bucket.key}`} x={centre(i)} y={height - 6} fontSize={11} fontFamily={fontFamily} fill={colors.onSurfaceVariant} textAnchor="middle">
               {p.bucket.label}
             </SvgText>
           ),

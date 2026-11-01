@@ -16,10 +16,11 @@ type Props = {
 const PERIODS = [
   { value: 'day', label: 'Jour', labelStyle: { paddingVertical: 4 }, showSelectedCheck: true },
   { value: 'week', label: 'Semaine', labelStyle: { paddingVertical: 4 }, showSelectedCheck: true },
+  { value: 'month', label: 'Mois', labelStyle: { paddingVertical: 4 }, showSelectedCheck: true },
   { value: 'year', label: 'Année', labelStyle: { paddingVertical: 4 }, showSelectedCheck: true },
 ];
 
-/** Day, week or year (shared by every Suivi screen), and which one: with arrows to go back in time. */
+/** Day, week, month or year (shared by every Suivi screen), and which one: with arrows to go back in time. */
 export function PeriodPicker({ period, onPeriod, title, onShift, canGoForward = false }: Props) {
   return (
     <View style={styles.box}>

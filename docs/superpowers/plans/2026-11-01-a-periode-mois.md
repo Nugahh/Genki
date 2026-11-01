@@ -129,7 +129,7 @@ et, dans `bucketsFor`, avant le `return` des mois de l'année :
 - Modify: `src/modules/tracking/ui/PeriodPicker.tsx`, `SeriesChart.tsx`, `changeText.ts` (+ leurs tests : `SeriesChart.test.tsx`, `SuiviHub.test.tsx`, `SectionScreen.test.tsx`, nouveau `PeriodPicker.test.tsx`)
 
 **Interfaces:**
-- `PeriodPicker` : quatre segments Jour · Semaine · Mois · Année. `BEFORE.month = 'le mois précédent'`. `SeriesChart` : les étiquettes sont affichées une sur `step`, avec `step = slot >= 28 ? 1 : slot >= 14 ? 2 : 5` (`slot` = largeur d'un seau).
+- `PeriodPicker` : quatre segments Jour · Semaine · Mois · Année. `BEFORE` porte la préposition (`'à la semaine précédente'`, `'au mois précédent'`…) et les phrases deviennent « par rapport ${BEFORE[period]} » : « à le mois » serait faux. `SeriesChart` : les étiquettes sont affichées une sur `step`, avec `step = slot >= 28 ? 1 : slot >= 14 ? 2 : 5` (`slot` = largeur d'un seau).
 
 - [ ] **Step 1: Tests (rouges)** :
   - `PeriodPicker.test.tsx` : les quatre libellés sont là dans l'ordre ; toucher « Mois » appelle `onPeriod('month')` ; la période choisie est cochée.
@@ -138,7 +138,7 @@ et, dans `bucketsFor`, avant le `return` des mois de l'année :
   - `SuiviHub.test.tsx` : toucher « Mois » appelle `onUiChange({ period: 'month' })` ; avec `ui.period = 'month'` le titre du hub est « novembre 2026 » et la carte Calories donne la moyenne des jours terminés du mois.
 - [ ] **Step 2:** Rouge. **Step 3: Implémenter** :
   - `PeriodPicker.tsx` : ajouter `{ value: 'month', label: 'Mois', labelStyle: { paddingVertical: 4 }, showSelectedCheck: true }` entre Semaine et Année ; si le libellé « Semaine » déborde sur 360 dp, mettre `showSelectedCheck: false` sur les quatre (à vérifier sur appareil, noté au README).
-  - `changeText.ts` : `month: 'le mois précédent'`.
+  - `changeText.ts` : `BEFORE = { day: 'à la veille', week: 'à la semaine précédente', month: 'au mois précédent', year: 'à l’année précédente' }`, et `SectionScreen.tsx` / `MetricCard.tsx` écrivent `par rapport ${BEFORE[period]}` (sans « à »).
   - `SeriesChart.tsx` : remplacer la règle d'espacement `slot < 28 && i % 2 === 1` par `i % labelStep !== 0` avec `const labelStep = slot >= 28 ? 1 : slot >= 14 ? 2 : 5;` (commentaire : « un mois n'a pas la place de ses 31 étiquettes »).
 - [ ] **Step 4:** Vert. **Step 5:** Commit `feat: the Month period in the Suivi screens`.
 

@@ -66,6 +66,15 @@ test('in the year view, a card is the mean of the months', async () => {
   expect(within(screen.getByTestId('card-calories')).getByText(calories.format(1900))).toBeTruthy();
 });
 
+test('in the month view, a card is the mean of the finished days of the month', async () => {
+  await setup({ hubMetrics: ['calories'], period: 'month' }, { '2026-10-05': { kcal: 2000 }, '2026-10-10': { kcal: 1800 }, '2026-10-31': { kcal: 300 }, '2026-09-15': { kcal: 1500 } });
+  expect(screen.getByText('octobre 2026')).toBeTruthy();
+  const card = within(screen.getByTestId('card-calories'));
+  expect(card.getByText(calories.format(1900))).toBeTruthy(); // today, still going, is left out
+  expect(card.getByText(`+${calories.format(400)}`)).toBeTruthy();
+  expect(screen.getByLabelText(/^Calories, .* par rapport au mois précédent/)).toBeTruthy();
+});
+
 test('touching a card opens its section on that statistic', async () => {
   const { onOpen } = await setup();
   await fireEvent.press(screen.getByTestId('card-water'));
@@ -77,6 +86,8 @@ test('the period is chosen here and kept in the preferences', async () => {
   expect(screen.getByText('Semaine du 26 oct. au 1 nov.')).toBeTruthy();
   await fireEvent.press(screen.getByText('Année'));
   expect(onUiChange).toHaveBeenCalledWith({ period: 'year' });
+  await fireEvent.press(screen.getByText('Mois'));
+  expect(onUiChange).toHaveBeenCalledWith({ period: 'month' });
 });
 
 describe('the editor', () => {

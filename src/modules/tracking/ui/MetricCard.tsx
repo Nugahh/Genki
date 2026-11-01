@@ -21,7 +21,7 @@ export function MetricCard({ def, period, view, failed = false, onPress }: Props
   const spoken = [
     def.label,
     valueText ?? (failed ? 'impossible de charger' : view ? emptyText.toLowerCase() : 'chargement'),
-    change === undefined ? undefined : change === 0 ? `inchangé par rapport à ${BEFORE[period]}` : `${change > 0 ? 'plus' : 'moins'} ${def.format(Math.abs(change))} par rapport à ${BEFORE[period]}`,
+    change === undefined ? undefined : change === 0 ? `inchangé par rapport ${BEFORE[period]}` : `${change > 0 ? 'plus' : 'moins'} ${def.format(Math.abs(change))} par rapport ${BEFORE[period]}`,
   ]
     .filter(Boolean)
     .join(', ');

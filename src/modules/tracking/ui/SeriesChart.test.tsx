@@ -82,3 +82,31 @@ describe('a line', () => {
     expect(screen.getByRole('image').props.accessibilityLabel).toBe('Poids : aucune donnée.');
   });
 });
+
+describe('the labels under the bars', () => {
+  const calories = metricById('calories')!;
+  const empty = (period: 'week' | 'month' | 'year') => bucketsFor(period, '2026-11-15').map((bucket): Point => ({ bucket, partial: false, tone: 'none' }));
+  const labelled = () => screen.queryAllByTestId(/^label-/).map((label) => label.props.testID.slice('label-'.length));
+
+  test('a week keeps all seven', async () => {
+    await draw(<SeriesChart def={calories} points={empty('week')} />);
+    expect(labelled()).toHaveLength(7);
+  });
+
+  test('a year keeps one month in two', async () => {
+    await draw(<SeriesChart def={calories} points={empty('year')} />);
+    expect(labelled()).toEqual(['2026-01', '2026-03', '2026-05', '2026-07', '2026-09', '2026-11']);
+  });
+
+  test('a month keeps one day in five', async () => {
+    await draw(<SeriesChart def={calories} points={empty('month')} />);
+    expect(labelled()).toEqual(['2026-11-01', '2026-11-06', '2026-11-11', '2026-11-16', '2026-11-21', '2026-11-26']);
+  });
+
+  test('a month draws one bar per day that has a value, and names them for a screen reader', async () => {
+    const points = empty('month').map((p, i) => (i < 3 ? { ...p, value: 2000, tone: 'good' as const } : p));
+    await draw(<SeriesChart def={calories} points={points} title="novembre 2026" />);
+    expect(screen.getAllByTestId(/^bar-/)).toHaveLength(3);
+    expect(screen.getByRole('image').props.accessibilityLabel).toMatch(/1er novembre, 2.000 kcal, dans la cible ; 2 novembre/);
+  });
+});

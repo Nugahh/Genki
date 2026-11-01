@@ -142,3 +142,28 @@ test('hands the period and the day to the extras of the section', async () => {
   await setup({ renderExtras: ({ period, day }) => <Text>{`extras ${period} ${day}`}</Text> });
   expect(screen.getByText('extras week 2026-10-31')).toBeTruthy();
 });
+
+describe('the month', () => {
+  // The clock says Saturday 31 October: October is the month in progress, September the one before.
+  const MONTH_FACTS: Record<string, DayFacts> = { ...WEEK_FACTS, '2026-10-05': { kcal: 1800 }, '2026-09-15': { kcal: 1500 } };
+
+  test('sums up the days finished so far, and how it moved since the month before', async () => {
+    await setup({ ui: { period: 'month' }, facts: MONTH_FACTS });
+    expect(screen.getByText('octobre 2026')).toBeTruthy();
+    const summary = within(screen.getByTestId('summary'));
+    expect(summary.getByText(calories.format(1960))).toBeTruthy();
+    expect(summary.getByText(`+${calories.format(460)} par rapport au mois précédent`)).toBeTruthy();
+    expect(chartLabel()).toMatch(/^Calories, octobre 2026 : 5 octobre, /);
+  });
+
+  test('goes back one month at a time, and not forward past the present', async () => {
+    await setup({ ui: { period: 'month' }, facts: MONTH_FACTS });
+    expect(screen.getByLabelText('Période suivante')).toBeDisabled();
+    await fireEvent.press(screen.getByLabelText('Période précédente'));
+    expect(screen.getByText('septembre 2026')).toBeTruthy();
+    expect(within(screen.getByTestId('summary')).getByText(calories.format(1500))).toBeTruthy();
+    expect(screen.getByLabelText('Période suivante')).toBeEnabled();
+    await fireEvent.press(screen.getByLabelText('Période suivante'));
+    expect(screen.getByText('octobre 2026')).toBeTruthy();
+  });
+});

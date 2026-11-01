@@ -36,7 +36,7 @@ Une application mobile personnelle, Android d'abord, iPhone ensuite, utilisable 
 - Alimentation : base Ciqual embarquée, variantes cru et cuit, portions, aliments personnalisés, favoris et repas types, journal par repas.
 - Hydratation : ajout rapide en un tap, contenants personnalisables.
 - Entraînement : programme en phases, journal de séance avec pré-remplissage, progression suggérée, paliers (jalons chiffrés).
-- Suivi : poids, tour de taille, pas, tabac, calories et macros, volume d'entraînement, avec vues Jour, Semaine, Année et stats personnalisables.
+- Suivi : poids, tour de taille, pas, tabac, calories et macros, volume d'entraînement, avec vues Jour, Semaine, Mois, Année et stats personnalisables.
 - Écran « Aujourd'hui » avec jauges en barres colorées selon le rythme, tous les indicateurs cliquables.
 - Pas via Health Connect (Fitbit ou téléphone), bouton de synchro manuel, réglages de source.
 - Export et import JSON, objectifs avec garde-fous.
@@ -85,7 +85,7 @@ L'application parle directement à Firestore par le SDK. REST n'apparaîtra que 
 Tout est rangé sous `users/{uid}`. Les identifiants sont des UUID générés par l'application pour pouvoir créer des données hors-ligne sans collision.
 
 ### Document `users/{uid}` (profil)
-`timezone` (défaut `Europe/Paris`), `sex` (`male` ou `female`, pour la formule des objectifs), `birthYear`, `heightCm`, `activityLevel` (`sedentary`, `light` ou `active`), `goals` (`kcal`, `proteinG`, `waterMl`, `steps`), `quitDate` (optionnel), `cigarettesPerDay` (optionnel), `packSize` (défaut 20), `packPrice` (optionnel), `goalMode` (`deficit`, `maintenance` ou `surplus` : ce à quoi sert l'objectif de calories, il décide des couleurs de la jauge), `weeklyLossKg` (optionnel, perte visée par semaine), `ui` (`hubMetrics` : liste ordonnée d'identifiants de métriques, `period` : `day`, `week` ou `year`), `waterContainers` (liste de `{ label, ml }`, défaut 250 et 500), `createdAt`.
+`timezone` (défaut `Europe/Paris`), `sex` (`male` ou `female`, pour la formule des objectifs), `birthYear`, `heightCm`, `activityLevel` (`sedentary`, `light` ou `active`), `goals` (`kcal`, `proteinG`, `waterMl`, `steps`), `quitDate` (optionnel), `cigarettesPerDay` (optionnel), `packSize` (défaut 20), `packPrice` (optionnel), `goalMode` (`deficit`, `maintenance` ou `surplus` : ce à quoi sert l'objectif de calories, il décide des couleurs de la jauge), `weeklyLossKg` (optionnel, perte visée par semaine), `ui` (`hubMetrics` : liste ordonnée d'identifiants de métriques, `period` : `day`, `week`, `month` ou `year`), `waterContainers` (liste de `{ label, ml }`, défaut 250 et 500), `createdAt`.
 
 ### Sous-collections
 
@@ -201,7 +201,7 @@ Journal du jour par repas (petit-déjeuner, déjeuner, dîner, collations) avec 
 Programme (phase en cours, semaines, séances) et journal de séance : exercices, séries pré-remplies avec la dernière valeur (kg et reps), chrono de repos, bouton Terminer. À la fin, l'application affiche la progression suggérée et les paliers atteints. Historique par exercice.
 
 ### Suivi
-- **Hub** : cartes de métriques avec mini-courbe, valeur et variation sur la période choisie, sélecteur Jour, Semaine, Année. Le bouton « Modifier » masque, ajoute et réordonne les cartes. La liste ordonnée est enregistrée dans `users/{uid}.ui`, donc commune aux deux téléphones.
+- **Hub** : cartes de métriques avec mini-courbe, valeur et variation sur la période choisie, sélecteur Jour, Semaine, Mois, Année. Le bouton « Modifier » masque, ajoute et réordonne les cartes. La liste ordonnée est enregistrée dans `users/{uid}.ui`, donc commune aux deux téléphones.
 - **Détail d'une rubrique** : sélecteur de période partagé, puces pour choisir la courbe affichée, graphique avec la ligne d'objectif, résumé (moyenne, jours dans la cible, meilleur jour), contenu propre à la rubrique. L'icône de réglages permet de choisir les courbes affichées.
 
 | Rubrique | Contenu |
@@ -217,7 +217,7 @@ Programme (phase en cours, semaines, séances) et journal de séance : exercices
 Un registre unique alimente l'accueil, le hub et les détails. Chaque entrée est une `MetricDefinition` : identifiant, rubrique, libellé, unité, couleur, objectif (lu dans le profil), calcul de la série par période, résumés et règle « dans la cible ». Ajouter une stat revient à ajouter une définition.
 
 ### États vides et période
-La période choisie (Jour, Semaine ou Année) est partagée entre les écrans et vaut Semaine au départ. Semaine : la semaine calendaire (lundi à dimanche), avec des flèches pour remonter aux semaines précédentes. Année : l'année civile, une barre par mois (moyenne journalière du mois). Jour : le détail de la journée quand il existe (repas, verres d'eau, séance) ; pour les pas, le poids et le tour de taille, qui n'ont qu'une valeur par jour, la vue affiche la valeur du jour et la compare à la veille. Une rubrique sans données propose l'action utile (par exemple, pour les pas : connecter le Fitbit ou autoriser Health Connect, avec un lien vers Réglages › Pas).
+La période choisie (Jour, Semaine, Mois ou Année) est partagée entre les écrans et vaut Semaine au départ. Semaine : la semaine calendaire (lundi à dimanche), avec des flèches pour remonter aux semaines précédentes. Mois : le mois calendaire, une barre par jour, avec des flèches de mois en mois. Année : l'année civile, une barre par mois (moyenne journalière du mois). Jour : le détail de la journée quand il existe (repas, verres d'eau, séance) ; pour les pas, le poids et le tour de taille, qui n'ont qu'une valeur par jour, la vue affiche la valeur du jour et la compare à la veille. Une rubrique sans données propose l'action utile (par exemple, pour les pas : connecter le Fitbit ou autoriser Health Connect, avec un lien vers Réglages › Pas).
 
 ### Réglages
 Objectifs (calories, protéines, eau, pas), fuseau horaire, contenants d'eau, prix du paquet, Pas (voir section 7), Sécurité (verrouillage biométrique optionnel), Données (export et import JSON, recalcul des totaux, suppression du compte et des données), connexion.
