@@ -56,7 +56,8 @@ export function trackingUseCases(deps: { sources: Record<SourceId, FactsSource>;
       change: compare ? variation(shown, summarize(def, goals, p.previousRange, facts, today).average) : undefined,
       goal: def.goal?.(goals),
       split: def.section === 'nutrition' ? macroSplit(p.range, facts, today) : undefined,
-      incomplete: lacking ? [...facts].some(([day, f]) => day >= p.range.from && day <= p.range.to && lacking(f)) : undefined,
+      // The days that count: the day itself, else the finished days (today's meals are not in the mean).
+      incomplete: lacking ? [...facts].some(([day, f]) => day >= p.range.from && day <= p.range.to && (p.period === 'day' || day < today) && lacking(f)) : undefined,
     };
   }
 

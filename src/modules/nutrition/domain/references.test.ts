@@ -30,3 +30,16 @@ test('there is no reference under 18, or when the age is not known', () => {
 test('no energy goal, no saturated fat reference', () => {
   expect(referencesFor(man, Number.NaN).saturatedFat).toBeUndefined();
 });
+
+// The table of the spec (§3.2, ANSES 2016), written out again here on purpose: [man, woman] for an adult. A typo in one value fails here.
+const SPEC: [string, number, number][] = [
+  ['vitA', 750, 650], ['vitD', 15, 15], ['vitE', 10.5, 9.9], ['vitK', 70, 70], ['vitC', 110, 110],
+  ['vitB1', 1.5, 1.2], ['vitB2', 1.8, 1.5], ['vitB3', 17.4, 14], ['vitB5', 5.8, 4.7], ['vitB6', 1.8, 1.5], ['vitB9', 330, 330], ['vitB12', 4, 4],
+  ['iron', 11, 11], ['magnesium', 420, 360], ['potassium', 3510, 3510], ['zinc', 11.7, 9.3], ['selenium', 70, 70], ['iodine', 150, 150],
+  ['phosphorus', 700, 700], ['copper', 1.3, 1], ['manganese', 2.8, 2.5], ['fiber', 30, 30], ['salt', 5, 5], ['sugars', 100, 100],
+];
+
+test.each(SPEC)('%s: %s for a man, %s for a woman', (id, forMan, forWoman) => {
+  expect(referencesFor(man, 2200)[id as 'vitA']).toBe(forMan);
+  expect(referencesFor(woman, 2200)[id as 'vitA']).toBe(forWoman);
+});

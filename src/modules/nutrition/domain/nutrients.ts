@@ -58,6 +58,8 @@ export function sumNutrients(list: (Nutrients | undefined)[]): { totals: Nutrien
   return { totals, incomplete: NUTRIENTS.map((n) => n.id).filter((id) => list.some((n) => n?.[id] === undefined)) };
 }
 
-/** « 82,5 mg »: about three significant digits, as the amounts are stored. */
-export const formatAmount = (value: number, unit: NutrientUnit) =>
-  `${value.toLocaleString('fr-FR', { maximumFractionDigits: value >= 100 ? 0 : value >= 10 ? 1 : 2 })} ${unit}`;
+/** « 82,5 mg »: about three significant digits, as the amounts are stored; a small amount keeps its two first (« 0,012 mg », not « 0 mg »). */
+export const formatAmount = (value: number, unit: NutrientUnit) => {
+  const digits = value >= 100 ? { maximumFractionDigits: 0 } : value >= 10 ? { maximumFractionDigits: 1 } : value >= 1 ? { maximumFractionDigits: 2 } : { maximumSignificantDigits: 2 };
+  return `${value.toLocaleString('fr-FR', digits)} ${unit}`;
+};

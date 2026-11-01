@@ -1,4 +1,5 @@
 import { inMemoryFactsSource } from '../adapters/inMemoryFactsSource';
+import type { DayFacts } from '../domain/metric';
 import { metricById } from '../domain/metrics';
 import { trackingUseCases, type MetricView, type MicroRow } from './trackingUseCases';
 
@@ -83,12 +84,12 @@ test('passes a source error on', () => {
 describe('observeMicronutrients', () => {
   const refs = { ...goals, nutrients: { vitC: 110, iron: 11, salt: 5 } };
   const MEALS = {
-    '2026-10-26': { nutrients: { iron: 11, vitC: 55, salt: 4 }, incomplete: [] },
-    '2026-10-27': { nutrients: { iron: 5.5, vitC: 55, salt: 7 }, incomplete: ['iron'] },
+    '2026-10-26': { nutrients: { iron: 11, vitC: 55, salt: 4 }, incomplete: ['zinc'] },
+    '2026-10-27': { nutrients: { iron: 5.5, vitC: 55, salt: 7 }, incomplete: ['iron', 'zinc'] },
     '2026-10-31': { nutrients: { iron: 1, vitC: 10 }, incomplete: ['salt'] }, // today
   };
-  function observe(period: 'day' | 'week', anchor: string, goalsOf: typeof goals = refs) {
-    const meals = inMemoryFactsSource(MEALS);
+  function observe(period: 'day' | 'week', anchor: string, goalsOf: typeof goals = refs, facts: Record<string, DayFacts> = MEALS) {
+    const meals = inMemoryFactsSource(facts);
     const tracking = trackingUseCases({ sources: { days: inMemoryFactsSource(), training: inMemoryFactsSource(), tobacco: inMemoryFactsSource(), meals }, clock, timezone: 'Europe/Paris' });
     const rows: MicroRow[][] = [];
     tracking.observeMicronutrients(goalsOf, period, anchor, (list) => rows.push(list), () => {});
@@ -107,14 +108,24 @@ describe('observeMicronutrients', () => {
     const { row } = observe('week', '2026-10-31');
     expect(row('iron')).toMatchObject({ value: 8.25, reference: 11, pct: 75, tone: 'none', incomplete: true });
     expect(row('vitC')).toMatchObject({ value: 55, pct: 50, tone: 'bad', incomplete: false });
-    expect(row('salt')).toMatchObject({ value: 5.5, pct: 110, tone: 'warn' });
-    expect(row('zinc')).toMatchObject({ value: undefined, pct: undefined, tone: 'none', incomplete: false });
+    // Today's gap (no salt in a meal of today) does not make the mean of the finished days partial.
+    expect(row('salt')).toMatchObject({ value: 5.5, pct: 110, tone: 'warn', incomplete: false });
+    // Meals, none of which tells the zinc: at least 0, and no reference to measure it against here.
+    expect(row('zinc')).toMatchObject({ value: 0, pct: undefined, tone: 'none', incomplete: true });
   });
 
   test('a day is its own total; today so far has no tone', () => {
     expect(observe('day', '2026-10-26').row('iron')).toMatchObject({ value: 11, pct: 100, tone: 'good' });
     expect(observe('day', '2026-10-27').row('iron')).toMatchObject({ value: 5.5, pct: 50, tone: 'none', incomplete: true });
     expect(observe('day', '2026-10-31').row('vitC')).toMatchObject({ value: 10, pct: 9, tone: 'none' });
+  });
+
+  test('a finished day with meals that lack a nutrient counts 0 for it: the mean stays a lower bound', () => {
+    const { row } = observe('week', '2026-10-31', refs, {
+      '2026-10-26': { nutrients: { iron: 11 }, incomplete: [] },
+      '2026-10-27': { nutrients: {}, incomplete: ['iron'] },
+    });
+    expect(row('iron')).toMatchObject({ value: 5.5, incomplete: true, tone: 'none' });
   });
 
   test('without references there is a total and no percentage', () => {

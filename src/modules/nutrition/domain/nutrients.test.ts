@@ -59,6 +59,8 @@ describe('formatAmount', () => {
     [82.5, 'mg', '82,5 mg'],
     [8.25, 'mg', '8,25 mg'],
     [0.16, 'g', '0,16 g'],
+    [0.0123, 'mg', '0,012 mg'],
+    [0.5, 'µg', '0,5 µg'],
     [0, 'µg', '0 µg'],
   ] as const)('%s %s reads %s', (value, unit, text) => expect(formatAmount(value, unit)).toBe(text));
 });

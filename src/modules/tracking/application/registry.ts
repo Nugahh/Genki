@@ -6,7 +6,8 @@ import { METRICS } from '../domain/metrics';
 function nutrientMetric(n: NutrientInfo): MetricDefinition {
   return {
     id: n.id, section: 'micro', label: n.label, source: 'meals', tint: 'micro', kind: 'bars',
-    value: (f) => f.nutrients?.[n.id],
+    // A day with meals that lack the nutrient is 0 at least (`incomplete` says so): the mean over days then stays a lower bound.
+    value: (f) => (f.nutrients ? (f.nutrients[n.id] ?? 0) : undefined),
     goal: (g) => g.nutrients?.[n.id],
     target: n.group === 'limit' ? 'atMost' : 'atLeast',
     format: (v) => formatAmount(v, n.unit),

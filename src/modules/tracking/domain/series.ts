@@ -21,10 +21,11 @@ export function toneOf(def: MetricDefinition, goals: Goals, value: number, incom
   if (def.target === 'none' || !goal) return 'none';
   const ratio = value / goal;
   if (def.target === 'calories') return calorieTone(goals.kcalMode, ratio);
-  if (def.target === 'atMost') return ratio <= 1 ? 'good' : ratio <= 1.2 ? 'warn' : 'bad';
-  const tone = ratio >= 0.9 ? 'good' : ratio >= 0.6 ? 'warn' : 'bad';
-  // A total with a food missing is a minimum: falling short of the reference proves nothing.
-  return incomplete && tone !== 'good' ? 'none' : tone;
+  const tone = def.target === 'atMost' ? (ratio <= 1 ? 'good' : ratio <= 1.2 ? 'warn' : 'bad') : ratio >= 0.9 ? 'good' : ratio >= 0.6 ? 'warn' : 'bad';
+  if (!incomplete) return tone;
+  // A total with a food missing is a minimum: it can show the reference reached or the ceiling passed, never a shortfall nor staying under a ceiling.
+  const proven = def.target === 'atMost' ? tone !== 'good' : tone === 'good';
+  return proven ? tone : 'none';
 }
 
 export const inTarget = (def: MetricDefinition, goals: Goals, value: number, incomplete = false) => toneOf(def, goals, value, incomplete) === 'good';

@@ -34,8 +34,10 @@ service cloud.firestore {
     }
 
     // Nutrients of an entry's portion: any of the 26 of the catalogue (nutrition/domain/nutrients.ts), each a number from 0 to 1 000 000.
+    // An absent key reads as 0, so a missing nutrient passes. One `get` per nutrient keeps a full entry (26 of them) under the 1 000 expressions a request may evaluate.
     function nutrientOk(n, k) {
-      return !(k in n) || (n[k] is number && n[k] >= 0 && n[k] <= 1000000);
+      let v = n.get(k, 0);
+      return v is number && v >= 0 && v <= 1000000;
     }
     function isEntryNutrients(n) {
       return n is map

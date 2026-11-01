@@ -120,6 +120,13 @@ describe('the editor', () => {
     expect(screen.queryByLabelText('Ajouter Calories')).toBeNull();
   });
 
+  test('does not offer the nutrients: they have their own screen', async () => {
+    await open();
+    expect(screen.getByLabelText('Ajouter Glucides')).toBeTruthy();
+    expect(screen.queryByLabelText('Ajouter Fer')).toBeNull();
+    expect(screen.queryByLabelText('Ajouter Vitamine C')).toBeNull();
+  });
+
   test('closes', async () => {
     await open();
     expect(screen.getByText('Ajouter une statistique')).toBeTruthy();

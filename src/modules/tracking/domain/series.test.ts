@@ -174,8 +174,12 @@ describe('a nutrient', () => {
     expect(toneOf(nutrient('atLeast'), withRef, 30, false)).toBe('bad');
   });
 
-  test('a limit already passed is passed whatever is missing', () => {
+  test('a limit already passed is passed whatever is missing; staying under it is not shown by a minimum', () => {
     expect(toneOf(nutrient('atMost'), withRef, 150, true)).toBe('bad');
+    expect(toneOf(nutrient('atMost'), withRef, 110, true)).toBe('warn');
+    expect(toneOf(nutrient('atMost'), withRef, 50, true)).toBe('none');
+    expect(toneOf(nutrient('atMost'), withRef, 100, true)).toBe('none');
+    expect(toneOf(nutrient('atMost'), withRef, 50, false)).toBe('good');
   });
 
   test('no reference, no tone', () => {

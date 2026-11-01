@@ -39,7 +39,7 @@ export function NutritionExtras({ split, onOpenJournal, onOpenMicro }: Props) {
           ))}
         </Surface>
       )}
-<Button mode="outlined" icon="leaf" contentStyle={styles.button} onPress={onOpenMicro}>
+      <Button mode="outlined" icon="leaf" contentStyle={styles.button} onPress={onOpenMicro}>
         Micronutriments
       </Button>
       <Button mode="outlined" icon="silverware-fork-knife" contentStyle={styles.button} onPress={onOpenJournal}>

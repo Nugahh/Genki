@@ -331,7 +331,7 @@ test('the nutrition section opens the micronutrients, and a nutrient opens its c
   await renderRouter(undefined, { initialUrl: '/suivi/nutrition?metric=calories' });
   await fireEvent.press(await screen.findByText('Micronutriments'));
   expect(screen).toHavePathname('/suivi/micro');
-  expect(await screen.findByText('Ajoute un aliment de la table Ciqual pour voir tes vitamines et minéraux.')).toBeTruthy();
+  expect(await screen.findByText('Pas encore de moyenne : elle compte les jours terminés avec un repas.')).toBeTruthy();
   await act(async () => router.push({ pathname: '/suivi/[section]', params: { section: 'micro', metric: 'iron' } }));
   expect(screen).toHaveSearchParams({ section: 'micro', metric: 'iron' });
   expect(await screen.findByText('Ajoute un aliment de la table Ciqual pour voir ce nutriment.')).toBeTruthy();

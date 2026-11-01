@@ -49,9 +49,9 @@ test('an amount that a meal may lack is a minimum: « au moins », « partiel »
   expect(screen.getAllByText('partiel').length).toBeGreaterThan(0);
 });
 
-test('a nutrient with no value says so', async () => {
-  await setup();
-  expect(row('Zinc')).toBe('Zinc, aucune donnée');
+test('a nutrient that no food of the period tells is at least 0, not an absence', async () => {
+  await setup({ meals: { '2026-10-26': { nutrients: { iron: 11 }, incomplete: ['zinc'] } } });
+  expect(row('Zinc')).toBe('Zinc, au moins 0 mg, valeur partielle');
 });
 
 test('touching a nutrient opens it', async () => {
@@ -71,10 +71,16 @@ test('says it is not medical advice', async () => {
   expect(screen.getByText('Repères de l’ANSES pour adultes. Ce n’est pas un avis médical.')).toBeTruthy();
 });
 
-test('with no meal in the period it says what to do instead of listing empty rows', async () => {
-  await setup({ meals: {} });
+test('with no meal on the day it says what to do instead of listing empty rows', async () => {
+  await setup({ ui: { period: 'day' }, meals: {} });
   expect(screen.getByText('Ajoute un aliment de la table Ciqual pour voir tes vitamines et minéraux.')).toBeTruthy();
   expect(screen.queryByText('Vitamines')).toBeNull();
+});
+
+test('with no finished day in a week it does not tell to add a food that may already be there', async () => {
+  await setup({ meals: { '2026-10-31': { nutrients: { iron: 3 }, incomplete: [] } } }); // only today
+  expect(screen.getByText('Pas encore de moyenne : elle compte les jours terminés avec un repas.')).toBeTruthy();
+  expect(screen.queryByText(/Ajoute un aliment/)).toBeNull();
 });
 
 test('offers no year, and reads a month when the year is the choice', async () => {

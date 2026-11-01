@@ -17,6 +17,7 @@ import {
   type Firestore,
 } from 'firebase/firestore';
 import { readFileSync } from 'node:fs';
+import { NUTRIENTS } from '../src/modules/nutrition/domain/nutrients';
 
 // Denials here are expected: without this the SDK logs each one as a warning.
 setLogLevel('error');
@@ -251,6 +252,14 @@ describe('foodEntries', () => {
   test('an entry may carry the nutrients of its portion', async () => {
     await assertSucceeds(setDoc(doc(db('alice'), 'users/alice/foodEntries/e1'), { ...foodEntry(), nutrients: { iron: 1.9, vitD: 0, fiber: 1000000 } }));
     await assertSucceeds(setDoc(doc(db('alice'), 'users/alice/foodEntries/e2'), { ...foodEntry(), nutrients: {} }));
+  });
+
+  test('an entry may carry all 26 nutrients, on creation and on a change of quantity (Ciqual gives that many to most foods)', async () => {
+    const all = Object.fromEntries(NUTRIENTS.map((n, i) => [n.id, i + 0.5]));
+    expect(Object.keys(all)).toHaveLength(26);
+    await assertSucceeds(setDoc(doc(db('alice'), 'users/alice/foodEntries/e1'), { ...foodEntry(), nutrients: all }));
+    const ref = doc(db('alice'), 'users/alice/foodEntries/e1');
+    await assertSucceeds(updateDoc(ref, { grams: 200, macros: { ...macros, kcal: 700 }, nutrients: all, updatedAt: Timestamp.now() }));
   });
 
   test.each<[string, object]>([

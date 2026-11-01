@@ -17,7 +17,8 @@ test('a nutrient reads its amount, its reference and its incompleteness', () => 
   const iron = findMetric('iron')!;
   const facts = { nutrients: { iron: 8.25 }, incomplete: ['iron'] };
   expect(iron.value(facts)).toBe(8.25);
-  expect(iron.value({})).toBeUndefined();
+  expect(iron.value({})).toBeUndefined(); // no meal that day
+  expect(iron.value({ nutrients: { vitC: 3 }, incomplete: ['iron'] })).toBe(0); // meals, none of which tells the iron: at least 0
   expect(iron.goal?.({ kcal: 2000, proteinG: 100, waterMl: 2500, steps: 8000, nutrients: { iron: 11 } })).toBe(11);
   expect(iron.incomplete?.(facts)).toBe(true);
   expect(iron.incomplete?.({ nutrients: { iron: 8 }, incomplete: [] })).toBe(false);

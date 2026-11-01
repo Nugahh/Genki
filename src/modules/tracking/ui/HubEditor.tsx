@@ -13,7 +13,8 @@ const swap = (list: string[], i: number, j: number) => list.map((id, k) => (k ==
 
 /** Which statistics the hub shows and in which order: move, hide, or add one back (no drag and drop). The host mounts it while it is open. */
 export function HubEditor({ shown, onChange, onClose }: Props) {
-  const hidden = ALL_METRICS.filter((m) => !shown.includes(m.id));
+  // The nutrients have their own screen: a hub card would read a year of meals in the year view, and could not say a total is partial.
+  const hidden = ALL_METRICS.filter((m) => m.section !== 'micro' && !shown.includes(m.id));
   return (
     <Portal>
       <Dialog visible onDismiss={onClose}>
