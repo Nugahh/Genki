@@ -10,8 +10,10 @@ import type { FoodEntry } from '../domain/food';
 import { sumMacros } from '../domain/macros';
 import { MEALS, type Meal } from '../domain/meal';
 import { NUTRIENTS, sumNutrients } from '../domain/nutrients';
-import { EntryActions } from './EntryActions';
+import { netCarbs } from '../domain/portion';
+import { EntryDetail } from './EntryDetail';
 import { gramsText, kcalText, MEAL_LABELS } from './format';
+import type { PickWhen } from './WhenPicker';
 
 type Props = {
   profile: Profile;
@@ -20,12 +22,14 @@ type Props = {
   onAdd: (meal: Meal) => void;
   /** The card of the nutrients of the day was touched: show them all. */
   onOpenNutrients: () => void;
+  /** The native picker of a date or a time, for the sheet of a line. */
+  pickWhen: PickWhen;
   /** Runs a write; a rejected one is offered again with « Réessayer » (spec §8). */
   run: (write: () => Promise<void>) => void;
 };
 
 /** Today's journal: the day totals, then one section per meal. */
-export function MealsScreen({ profile, clock, meals, onAdd, onOpenNutrients, run }: Props) {
+export function MealsScreen({ profile, clock, meals, onAdd, onOpenNutrients, pickWhen, run }: Props) {
   const now = useNow(clock);
   const day = dayKey(now, profile.timezone);
   const [entries, setEntries] = useState<FoodEntry[]>([]);
@@ -36,6 +40,7 @@ export function MealsScreen({ profile, clock, meals, onAdd, onOpenNutrients, run
   useEffect(() => meals.observeDay(day, setEntries, () => {}), [meals, day]);
 
   const total = sumMacros(entries.map((e) => e.macros));
+  const netCarbsTotal = Math.round(entries.reduce((sum, e) => sum + netCarbs(e.macros, e.nutrients).grams, 0) * 10) / 10;
   // The three nutrients to reach that the day's foods tell and that are the furthest from their reference: those they do not tell are unknown, not low.
   const references = referencesOf(profile);
   const nutrients = sumNutrients(entries.map((e) => e.nutrients));
@@ -49,12 +54,22 @@ export function MealsScreen({ profile, clock, meals, onAdd, onOpenNutrients, run
     setFavorite(null);
   };
 
+  // The sheet of a line takes the place of the journal.
+  if (selected) {
+    return (
+      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+        <EntryDetail entry={selected} meals={meals} profile={profile} clock={clock} pickWhen={pickWhen} run={run} onDone={() => setSelected(null)} onBack={() => setSelected(null)} />
+      </ScrollView>
+    );
+  }
+
   return (
     <ScrollView contentContainerStyle={styles.content}>
       <Surface style={styles.card}>
         <Text variant="titleMedium">{`Calories : ${kcalText(total.kcal)} / ${kcalText(profile.goals.kcal)} kcal`}</Text>
         <Text variant="titleMedium">{`Protéines : ${gramsText(total.protein)} / ${gramsText(profile.goals.proteinG)} g`}</Text>
-        <Text variant="bodyMedium">{`Glucides ${gramsText(total.carbs)} g · Lipides ${gramsText(total.fat)} g`}</Text>
+        <Text variant="titleMedium">{`Glucides nets : ${gramsText(netCarbsTotal)} / ${gramsText(profile.goals.carbsNetG)} g`}</Text>
+        <Text variant="titleMedium">{`Lipides : ${gramsText(total.fat)} / ${gramsText(profile.goals.fatG)} g`}</Text>
       </Surface>
       {least.length > 0 && (
         <Pressable accessibilityRole="button" accessibilityLabel={`Nutriments du jour : ${least.map(said).join(', ')}. Ouvrir le détail`} onPress={onOpenNutrients}>
@@ -104,12 +119,6 @@ export function MealsScreen({ profile, clock, meals, onAdd, onOpenNutrients, run
           </Surface>
         );
       })}
-      <EntryActions
-        entry={selected}
-        onDismiss={() => setSelected(null)}
-        onChangeGrams={(entry, grams) => run(() => meals.updateEntry(entry, { grams, meal: entry.meal, at: entry.createdAt }))}
-        onRemove={(entry) => run(() => meals.removeEntry(entry))}
-      />
       {favorite && (
         <Portal>
           <Dialog visible onDismiss={() => setFavorite(null)}>

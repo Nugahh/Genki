@@ -9,4 +9,5 @@ export type { Food, FoodEntry } from './domain/food';
 export { formatAmount, NUTRIENTS, nutrientsFor, sumNutrients, type NutrientId, type NutrientInfo, type Nutrients } from './domain/nutrients';
 export { defaultMeal, MEALS, type Meal } from './domain/meal';
 export { AddFoodScreen } from './ui/AddFoodScreen';
+export type { PickWhen } from './ui/WhenPicker';
 export { MealsScreen } from './ui/MealsScreen';

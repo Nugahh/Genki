@@ -1,5 +1,6 @@
 import { act, fireEvent, render, screen, within } from '@testing-library/react-native';
 import { PaperProvider } from 'react-native-paper';
+import { theme } from '@/theme';
 import { DEFAULT_PROFILE } from '@/modules/settings';
 import { inMemoryFavoriteMealRepository } from '../adapters/inMemoryFavoriteMealRepository';
 import { inMemoryFoodEntryRepository } from '../adapters/inMemoryFoodEntryRepository';
@@ -8,6 +9,7 @@ import type { FavoriteMeal } from '../domain/food';
 import { MealsScreen } from './MealsScreen';
 
 const clock = { now: () => new Date('2026-10-24T10:00:00Z') }; // 12:00 in Paris
+const pickWhen = jest.fn(async () => undefined as Date | undefined);
 const rice = { ref: { type: 'ciqual' as const, id: '9100' }, name: 'Riz blanc, cru', per100g: { kcal: 350, protein: 7, carbs: 78, fat: 0.6 } };
 const yogurt = { ref: { type: 'custom' as const, id: 'c1' }, name: 'Yaourt nature', per100g: { kcal: 60, protein: 4, carbs: 5, fat: 3 } };
 // The thousands separator depends on the ICU data, so the expected text is built the way the screen does.
@@ -19,8 +21,8 @@ async function setup(at = clock, run: (write: () => Promise<void>) => void = (wr
   const meals = mealUseCases({ entries, favorites, clock: at, timezone: DEFAULT_PROFILE.timezone });
   const onAdd = jest.fn();
   await render(
-    <PaperProvider>
-      <MealsScreen profile={DEFAULT_PROFILE} clock={at} meals={meals} onAdd={onAdd} run={run} onOpenNutrients={onOpenNutrients} />
+    <PaperProvider theme={theme}>
+      <MealsScreen profile={DEFAULT_PROFILE} clock={at} meals={meals} onAdd={onAdd} run={run} onOpenNutrients={onOpenNutrients} pickWhen={pickWhen} />
     </PaperProvider>,
   );
   return { entries, favorites, meals, onAdd, onOpenNutrients };
@@ -31,12 +33,14 @@ const lunchOfRice = (meals: MealUseCases) =>
     await meals.logFood('lunch', rice, 200);
   });
 
-/** Opens the actions of the rice line, then its quantity field. */
+/** Opens the sheet of the rice line and gives its quantity field. */
 async function openQuantity() {
   await fireEvent.press(screen.getByLabelText('Riz blanc, cru, 200 g, 700 kcal'));
-  await fireEvent.press(screen.getByText('Modifier la quantité'));
   return screen.getByLabelText('Quantité (g)');
 }
+
+/** The button of the confirmation that opens over the sheet: the last « Supprimer » of the screen. */
+const confirmDelete = () => fireEvent.press(screen.getAllByText('Supprimer').at(-1)!);
 
 function savedFavorites(meals: MealUseCases) {
   let list: FavoriteMeal[] = [];
@@ -60,7 +64,8 @@ test('the journal lists the day under each meal, with the subtotals and the day 
   expect(screen.getAllByText('0 kcal')).toHaveLength(3);
   expect(screen.getByText(`Calories : 700 / ${goal} kcal`)).toBeTruthy();
   expect(screen.getByText('Protéines : 14 / 130 g')).toBeTruthy();
-  expect(screen.getByText('Glucides 156 g · Lipides 1,2 g')).toBeTruthy();
+  expect(screen.getByText('Glucides nets : 156 / 255 g')).toBeTruthy();
+  expect(screen.getByText('Lipides : 1,2 / 75 g')).toBeTruthy();
 });
 
 test('« Ajouter » asks to add to that meal', async () => {
@@ -70,14 +75,13 @@ test('« Ajouter » asks to add to that meal', async () => {
   expect(onAdd).toHaveBeenCalledWith('dinner');
 });
 
-test('a touched line opens its actions, and the corrected quantity reaches the line and the totals', async () => {
+test('a touched line opens its sheet, and the corrected quantity reaches the line and the totals', async () => {
   const { meals } = await setup();
   await lunchOfRice(meals);
 
-  await fireEvent.press(screen.getByLabelText('Riz blanc, cru, 200 g, 700 kcal'));
-  expect(screen.getByRole('header', { name: 'Riz blanc, cru' })).toBeTruthy();
-  await fireEvent.press(screen.getByText('Modifier la quantité'));
-  const field = screen.getByLabelText('Quantité (g)');
+  const field = await openQuantity();
+  expect(screen.getByText('Riz blanc, cru')).toBeTruthy();
+  expect(screen.getByText('Source : Ciqual (ANSES)')).toBeTruthy();
   expect(field).toHaveDisplayValue('200');
   await fireEvent.changeText(field, '150');
   await fireEvent.press(screen.getByText('Enregistrer'));
@@ -98,7 +102,6 @@ test('the quantity accepts a comma as the decimal separator, and is offered back
   expect(screen.getByText('150,5 g · 527 kcal')).toBeTruthy();
   expect(entries.entries[0].grams).toBe(150.5);
   await fireEvent.press(screen.getByLabelText('Riz blanc, cru, 150,5 g, 527 kcal'));
-  await fireEvent.press(screen.getByText('Modifier la quantité'));
   expect(screen.getByLabelText('Quantité (g)')).toHaveDisplayValue('150,5');
 });
 
@@ -114,36 +117,29 @@ test('« Enregistrer » needs a quantity above 0 and up to 5 000 g', async () =>
   }
 });
 
-test('« Annuler » closes the actions, which open again on the three choices', async () => {
-  const { meals } = await setup();
-  await lunchOfRice(meals);
-
-  await fireEvent.press(screen.getByLabelText('Riz blanc, cru, 200 g, 700 kcal'));
-  await fireEvent.press(screen.getByText('Annuler'));
-  expect(screen.queryByText('Modifier la quantité')).toBeNull();
-
-  await fireEvent.changeText(await openQuantity(), '150');
-  await fireEvent.press(screen.getByText('Annuler'));
-  expect(screen.queryByLabelText('Quantité (g)')).toBeNull();
-  expect(screen.getByText('200 g · 700 kcal')).toBeTruthy();
-
-  await fireEvent.press(screen.getByLabelText('Riz blanc, cru, 200 g, 700 kcal'));
-  expect(screen.getByText('Modifier la quantité')).toBeTruthy();
-  expect(screen.getByText('Supprimer')).toBeTruthy();
-});
-
-test('« Supprimer » asks first, and « Annuler » keeps the line and brings the choices back', async () => {
+test('« Retour » brings the journal back without saving', async () => {
   const { entries, meals } = await setup();
   await lunchOfRice(meals);
 
-  await fireEvent.press(screen.getByLabelText('Riz blanc, cru, 200 g, 700 kcal'));
+  await fireEvent.changeText(await openQuantity(), '150');
+  await fireEvent.press(screen.getByText('Retour'));
+  expect(screen.queryByLabelText('Quantité (g)')).toBeNull();
+  expect(screen.getByText('200 g · 700 kcal')).toBeTruthy();
+  expect(entries.entries[0].grams).toBe(200);
+});
+
+test('« Supprimer » asks first, and « Annuler » keeps the line and the sheet', async () => {
+  const { entries, meals } = await setup();
+  await lunchOfRice(meals);
+
+  await openQuantity();
   await fireEvent.press(screen.getByText('Supprimer'));
   expect(screen.getByText('Supprimer Riz blanc, cru du journal ?')).toBeTruthy();
   expect(entries.entries).toHaveLength(1);
 
   await fireEvent.press(screen.getByText('Annuler'));
   expect(screen.queryByText('Supprimer Riz blanc, cru du journal ?')).toBeNull();
-  expect(screen.getByText('Modifier la quantité')).toBeTruthy();
+  expect(screen.getByLabelText('Quantité (g)')).toBeTruthy();
   expect(entries.entries).toHaveLength(1);
 });
 
@@ -151,16 +147,51 @@ test('« Supprimer » removes the line and the totals fall back to zero', async 
   const { meals } = await setup();
   await lunchOfRice(meals);
 
-  await fireEvent.press(screen.getByLabelText('Riz blanc, cru, 200 g, 700 kcal'));
+  await openQuantity();
   await fireEvent.press(screen.getByText('Supprimer'));
-  await fireEvent.press(screen.getByText('Supprimer')); // the confirmation
+  await confirmDelete();
 
   expect(screen.queryByText('Supprimer')).toBeNull();
   expect(screen.queryByText('Riz blanc, cru')).toBeNull();
   expect(screen.getAllByText('Rien pour l’instant.')).toHaveLength(4);
   expect(screen.getByText(`Calories : 0 / ${goal} kcal`)).toBeTruthy();
   expect(screen.getByText('Protéines : 0 / 130 g')).toBeTruthy();
-  expect(screen.getByText('Glucides 0 g · Lipides 0 g')).toBeTruthy();
+  expect(screen.getByText('Glucides nets : 0 / 255 g')).toBeTruthy();
+  expect(screen.getByText('Lipides : 0 / 75 g')).toBeTruthy();
+});
+
+describe('the sheet of a line', () => {
+  test('does not count the line twice in the goals of its day', async () => {
+    const { meals } = await setup();
+    await lunchOfRice(meals);
+    await openQuantity();
+    expect(screen.getByLabelText(`Énergie : 700 sur ${goal} kcal avec cette portion`)).toBeTruthy();
+    await fireEvent.changeText(screen.getByLabelText('Quantité (g)'), '100');
+    expect(screen.getByLabelText(`Énergie : 350 sur ${goal} kcal avec cette portion`)).toBeTruthy();
+  });
+
+  test('changes the group and the day: the line leaves today’s journal', async () => {
+    const { entries, meals } = await setup();
+    await lunchOfRice(meals);
+    pickWhen.mockResolvedValueOnce(new Date('2026-10-23T18:00:00Z'));
+    await openQuantity();
+    await fireEvent.press(screen.getByText('Dîner'));
+    await fireEvent.press(screen.getByLabelText('Choisir le jour'));
+    await fireEvent.press(screen.getByText('Enregistrer'));
+
+    expect(entries.entries[0]).toMatchObject({ meal: 'dinner', day: '2026-10-23', createdAt: new Date('2026-10-23T18:00:00Z') });
+    expect(screen.queryByText('Riz blanc, cru')).toBeNull();
+    expect(screen.getByText(`Calories : 0 / ${goal} kcal`)).toBeTruthy();
+  });
+
+  test('keeps the time of the line when only the quantity changes', async () => {
+    const { entries, meals } = await setup();
+    await lunchOfRice(meals);
+    const before = entries.entries[0].createdAt;
+    await fireEvent.changeText(await openQuantity(), '100');
+    await fireEvent.press(screen.getByText('Enregistrer'));
+    expect(entries.entries[0].createdAt).toEqual(before);
+  });
 });
 
 test('a meal is saved as a favorite: the name starts as its label and only its lines are kept', async () => {
@@ -226,7 +257,7 @@ test('a quantity change, a removal and a favorite are handed to run: nothing is 
 
   await fireEvent.press(screen.getByLabelText('Riz blanc, cru, 150 g, 525 kcal'));
   await fireEvent.press(screen.getByText('Supprimer'));
-  await fireEvent.press(screen.getByText('Supprimer'));
+  await confirmDelete();
   expect(writes).toHaveLength(3);
   expect(entries.entries).toHaveLength(1);
   await runWrite(2);

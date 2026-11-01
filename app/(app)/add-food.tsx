@@ -1,7 +1,8 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useApp } from '@/appContext';
-import { AddFoodScreen, MEALS, referencesOf } from '@/modules/nutrition';
+import { AddFoodScreen, MEALS } from '@/modules/nutrition';
+import { pickWhen } from '@/platform/dateTimePicker';
 
 export default function AddFood() {
   const { app, profile, run } = useApp();
@@ -14,7 +15,9 @@ export default function AddFood() {
         meal={MEALS.find((m) => m === meal) ?? 'snack'}
         meals={app.nutrition.meals}
         foods={app.nutrition.foods}
-        references={referencesOf(profile)}
+        profile={profile}
+        clock={app.clock}
+        pickWhen={pickWhen}
         run={run}
         onDone={() => router.back()}
       />

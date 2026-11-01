@@ -1,16 +1,18 @@
 import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { SegmentedButtons } from 'react-native-paper';
+import type { Profile } from '@/modules/settings';
+import type { Clock } from '@/shared/clock';
 import type { FoodUseCases } from '../application/foodUseCases';
 import type { MealUseCases } from '../application/mealUseCases';
 import type { Food, FoodInput } from '../domain/food';
 import type { Meal } from '../domain/meal';
-import type { Nutrients } from '../domain/nutrients';
 import { FavoritesList } from './FavoritesList';
 import { FoodDetail } from './FoodDetail';
 import { FoodForm } from './FoodForm';
 import { FoodSearch, type Search } from './FoodSearch';
 import { RecentsList } from './RecentsList';
+import type { PickWhen } from './WhenPicker';
 
 type Segment = 'favorites' | 'recents' | 'search' | 'create';
 
@@ -25,8 +27,11 @@ type Props = {
   meal: Meal;
   meals: MealUseCases;
   foods: FoodUseCases;
-  /** The reference intakes of the profile, for the nutrients of a fiche. */
-  references?: Nutrients;
+  /** The goals, the zone and the references of the sheet of a food. */
+  profile: Profile;
+  clock: Clock;
+  /** The native picker of a date or a time. */
+  pickWhen: PickWhen;
   /** Runs a write; a rejected one is offered again with « Réessayer » (spec §8). */
   run: (write: () => Promise<void>) => void;
   /** A food was added: the host leaves the screen. */
@@ -34,7 +39,7 @@ type Props = {
 };
 
 /** Adds a food to a meal: from a favorite, a recent, the search, or a food created on the spot. */
-export function AddFoodScreen({ meal, meals, foods, references, run, onDone }: Props) {
+export function AddFoodScreen({ meal, meals, foods, profile, clock, pickWhen, run, onDone }: Props) {
   const [segment, setSegment] = useState<Segment>('search');
   // The food whose fiche replaces the segments, with the quantity to start from when it comes from « Récents ».
   const [selected, setSelected] = useState<{ food: Food; grams?: number } | null>(null);
@@ -59,7 +64,9 @@ export function AddFoodScreen({ meal, meals, foods, references, run, onDone }: P
           meal={meal}
           meals={meals}
           foods={foods}
-          references={references}
+          profile={profile}
+          clock={clock}
+          pickWhen={pickWhen}
           run={run}
           onDone={onDone}
           onBack={() => setSelected(null)}

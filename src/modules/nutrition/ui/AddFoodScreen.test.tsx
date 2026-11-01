@@ -1,6 +1,7 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import { PaperProvider } from 'react-native-paper';
-import { DEFAULT_PROFILE } from '@/modules/settings';
+import { theme } from '@/theme';
+import { DEFAULT_PROFILE, type Profile } from '@/modules/settings';
 import { inMemoryFavoriteMealRepository } from '../adapters/inMemoryFavoriteMealRepository';
 import { inMemoryFoodCatalog } from '../adapters/inMemoryFoodCatalog';
 import { inMemoryFoodEntryRepository } from '../adapters/inMemoryFoodEntryRepository';
@@ -9,11 +10,11 @@ import { foodUseCases, type FoodUseCases } from '../application/foodUseCases';
 import { mealUseCases } from '../application/mealUseCases';
 import type { FoodCatalog } from '../application/ports';
 import type { Food, FoodInput } from '../domain/food';
-import type { Nutrients } from '../domain/nutrients';
 import type { Meal } from '../domain/meal';
 import { AddFoodScreen } from './AddFoodScreen';
 
 const clock = { now: () => new Date('2026-10-24T10:00:00Z') }; // 12:00 in Paris
+const pickWhen = jest.fn(async () => undefined as Date | undefined);
 const rawRice: Food = { ref: { type: 'ciqual', id: '9100' }, name: 'Riz blanc, cru', state: 'raw', per100g: { kcal: 350, protein: 7, carbs: 78, fat: 0.6 }, portions: [] };
 const cookedRice: Food = {
   ref: { type: 'ciqual', id: '9101' },
@@ -29,17 +30,17 @@ const orange: Food = {
   nutrients: { vitC: 50, fiber: 1.8, salt: 0.01 },
 };
 
-type Options = { references?: Nutrients; catalog?: FoodCatalog; meal?: Meal; observeCustom?: FoodUseCases['observeCustom']; run?: (write: () => Promise<void>) => void };
+type Options = { profile?: Profile; catalog?: FoodCatalog; meal?: Meal; observeCustom?: FoodUseCases['observeCustom']; run?: (write: () => Promise<void>) => void };
 
-async function setup({ catalog = inMemoryFoodCatalog([rawRice, cookedRice, orange]), meal = 'lunch', observeCustom, references, run = (write) => void write() }: Options = {}) {
+async function setup({ catalog = inMemoryFoodCatalog([rawRice, cookedRice, orange]), meal = 'lunch', observeCustom, profile = DEFAULT_PROFILE, run = (write) => void write() }: Options = {}) {
   const entries = inMemoryFoodEntryRepository();
   const favorites = inMemoryFavoriteMealRepository();
   const foods = { ...foodUseCases({ catalog, repo: inMemoryFoodRepository() }), ...(observeCustom && { observeCustom }) };
   const meals = mealUseCases({ entries, favorites, clock, timezone: DEFAULT_PROFILE.timezone });
   const onDone = jest.fn();
   await render(
-    <PaperProvider>
-      <AddFoodScreen meal={meal} meals={meals} foods={foods} run={run} onDone={onDone} references={references} />
+    <PaperProvider theme={theme}>
+      <AddFoodScreen meal={meal} meals={meals} foods={foods} run={run} onDone={onDone} profile={profile} clock={clock} pickWhen={pickWhen} />
     </PaperProvider>,
   );
   return { entries, favorites, foods, meals, onDone };
@@ -616,14 +617,13 @@ test('a search that cannot run is announced too', async () => {
 });
 
 describe('the nutrients of a fiche', () => {
-  const references = { vitC: 110, fiber: 30, salt: 5 };
   const open = async () => {
     await search('orange');
     await fireEvent.press(await screen.findByText('Orange, pulpe, crue'));
   };
 
   test('are listed for the portion, with the share of the reference, once the list is opened', async () => {
-    await setup({ references });
+    await setup();
     await open();
     expect(screen.queryByText('Vitamine C')).toBeNull();
     await fireEvent.press(screen.getByText('Nutriments'));
@@ -634,30 +634,105 @@ describe('the nutrients of a fiche', () => {
   });
 
   test('say how many the table does not give', async () => {
-    await setup({ references });
+    await setup();
     await open();
     await fireEvent.press(screen.getByText('Nutriments'));
     expect(screen.getByText('23 nutriments ne sont pas renseignés pour cet aliment.')).toBeTruthy();
   });
 
   test('have no percentage without references', async () => {
-    await setup();
+    await setup({ profile: { ...DEFAULT_PROFILE, birthYear: 2012 } });
     await open();
     await fireEvent.press(screen.getByText('Nutriments'));
     expect(screen.getByLabelText('Vitamine C, 50 mg')).toBeTruthy();
   });
 
   test('are not offered for a quantity that is not valid', async () => {
-    await setup({ references });
+    await setup();
     await open();
     await type('Quantité (g)', '0');
     expect(screen.queryByText('Nutriments')).toBeNull();
   });
 
   test('are not there for a food with none: Ciqual missing them, or a food of one’s own', async () => {
-    await setup({ references });
+    await setup();
     await search('riz');
     await fireEvent.press(await screen.findByText('Riz blanc, cru'));
     expect(screen.queryByText('Nutriments')).toBeNull();
+  });
+});
+
+describe('the sheet of a food', () => {
+  const kcal = (n: number) => n.toLocaleString('fr-FR');
+  const openRice = async () => {
+    await search('riz');
+    await fireEvent.press(await screen.findByText('Riz blanc, cru'));
+  };
+
+  test('names where the figures come from', async () => {
+    const { foods } = await setup();
+    await openRice();
+    expect(screen.getByText('Source : Ciqual (ANSES)')).toBeTruthy();
+    await fireEvent.press(screen.getByText('Retour'));
+    await act(async () => {
+      await foods.create(bread);
+    });
+    await search('pain maison');
+    await fireEvent.press(await screen.findByText('Pain maison'));
+    expect(screen.getByText('Source : Mon aliment')).toBeTruthy();
+  });
+
+  test('adds the food to the group chosen in the sheet', async () => {
+    const { entries } = await setup({ meal: 'lunch' });
+    await openRice();
+    await fireEvent.press(screen.getByText('Dîner'));
+    await fireEvent.press(screen.getByText('Ajouter à Dîner'));
+    expect(entries.entries[0].meal).toBe('dinner');
+  });
+
+  test('adds the food at the day and time chosen, in the zone of the profile', async () => {
+    pickWhen.mockResolvedValueOnce(new Date('2026-10-22T22:30:00Z')); // 00:30 in Paris on the 23rd
+    const { entries } = await setup();
+    await openRice();
+    await fireEvent.press(screen.getByLabelText('Choisir le jour'));
+    expect(screen.getByText('Hier')).toBeTruthy();
+    await fireEvent.press(screen.getByText('Ajouter à Déjeuner'));
+    expect(entries.entries[0]).toMatchObject({ day: '2026-10-23', createdAt: new Date('2026-10-22T22:30:00Z') });
+  });
+
+  test('without a choice the food is logged at the moment it is added', async () => {
+    const { entries } = await setup();
+    await openRice();
+    await fireEvent.press(screen.getByText('Ajouter à Déjeuner'));
+    expect(entries.entries[0]).toMatchObject({ day: '2026-10-24', createdAt: new Date('2026-10-24T10:00:00Z') });
+  });
+
+  test('refuses a time in the future: said, and nothing to add', async () => {
+    pickWhen.mockResolvedValueOnce(new Date('2026-10-24T11:00:00Z'));
+    const { entries } = await setup();
+    await openRice();
+    await fireEvent.press(screen.getByLabelText('Choisir l’heure'));
+    expect(screen.getByText('L’heure choisie est dans le futur.')).toBeTruthy();
+    expect(screen.getByText('Ajouter à Déjeuner')).toBeDisabled();
+    expect(entries.entries).toEqual([]);
+  });
+
+  test('shows the energy ring of the portion and the goals of the day with it, counting what the day holds already', async () => {
+    const { meals } = await setup();
+    await act(async () => {
+      await meals.logFood('breakfast', rawRice, 100);
+    });
+    await openRice();
+    expect(screen.getByRole('image').props.accessibilityLabel).toMatch(/^Énergie : 350 kcal\./);
+    expect(screen.getByText('Objectifs avec cette portion')).toBeTruthy();
+    expect(screen.getByLabelText(`Énergie : ${kcal(700)} sur ${kcal(2200)} kcal avec cette portion`)).toBeTruthy();
+    await type('Quantité (g)', '200');
+    expect(screen.getByLabelText(`Énergie : ${kcal(1050)} sur ${kcal(2200)} kcal avec cette portion`)).toBeTruthy();
+  });
+
+  test('says the net carbs are only the carbohydrates when the fibre is not known', async () => {
+    await setup();
+    await openRice();
+    expect(screen.getByText('Glucides nets (partiel)')).toBeTruthy();
   });
 });

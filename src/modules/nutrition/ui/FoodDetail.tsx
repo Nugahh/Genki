@@ -1,20 +1,20 @@
 import { useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { Button, Chip, HelperText, Text, TextInput } from 'react-native-paper';
+import { Button } from 'react-native-paper';
+import type { Profile } from '@/modules/settings';
+import type { Clock } from '@/shared/clock';
 import type { FoodUseCases } from '../application/foodUseCases';
 import type { MealUseCases } from '../application/mealUseCases';
-import { isValidGrams, type Food } from '../domain/food';
+import type { Food } from '../domain/food';
 import { macrosFor } from '../domain/macros';
-import { nutrientsFor, type Nutrients } from '../domain/nutrients';
 import type { Meal } from '../domain/meal';
+import { nutrientsFor } from '../domain/nutrients';
 import { ConfirmDelete } from './ConfirmDelete';
 import { FoodForm } from './FoodForm';
-import { asText, gramsText, macrosText, MEAL_LABELS, parseNumber } from './format';
-import { NutrientList } from './NutrientList';
+import { gramsText, MEAL_LABELS } from './format';
+import { PortionSheet } from './PortionSheet';
 import { StateChip } from './StateChip';
-
-// A chip is 32 dp tall: 8 dp more above and below make the 48 dp target.
-const HIT_SLOP = { top: 8, bottom: 8 };
+import type { PickWhen } from './WhenPicker';
 
 type Props = {
   food: Food;
@@ -23,8 +23,9 @@ type Props = {
   meal: Meal;
   meals: MealUseCases;
   foods: FoodUseCases;
-  /** The reference intakes of the profile, to show the share of each nutrient. */
-  references?: Nutrients;
+  profile: Profile;
+  clock: Clock;
+  pickWhen: PickWhen;
   run: (write: () => Promise<void>) => void;
   onDone: () => void;
   onBack: () => void;
@@ -32,17 +33,16 @@ type Props = {
   onRemoved: () => void;
 };
 
-/** A food chosen from a list: pick a quantity, read the macros, add it to the meal. A custom food can also be changed or deleted here. */
-export function FoodDetail({ food: chosen, grams: last, meal, meals, foods, references, run, onDone, onBack, onRemoved }: Props) {
+const SOURCES = { ciqual: 'Ciqual (ANSES)', custom: 'Mon aliment' } as const;
+
+/** A food chosen from a list: pick a quantity, a group and a time, read the figures, add it. A custom food can also be changed or deleted here. */
+export function FoodDetail({ food: chosen, grams: last, meal, meals, foods, profile, clock, pickWhen, run, onDone, onBack, onRemoved }: Props) {
   // Held here so that a saved change shows at once.
   const [food, setFood] = useState(chosen);
-  const [text, setText] = useState(asText(last ?? 100));
   const [editing, setEditing] = useState(false);
   const [removing, setRemoving] = useState(false);
   // Set by the first touch of « Ajouter à … »: a second one, before the host has left the screen, must not log the food again.
   const submitted = useRef(false);
-  const grams = parseNumber(text);
-  const valid = isValidGrams(grams);
 
   if (editing) {
     return (
@@ -70,58 +70,42 @@ export function FoodDetail({ food: chosen, grams: last, meal, meals, foods, refe
   ];
 
   return (
-    <View style={styles.detail}>
-      <View style={styles.title}>
-        <Text variant="titleLarge" style={styles.name}>
-          {food.name}
-        </Text>
-        <StateChip state={food.state} />
-      </View>
-      <View style={styles.chips}>
-        {quantities.map((quantity, i) => (
-          <Chip key={i} hitSlop={HIT_SLOP} onPress={() => setText(asText(quantity.grams))}>
-            {quantity.label}
-          </Chip>
-        ))}
-      </View>
-      <TextInput label="Quantité (g)" accessibilityLabel="Quantité (g)" value={text} onChangeText={setText} keyboardType="decimal-pad" />
-      {text.trim() !== '' && !valid && (
-        <HelperText type="error" accessibilityLiveRegion="polite">
-          La quantité doit être comprise entre 0 et 5 000 g.
-        </HelperText>
-      )}
-      {valid && (
-        <Text variant="bodyLarge" accessibilityLiveRegion="polite">
-          {macrosText(macrosFor(food.per100g, grams))}
-        </Text>
-      )}
-      {valid && food.nutrients && <NutrientList nutrients={nutrientsFor(food.nutrients, grams)} references={references} />}
-      <Button
-        mode="contained"
-        contentStyle={styles.button}
-        disabled={!valid}
-        onPress={() => {
+    <>
+      <PortionSheet
+        name={food.name}
+        badge={<StateChip state={food.state} />}
+        source={SOURCES[food.ref.type]}
+        portions={quantities}
+        initialGrams={last ?? 100}
+        macrosAt={(grams) => macrosFor(food.per100g, grams)}
+        nutrientsAt={(grams) => food.nutrients && nutrientsFor(food.nutrients, grams)}
+        initialMeal={meal}
+        meals={meals}
+        profile={profile}
+        clock={clock}
+        pickWhen={pickWhen}
+        submitLabel={(chosenMeal) => `Ajouter à ${MEAL_LABELS[chosenMeal]}`}
+        onSubmit={({ grams, meal: chosenMeal, at }) => {
           if (submitted.current) return;
           submitted.current = true;
-          run(() => meals.logFood(meal, food, grams));
+          run(() => meals.logFood(chosenMeal, food, grams, at));
           onDone();
         }}
       >
-        {`Ajouter à ${MEAL_LABELS[meal]}`}
-      </Button>
-      {food.ref.type === 'custom' && (
-        <>
-          <Button mode="outlined" icon="pencil" contentStyle={styles.button} onPress={() => setEditing(true)}>
-            Modifier l’aliment
-          </Button>
-          <Button mode="outlined" icon="delete-outline" contentStyle={styles.button} onPress={() => setRemoving(true)}>
-            Supprimer l’aliment
-          </Button>
-        </>
-      )}
-      <Button contentStyle={styles.button} onPress={onBack}>
-        Retour
-      </Button>
+        {food.ref.type === 'custom' && (
+          <>
+            <Button mode="outlined" icon="pencil" contentStyle={styles.button} onPress={() => setEditing(true)}>
+              Modifier l’aliment
+            </Button>
+            <Button mode="outlined" icon="delete-outline" contentStyle={styles.button} onPress={() => setRemoving(true)}>
+              Supprimer l’aliment
+            </Button>
+          </>
+        )}
+        <Button contentStyle={styles.button} onPress={onBack}>
+          Retour
+        </Button>
+      </PortionSheet>
       {removing && (
         <ConfirmDelete
           title={`Supprimer l’aliment ${food.name} ?`}
@@ -132,14 +116,11 @@ export function FoodDetail({ food: chosen, grams: last, meal, meals, foods, refe
           }}
         />
       )}
-    </View>
+    </>
   );
 }
 
 const styles = StyleSheet.create({
   detail: { gap: 12 },
-  title: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  name: { flexShrink: 1 },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   button: { minHeight: 48 },
 });
