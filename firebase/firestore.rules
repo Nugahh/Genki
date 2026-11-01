@@ -213,13 +213,16 @@ service cloud.firestore {
         && request.resource.data.createdAt is timestamp
         && request.resource.data.updatedAt is timestamp
         && request.resource.data.deletedAt == null;
-      // Either a soft delete (once: the batch moving the day totals fails with it) or a quantity change.
+      // Either a soft delete (once: the batch moving the day totals fails with it) or a change of quantity, group or time.
       allow update: if isOwner(uid)
         && resource.data.deletedAt == null
         && (
           (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['deletedAt'])
             && request.resource.data.deletedAt is timestamp)
-          || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['grams', 'macros', 'nutrients', 'updatedAt'])
+          || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['day', 'meal', 'createdAt', 'grams', 'macros', 'nutrients', 'updatedAt'])
+            && isDayKey(request.resource.data.day)
+            && request.resource.data.meal in ['breakfast', 'lunch', 'dinner', 'snack']
+            && request.resource.data.createdAt is timestamp
             && isGrams(request.resource.data.grams)
             && isEntryMacros(request.resource.data.macros)
             && (!('nutrients' in request.resource.data) || isEntryNutrients(request.resource.data.nutrients))

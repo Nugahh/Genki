@@ -107,7 +107,7 @@ export function MealsScreen({ profile, clock, meals, onAdd, onOpenNutrients, run
       <EntryActions
         entry={selected}
         onDismiss={() => setSelected(null)}
-        onChangeGrams={(entry, grams) => run(() => meals.changeGrams(entry, grams))}
+        onChangeGrams={(entry, grams) => run(() => meals.updateEntry(entry, { grams, meal: entry.meal, at: entry.createdAt }))}
         onRemove={(entry) => run(() => meals.removeEntry(entry))}
       />
       {favorite && (

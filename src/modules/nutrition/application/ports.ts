@@ -1,6 +1,4 @@
-import type { FavoriteMeal, Food, FoodEntry, FoodInput, NewFavoriteMeal, NewFoodEntry } from '../domain/food';
-import type { Macros } from '../domain/macros';
-import type { Nutrients } from '../domain/nutrients';
+import type { EntryChange, FavoriteMeal, Food, FoodEntry, FoodInput, NewFavoriteMeal, NewFoodEntry } from '../domain/food';
 
 type Observe<T> = (onNext: (value: T) => void, onError: (error: Error) => void) => () => void;
 
@@ -22,8 +20,11 @@ export interface FoodRepository {
 export interface FoodEntryRepository {
   /** Also adds the entry's macros to the day totals. */
   add(entry: NewFoodEntry): Promise<void>;
-  /** Also moves the day totals by the difference between `macros` and the entry's current ones. `nutrients` are the entry's, rescaled. */
-  updateGrams(entry: FoodEntry, grams: number, macros: Macros, nutrients?: Nutrients): Promise<void>;
+  /**
+   * Changes the quantity, group and time of the entry. Also moves the day totals in the same write: by the difference of the macros on the same day,
+   * else the old macros come off the old day and the new ones go onto the new day.
+   */
+  update(entry: FoodEntry, change: EntryChange): Promise<void>;
   /** Soft delete; also takes the entry's macros off the day totals. */
   remove(entry: FoodEntry): Promise<void>;
   /** Live entries of `day`, deleted ones excluded. */

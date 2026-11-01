@@ -240,17 +240,35 @@ describe('foodEntries', () => {
     await assertFails(setDoc(doc(db('alice'), 'users/alice/foodEntries/e1'), { ...foodEntry(), ...override }));
   });
 
-  test('the quantity can change but nothing else, and the entry is soft-deleted once', async () => {
+  test('the quantity, group and time can change but nothing else, and the entry is soft-deleted once', async () => {
     await seed('users/alice/foodEntries/e1', foodEntry());
     const ref = doc(db('alice'), 'users/alice/foodEntries/e1');
     await assertFails(updateDoc(ref, { foodName: 'Autre' }));
     await assertFails(updateDoc(ref, { grams: 0, macros, updatedAt: Timestamp.now() }));
-    await assertFails(updateDoc(ref, { grams: 200, macros, updatedAt: Timestamp.now(), meal: 'dinner' }));
+    await assertFails(updateDoc(ref, { grams: 200, macros, updatedAt: Timestamp.now(), foodName: 'Autre' }));
     await assertSucceeds(updateDoc(ref, { grams: 200, macros: { ...macros, kcal: 700 }, updatedAt: Timestamp.now() }));
     await assertFails(deleteDoc(ref));
     await assertSucceeds(updateDoc(ref, { deletedAt: Timestamp.now() }));
     await assertFails(updateDoc(ref, { deletedAt: Timestamp.now() }));
     await assertFails(updateDoc(ref, { grams: 100, macros, updatedAt: Timestamp.now() }));
+  });
+
+  test('the group, the day and the time can change with the quantity', async () => {
+    await seed('users/alice/foodEntries/e1', foodEntry());
+    const ref = doc(db('alice'), 'users/alice/foodEntries/e1');
+    const when = { grams: 100, macros, updatedAt: Timestamp.now() };
+    await assertSucceeds(updateDoc(ref, { ...when, meal: 'dinner', day: '2026-10-23', createdAt: Timestamp.fromDate(new Date('2026-10-23T18:00:00Z')) }));
+  });
+
+  test.each<[string, object]>([
+    ['the day is not a date', { day: 'hier' }],
+    ['the meal is unknown', { meal: 'brunch' }],
+    ['the time is not a timestamp', { createdAt: 'midi' }],
+    ['the food name changes', { foodName: 'Autre' }],
+    ['the food reference changes', { foodRef: { type: 'custom', id: 'x' } }],
+  ])('a change of time is refused when %s', async (_, patch) => {
+    await seed('users/alice/foodEntries/e1', foodEntry());
+    await assertFails(updateDoc(doc(db('alice'), 'users/alice/foodEntries/e1'), { grams: 100, macros, updatedAt: Timestamp.now(), ...patch }));
   });
 
   test('an entry may carry the nutrients of its portion', async () => {

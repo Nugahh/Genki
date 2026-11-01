@@ -1,5 +1,5 @@
 import { dayKey, type Clock } from '@/shared/clock';
-import { isValidGrams, type FavoriteMeal, type Food, type FoodEntry, type FoodRef, type RecentFood } from '../domain/food';
+import { isValidGrams, isValidLoggedAt, type FavoriteMeal, type Food, type FoodEntry, type FoodRef, type RecentFood } from '../domain/food';
 import { macrosFor, scaleMacros } from '../domain/macros';
 import { nutrientsFor, scaleNutrients } from '../domain/nutrients';
 import type { Meal } from '../domain/meal';
@@ -12,6 +12,9 @@ const byName = (a: FavoriteMeal, b: FavoriteMeal) => a.name.localeCompare(b.name
 // A use case does not trust its caller (the UI and the Firestore rules bound these values too).
 const assertGrams = (grams: number) => {
   if (!isValidGrams(grams)) throw new Error('La quantité doit être comprise entre 0 et 5 000 g.');
+};
+const assertWhen = (at: Date, now: Date) => {
+  if (!isValidLoggedAt(at, now)) throw new Error('L’heure choisie ne peut ni être dans le futur ni remonter à plus d’un an.');
 };
 
 export function mealUseCases(deps: { entries: FoodEntryRepository; favorites: FavoriteMealRepository; clock: Clock; timezone: string }) {
@@ -27,13 +30,26 @@ export function mealUseCases(deps: { entries: FoodEntryRepository; favorites: Fa
     });
 
   return {
-    async logFood(meal: Meal, food: Pick<Food, 'ref' | 'name' | 'per100g' | 'nutrients'>, grams: number) {
+    /** Logs the food at `at` (now when missing): the day is that of the profile's zone. */
+    async logFood(meal: Meal, food: Pick<Food, 'ref' | 'name' | 'per100g' | 'nutrients'>, grams: number, at?: Date) {
       assertGrams(grams);
-      return log(meal, food, grams, clock.now());
+      const now = clock.now();
+      if (at) assertWhen(at, now);
+      return log(meal, food, grams, at ?? now);
     },
-    async changeGrams(entry: FoodEntry, grams: number) {
-      assertGrams(grams);
-      return entries.updateGrams(entry, grams, scaleMacros(entry.macros, entry.grams, grams), entry.nutrients && scaleNutrients(entry.nutrients, entry.grams, grams));
+    /** Changes the quantity, the group and the time of an entry: its values follow the quantity, from its own frozen ones. */
+    async updateEntry(entry: FoodEntry, change: { grams: number; meal: Meal; at: Date }) {
+      assertGrams(change.grams);
+      // The time an entry already has is kept as it is, even if it is further back than a new one may be.
+      if (change.at.getTime() !== entry.createdAt.getTime()) assertWhen(change.at, clock.now());
+      return entries.update(entry, {
+        grams: change.grams,
+        meal: change.meal,
+        day: dayKey(change.at, timezone),
+        createdAt: change.at,
+        macros: scaleMacros(entry.macros, entry.grams, change.grams),
+        ...(entry.nutrients && { nutrients: scaleNutrients(entry.nutrients, entry.grams, change.grams) }),
+      });
     },
     async removeEntry(entry: FoodEntry) {
       return entries.remove(entry);

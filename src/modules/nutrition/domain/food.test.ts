@@ -1,4 +1,4 @@
-import { isValidGrams, matchCustom, validateFood, type Food, type FoodInput } from './food';
+import { isValidGrams, isValidLoggedAt, matchCustom, validateFood, type Food, type FoodInput } from './food';
 
 const input = (over: Partial<FoodInput> = {}): FoodInput => ({
   name: 'Pain de mie complet',
@@ -57,5 +57,24 @@ describe('matchCustom', () => {
   test('filters by state and returns nothing for a blank query', () => {
     expect(matchCustom(foods, 'riz', 'raw').map((f) => f.ref.id)).toEqual(['3']);
     expect(matchCustom(foods, '  ')).toEqual([]);
+  });
+});
+
+describe('isValidLoggedAt', () => {
+  const now = new Date('2026-11-01T10:00:00Z');
+  const ago = (days: number) => new Date(now.getTime() - days * 24 * 3600 * 1000);
+
+  test('now and the past are fine, up to a year back', () => {
+    expect(isValidLoggedAt(now, now)).toBe(true);
+    expect(isValidLoggedAt(ago(1), now)).toBe(true);
+    expect(isValidLoggedAt(ago(365), now)).toBe(true);
+  });
+
+  test('more than a year back is not', () => {
+    expect(isValidLoggedAt(ago(366), now)).toBe(false);
+  });
+
+  test('the future is not, not even a minute of it', () => {
+    expect(isValidLoggedAt(new Date(now.getTime() + 60000), now)).toBe(false);
   });
 });

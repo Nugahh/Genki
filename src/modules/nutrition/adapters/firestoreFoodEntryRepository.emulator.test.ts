@@ -31,6 +31,8 @@ const entry = (over = {}) => ({
   grams: 100, macros: rice, createdAt: new Date('2026-10-24T10:00:00Z'), ...over,
 });
 
+/** A change of quantity alone: the group, the day and the time stay. */
+const same = (e: FoodEntry, grams: number, macros: Macros, nutrients?: FoodEntry['nutrients']) => ({ grams, meal: e.meal, day: e.day, createdAt: e.createdAt, macros, nutrients });
 const dayDoc = async (db: Firestore) => (await getDocFromServer(doc(db, 'users/alice/days/2026-10-24'))).data();
 // Day totals are sums of 0.1-rounded floats (0.6 + 1.2 is 1.7999999999999998): compare them within float noise.
 const totalsOf = (m: Macros) => ({
@@ -78,7 +80,7 @@ test('changing the quantity updates the entry and moves the day total by the dif
   const db = phone();
   await entriesOn(db).add(entry({ grams: 200, macros: double }));
   const [added] = await journal(db);
-  await entriesOn(db).updateGrams(added, 100, rice);
+  await entriesOn(db).update(added, same(added, 100, rice));
   expect(await journal(db)).toEqual([{ id: added.id, ...entry() }]);
   expect(await dayDoc(db)).toMatchObject(totalsOf(rice));
 });
@@ -130,7 +132,7 @@ describe('nutrients', () => {
     await entriesOn(db).add(entry({ nutrients: iron }));
     const [added] = await journal(db);
     expect(added.nutrients).toEqual(iron);
-    await entriesOn(db).updateGrams(added, 200, double, { iron: 3.88, vitC: 0 });
+    await entriesOn(db).update(added, same(added, 200, double, { iron: 3.88, vitC: 0 }));
     expect((await journal(db))[0]).toMatchObject({ grams: 200, nutrients: { iron: 3.88, vitC: 0 } });
   });
 
@@ -139,7 +141,7 @@ describe('nutrients', () => {
     await entriesOn(db).add(entry());
     const [added] = await journal(db);
     expect(added.nutrients).toBeUndefined();
-    await entriesOn(db).updateGrams(added, 200, double);
+    await entriesOn(db).update(added, same(added, 200, double));
     expect((await journal(db))[0].nutrients).toBeUndefined();
   });
 
@@ -149,5 +151,40 @@ describe('nutrients', () => {
     const [gone] = (await between(db, '2026-10-24', '2026-10-24'));
     await entriesOn(db).remove(gone);
     expect((await between(db, '2026-10-23', '2026-10-25')).map((e) => e.foodName).sort()).toEqual(['2026-10-23', '2026-10-25']);
+  });
+});
+
+describe('changing the group and the time', () => {
+  const dayDocOf = async (db: Firestore, day: string) => (await getDocFromServer(doc(db, `users/alice/days/${day}`))).data();
+
+  test('a new group on the same day moves nothing but the difference of the totals', async () => {
+    const db = phone();
+    await entriesOn(db).add(entry());
+    const [added] = await journal(db);
+    await entriesOn(db).update(added, { ...same(added, 100, rice), meal: 'dinner' });
+    expect((await journal(db))[0]).toMatchObject({ meal: 'dinner' });
+    expect(await dayDoc(db)).toMatchObject(totalsOf(rice));
+  });
+
+  test('a new day takes the old macros off the old day and puts the new ones on the new day, in one write', async () => {
+    const db = phone();
+    await entriesOn(db).add(entry());
+    const [added] = await journal(db);
+    const at = new Date('2026-10-23T18:00:00Z');
+    await entriesOn(db).update(added, { grams: 200, meal: 'dinner', day: '2026-10-23', createdAt: at, macros: double });
+    expect(await dayDoc(db)).toMatchObject(totalsOf(ZERO_MACROS));
+    expect(await dayDocOf(db, '2026-10-23')).toMatchObject(totalsOf(double));
+    expect(await journal(db)).toEqual([]);
+    expect((await firstOf((next, fail) => entriesOn(db).observeDay('2026-10-23', next, fail)))[0]).toMatchObject({ grams: 200, meal: 'dinner', createdAt: at });
+  });
+
+  test('an update the rules refuse moves neither total', async () => {
+    const db = phone();
+    await entriesOn(db).add(entry());
+    const [added] = await journal(db);
+    await expect(entriesOn(db).update(added, { ...same(added, 100, rice), day: 'hier' })).rejects.toThrow();
+    expect(await dayDoc(db)).toMatchObject(totalsOf(rice));
+    expect(await dayDocOf(db, 'hier')).toBeUndefined();
+    expect((await journal(db))[0].day).toBe('2026-10-24');
   });
 });

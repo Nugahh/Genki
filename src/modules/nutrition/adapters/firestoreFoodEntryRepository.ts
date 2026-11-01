@@ -5,7 +5,6 @@ import {
 import type { FoodEntryRepository } from '../application/ports';
 import type { FoodEntry } from '../domain/food';
 import { subtractMacros, ZERO_MACROS, type Macros } from '../domain/macros';
-import type { Nutrients } from '../domain/nutrients';
 
 /** Entries in `users/{uid}/foodEntries`; each write moves `days/{day}` in the same batch (spec §4). */
 export function firestoreFoodEntryRepository(db: Firestore, uid: string): FoodEntryRepository {
@@ -42,10 +41,19 @@ export function firestoreFoodEntryRepository(db: Firestore, uid: string): FoodEn
       moveDayTotals(batch, entry.day, subtractMacros(entry.macros, ZERO_MACROS));
       return batch.commit();
     },
-    updateGrams(entry, grams, macros, nutrients?: Nutrients) {
+    update(entry, change) {
       const batch = writeBatch(db);
-      batch.update(doc(entries, entry.id), { grams, macros, ...(nutrients && { nutrients }), updatedAt: Timestamp.now() });
-      moveDayTotals(batch, entry.day, subtractMacros(macros, entry.macros));
+      batch.update(doc(entries, entry.id), {
+        grams: change.grams, meal: change.meal, day: change.day, createdAt: Timestamp.fromDate(change.createdAt), macros: change.macros,
+        ...(change.nutrients && { nutrients: change.nutrients }), updatedAt: Timestamp.now(),
+      });
+      if (change.day === entry.day) {
+        moveDayTotals(batch, entry.day, subtractMacros(change.macros, entry.macros));
+      } else {
+        // One batch: the two totals and the entry move together or not at all.
+        moveDayTotals(batch, entry.day, subtractMacros(ZERO_MACROS, entry.macros));
+        moveDayTotals(batch, change.day, subtractMacros(change.macros, ZERO_MACROS));
+      }
       return batch.commit();
     },
     remove(entry) {

@@ -20,6 +20,8 @@ function setup(now = '2026-10-24T09:00:00Z') {
   return { clock, entries, favorites, meals };
 }
 
+/** A change of quantity alone: the group and the time stay. */
+const sameTime = (entry: FoodEntry, grams: number) => ({ grams, meal: entry.meal, at: entry.createdAt });
 const latest = (entries: { entries: FoodEntry[] }) => entries.entries[entries.entries.length - 1];
 const BAD_GRAMS = 'La quantité doit être comprise entre 0 et 5 000 g.';
 const BAD_FAVORITE = 'Un favori a un nom et 1 à 50 aliments.';
@@ -33,10 +35,10 @@ test('logFood freezes the macros of the quantity and uses the profile-zone day',
   });
 });
 
-test('changeGrams rescales the frozen macros of the entry', async () => {
+test('updateEntry rescales the frozen macros of the entry', async () => {
   const { entries, meals } = setup();
   await meals.logFood('lunch', rice, 200);
-  await meals.changeGrams(latest(entries), 100);
+  await meals.updateEntry(latest(entries), sameTime(latest(entries), 100));
   expect(latest(entries)).toMatchObject({ grams: 100, macros: { kcal: 350, protein: 7, carbs: 78, fat: 0.6 } });
 });
 
@@ -167,13 +169,13 @@ test('logFood rejects a quantity outside ]0 ; 5 000] g and writes nothing', asyn
   expect(entries.entries).toHaveLength(1);
 });
 
-test('changeGrams rejects a quantity outside ]0 ; 5 000] g and leaves the entry alone', async () => {
+test('updateEntry rejects a quantity outside ]0 ; 5 000] g and leaves the entry alone', async () => {
   const { entries, meals } = setup();
   await meals.logFood('lunch', rice, 100);
   const entry = latest(entries);
-  for (const grams of [0, -1, 5001, Number.NaN]) await expect(meals.changeGrams(entry, grams)).rejects.toThrow(BAD_GRAMS);
+  for (const grams of [0, -1, 5001, Number.NaN]) await expect(meals.updateEntry(entry, sameTime(entry, grams))).rejects.toThrow(BAD_GRAMS);
   expect(latest(entries)).toMatchObject({ grams: 100 });
-  await meals.changeGrams(entry, 5000); // the upper bound itself is allowed
+  await meals.updateEntry(entry, sameTime(entry, 5000)); // the upper bound itself is allowed
   expect(latest(entries)).toMatchObject({ grams: 5000 });
 });
 
@@ -209,13 +211,13 @@ describe('nutrients', () => {
     expect(latest(entries)).not.toHaveProperty('nutrients');
   });
 
-  test('changeGrams rescales them from the frozen values of the entry', async () => {
+  test('updateEntry rescales them from the frozen values of the entry', async () => {
     const { entries, meals } = setup();
     await meals.logFood('snack', orange, 200);
-    await meals.changeGrams(latest(entries), 100);
+    await meals.updateEntry(latest(entries), sameTime(latest(entries), 100));
     expect(latest(entries).nutrients).toEqual({ vitC: 50, fiber: 1.8 });
     await meals.logFood('lunch', egg, 100);
-    await meals.changeGrams(latest(entries), 50);
+    await meals.updateEntry(latest(entries), sameTime(latest(entries), 50));
     expect(latest(entries)).not.toHaveProperty('nutrients');
   });
 
@@ -235,5 +237,45 @@ describe('nutrients', () => {
     meals.observeBetween('2026-10-25', '2026-10-30', (list) => outside.push(list.length), () => {})();
     stop();
     expect([seen, outside]).toEqual([[1], [0]]);
+  });
+});
+
+describe('the time of an entry', () => {
+  // 2026-10-24 09:00 UTC is 11:00 in Paris.
+  test('logFood can log at an earlier time: the day is that of the zone, the entry has that time', async () => {
+    const { entries, meals } = setup();
+    const at = new Date('2026-10-22T22:30:00Z'); // 00:30 in Paris on the 23rd
+    await meals.logFood('dinner', rice, 100, at);
+    expect(latest(entries)).toMatchObject({ day: '2026-10-23', createdAt: at, meal: 'dinner' });
+  });
+
+  test('logFood refuses the future and more than a year back, and logs nothing', async () => {
+    const { entries, meals } = setup();
+    await expect(meals.logFood('lunch', rice, 100, new Date('2026-10-24T09:01:00Z'))).rejects.toThrow('L’heure choisie');
+    await expect(meals.logFood('lunch', rice, 100, new Date('2025-10-23T08:59:00Z'))).rejects.toThrow('L’heure choisie');
+    expect(entries.entries).toEqual([]);
+  });
+
+  test('updateEntry changes the group and the time: the day follows, the values follow the quantity', async () => {
+    const { entries, meals } = setup();
+    await meals.logFood('lunch', rice, 200);
+    const at = new Date('2026-10-22T22:30:00Z');
+    await meals.updateEntry(latest(entries), { grams: 100, meal: 'snack', at });
+    expect(latest(entries)).toMatchObject({ grams: 100, meal: 'snack', day: '2026-10-23', createdAt: at, macros: { kcal: 350, protein: 7, carbs: 78, fat: 0.6 } });
+  });
+
+  test('updateEntry refuses a time in the future and leaves the entry alone', async () => {
+    const { entries, meals } = setup();
+    await meals.logFood('lunch', rice, 200);
+    const before = latest(entries);
+    await expect(meals.updateEntry(before, { grams: 100, meal: 'lunch', at: new Date('2026-10-25T09:00:00Z') })).rejects.toThrow('L’heure choisie');
+    expect(latest(entries)).toEqual(before);
+  });
+
+  test('an entry keeps a time that is further back than a new one may be when only the quantity changes', async () => {
+    const { entries, meals } = setup();
+    await entries.add({ day: '2024-01-05', meal: 'lunch', foodRef: rice.ref, foodName: rice.name, grams: 100, macros: { kcal: 350, protein: 7, carbs: 78, fat: 0.6 }, createdAt: new Date('2024-01-05T11:00:00Z') });
+    await meals.updateEntry(latest(entries), sameTime(latest(entries), 200));
+    expect(latest(entries)).toMatchObject({ grams: 200, day: '2024-01-05' });
   });
 });

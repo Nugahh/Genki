@@ -25,6 +25,8 @@ export type FoodEntry = {
   createdAt: Date;
 };
 export type NewFoodEntry = Omit<FoodEntry, 'id'>;
+/** What a journal entry can change: its quantity, group and time, with the values that follow the quantity. */
+export type EntryChange = Pick<FoodEntry, 'grams' | 'meal' | 'day' | 'createdAt' | 'macros' | 'nutrients'>;
 
 export type FavoriteItem = { foodRef: FoodRef; foodName: string; grams: number };
 /** A "repas type": a few foods with quantities, logged back in one tap. */
@@ -35,6 +37,9 @@ export type RecentFood = { ref: FoodRef; name: string; grams: number };
 
 /** The bound of a quantity of food and of a portion weight: above 0 and up to 5 000 g, like the Firestore rules. NaN and Infinity fail both comparisons. */
 export const isValidGrams = (grams: number) => grams > 0 && grams <= 5000;
+
+/** A food can be logged at a time that is not in the future and not more than a year back. */
+export const isValidLoggedAt = (at: Date, now: Date) => at.getTime() <= now.getTime() && at.getTime() >= now.getTime() - 365 * 24 * 3600 * 1000;
 
 /** A French message for the first problem with a custom food, or null. The Firestore rules bound each value; the sum of the macros (100.5 g at most) and the portion weights are checked here only. */
 export function validateFood(food: FoodInput): string | null {
