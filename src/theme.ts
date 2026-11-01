@@ -59,6 +59,7 @@ const colors = {
     protein: 'rgb(0, 110, 108)',
     carbs: 'rgb(140, 95, 30)',
     fat: 'rgb(160, 65, 105)',
+    micro: 'rgb(95, 105, 40)',
     steps: 'rgb(85, 95, 113)',
     weight: 'rgb(70, 80, 150)',
     waist: 'rgb(110, 100, 60)',

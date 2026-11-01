@@ -2,7 +2,7 @@ import { StyleSheet } from 'react-native';
 import { Button, Surface, Text } from 'react-native-paper';
 import type { TrackingUseCases } from '../application/trackingUseCases';
 import type { Goals } from '../domain/metric';
-import { metricById } from '../domain/metrics';
+import { findMetric } from '../application/registry';
 import type { Period } from '../domain/period';
 import { useMetricView } from './useMetricView';
 
@@ -18,7 +18,7 @@ type Props = {
 };
 
 function WeekSessions({ tracking, goals, day, planned }: Pick<Props, 'tracking' | 'goals' | 'day' | 'planned'>) {
-  const { view } = useMetricView(tracking, metricById('sessions')!, goals, 'week', day);
+  const { view } = useMetricView(tracking, findMetric('sessions')!, goals, 'week', day);
   if (!view) return null;
   const done = view.points.reduce((sum, p) => sum + (p.value ?? 0), 0);
   return (

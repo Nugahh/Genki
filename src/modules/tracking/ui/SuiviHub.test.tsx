@@ -16,7 +16,7 @@ const calories = metricById('calories')!;
 const refusing = { observeRange: (_from: string, _to: string, _next: unknown, onError: (e: Error) => void) => (onError(new Error('denied')), () => {}) };
 
 async function setup(ui: UiPrefs = { hubMetrics: ['calories', 'water', 'weight'] }, facts: Record<string, DayFacts> = {}, days: FactsSource = inMemoryFactsSource(facts)) {
-  const tracking = trackingUseCases({ sources: { days, training: inMemoryFactsSource(), tobacco: inMemoryFactsSource() }, clock, timezone: 'Europe/Paris' });
+  const tracking = trackingUseCases({ sources: { days, training: inMemoryFactsSource(), tobacco: inMemoryFactsSource(), meals: inMemoryFactsSource() }, clock, timezone: 'Europe/Paris' });
   const onUiChange = jest.fn();
   const onOpen = jest.fn();
   await render(

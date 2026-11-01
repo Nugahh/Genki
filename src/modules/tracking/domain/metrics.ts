@@ -19,10 +19,10 @@ export const METRICS: MetricDefinition[] = [
 ];
 
 export const metricById = (id: string) => METRICS.find((m) => m.id === id);
-export const metricsOf = (section: SectionId) => METRICS.filter((m) => m.section === section);
 
 const SECTIONS: { id: SectionId; label: string }[] = [
   { id: 'nutrition', label: 'Nutrition' },
+  { id: 'micro', label: 'Micronutriments' },
   { id: 'activite', label: 'Activité' },
   { id: 'corps', label: 'Corps' },
   { id: 'entrainement', label: 'Entraînement' },

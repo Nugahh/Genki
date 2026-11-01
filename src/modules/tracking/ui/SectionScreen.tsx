@@ -4,9 +4,9 @@ import { Chip, Icon, Surface, Text, useTheme } from 'react-native-paper';
 import type { UiPrefs } from '@/modules/settings';
 import { dayKey, type Clock } from '@/shared/clock';
 import { useNow } from '@/shared/useNow';
+import { metricsIn } from '../application/registry';
 import type { MetricView, TrackingUseCases } from '../application/trackingUseCases';
 import type { Goals, MetricDefinition, SectionId } from '../domain/metric';
-import { metricsOf } from '../domain/metrics';
 import { bucketsFor, periodTitle, rangeOf, shiftAnchor, type Period } from '../domain/period';
 import { BEFORE, signed } from './changeText';
 import { PeriodPicker } from './PeriodPicker';
@@ -39,7 +39,7 @@ export function SectionScreen({ section, metricId, tracking, goals, ui, onUiChan
   // null is the period in progress: it follows the clock, so that a screen left open overnight moves on to the new day.
   const [picked, setPicked] = useState<string | null>(null);
   const anchor = picked ?? today;
-  const defs = metricsOf(section);
+  const defs = metricsIn(section);
   const [selected, setSelected] = useState(metricId);
   const def = defs.find((d) => d.id === selected) ?? defs[0];
   const { view, failed } = useMetricView(tracking, def, goals, period, anchor);

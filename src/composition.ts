@@ -12,6 +12,7 @@ import { trainingUseCases } from '@/modules/training';
 import { DEFAULT_PROFILE, settingsUseCases } from '@/modules/settings';
 import { firestoreProfileRepository } from '@/modules/settings/adapters/firestoreProfileRepository';
 import { firestoreDaysSource } from '@/modules/tracking/adapters/firestoreDaysSource';
+import { mealsFactsSource } from '@/modules/tracking/adapters/mealsFactsSource';
 import { trainingFactsSource } from '@/modules/tracking/adapters/trainingFactsSource';
 import { trackingUseCases } from '@/modules/tracking';
 import { firestoreDayTotals } from '@/modules/today/adapters/firestoreDayTotals';
@@ -40,6 +41,12 @@ export function compose(uid: string) {
     clock: systemClock,
     timezone: profile.timezone,
   });
+  const meals = mealUseCases({
+    entries: firestoreFoodEntryRepository(db, uid),
+    favorites: firestoreFavoriteMealRepository(db, uid),
+    clock: systemClock,
+    timezone: profile.timezone,
+  });
   const tobacco = tobaccoUseCases({ repo: firestoreCravingRepository(db, uid), clock: systemClock, timezone: profile.timezone });
   return {
     profile,
@@ -52,14 +59,9 @@ export function compose(uid: string) {
     data: dataUseCases({ store: firestoreDataStore(db, uid), clock: systemClock, timezone: profile.timezone }),
     body: bodyUseCases({ repo: firestoreBodyRepository(db, uid), milestones: training.listMilestones, clock: systemClock, timezone: profile.timezone }),
     settings: settingsUseCases(firestoreProfileRepository(db, uid)),
-    tracking: trackingUseCases({ sources: { days: firestoreDaysSource(db, uid), training: trainingFactsSource(training), tobacco: tobaccoFactsSource(tobacco) }, clock: systemClock, timezone: profile.timezone }),
+    tracking: trackingUseCases({ sources: { days: firestoreDaysSource(db, uid), training: trainingFactsSource(training), tobacco: tobaccoFactsSource(tobacco), meals: mealsFactsSource(meals) }, clock: systemClock, timezone: profile.timezone }),
     nutrition: {
-      meals: mealUseCases({
-        entries: firestoreFoodEntryRepository(db, uid),
-        favorites: firestoreFavoriteMealRepository(db, uid),
-        clock: systemClock,
-        timezone: profile.timezone,
-      }),
+      meals,
       foods: foodUseCases({ catalog: ciqualCatalog(openCiqual), repo: firestoreFoodRepository(db, uid) }),
     },
   };

@@ -1,6 +1,6 @@
 import { inMemoryFactsSource } from '../adapters/inMemoryFactsSource';
 import { metricById } from '../domain/metrics';
-import { trackingUseCases, type MetricView } from './trackingUseCases';
+import { trackingUseCases, type MetricView, type MicroRow } from './trackingUseCases';
 
 const goals = { kcal: 2000, proteinG: 100, waterMl: 2500, steps: 8000 };
 const clock = { now: () => new Date('2026-10-31T10:00:00Z') }; // Saturday 31 October, 11:00 in Paris
@@ -11,7 +11,7 @@ const weight = metricById('weight')!;
 function setup(days = {}, training = {}) {
   const daysSource = inMemoryFactsSource(days);
   const trainingSource = inMemoryFactsSource(training);
-  const tracking = trackingUseCases({ sources: { days: daysSource, training: trainingSource, tobacco: inMemoryFactsSource() }, clock, timezone: 'Europe/Paris' });
+  const tracking = trackingUseCases({ sources: { days: daysSource, training: trainingSource, tobacco: inMemoryFactsSource(), meals: inMemoryFactsSource() }, clock, timezone: 'Europe/Paris' });
   const views: MetricView[] = [];
   return { daysSource, trainingSource, tracking, views };
 }
@@ -74,8 +74,51 @@ test('shares the energy of the nutrition metrics only', () => {
 
 test('passes a source error on', () => {
   const failing = { observeRange: (_from: string, _to: string, _next: unknown, onError: (e: Error) => void) => (onError(new Error('denied')), () => {}) };
-  const tracking = trackingUseCases({ sources: { days: failing as never, training: failing as never, tobacco: failing as never }, clock, timezone: 'Europe/Paris' });
+  const tracking = trackingUseCases({ sources: { days: failing as never, training: failing as never, tobacco: failing as never, meals: failing as never }, clock, timezone: 'Europe/Paris' });
   const errors: string[] = [];
   tracking.observeMetric(calories, goals, 'week', '2026-10-31', () => {}, (e) => errors.push(e.message));
   expect(errors).toEqual(['denied']);
+});
+
+describe('observeMicronutrients', () => {
+  const refs = { ...goals, nutrients: { vitC: 110, iron: 11, salt: 5 } };
+  const MEALS = {
+    '2026-10-26': { nutrients: { iron: 11, vitC: 55, salt: 4 }, incomplete: [] },
+    '2026-10-27': { nutrients: { iron: 5.5, vitC: 55, salt: 7 }, incomplete: ['iron'] },
+    '2026-10-31': { nutrients: { iron: 1, vitC: 10 }, incomplete: ['salt'] }, // today
+  };
+  function observe(period: 'day' | 'week', anchor: string, goalsOf: typeof goals = refs) {
+    const meals = inMemoryFactsSource(MEALS);
+    const tracking = trackingUseCases({ sources: { days: inMemoryFactsSource(), training: inMemoryFactsSource(), tobacco: inMemoryFactsSource(), meals }, clock, timezone: 'Europe/Paris' });
+    const rows: MicroRow[][] = [];
+    tracking.observeMicronutrients(goalsOf, period, anchor, (list) => rows.push(list), () => {});
+    const row = (id: string) => rows[0].find((r) => r.info.id === id)!;
+    return { meals, rows, row };
+  }
+
+  test('one read of the meals feeds the 26 rows', () => {
+    const { meals, rows } = observe('week', '2026-10-31');
+    expect(meals.ranges).toEqual([['2026-10-26', '2026-11-01']]);
+    expect(rows[0]).toHaveLength(26);
+    expect(rows[0].map((r) => r.info.id)[0]).toBe('vitA');
+  });
+
+  test('a week is the mean of its finished days, against the reference', () => {
+    const { row } = observe('week', '2026-10-31');
+    expect(row('iron')).toMatchObject({ value: 8.25, reference: 11, pct: 75, tone: 'none', incomplete: true });
+    expect(row('vitC')).toMatchObject({ value: 55, pct: 50, tone: 'bad', incomplete: false });
+    expect(row('salt')).toMatchObject({ value: 5.5, pct: 110, tone: 'warn' });
+    expect(row('zinc')).toMatchObject({ value: undefined, pct: undefined, tone: 'none', incomplete: false });
+  });
+
+  test('a day is its own total; today so far has no tone', () => {
+    expect(observe('day', '2026-10-26').row('iron')).toMatchObject({ value: 11, pct: 100, tone: 'good' });
+    expect(observe('day', '2026-10-27').row('iron')).toMatchObject({ value: 5.5, pct: 50, tone: 'none', incomplete: true });
+    expect(observe('day', '2026-10-31').row('vitC')).toMatchObject({ value: 10, pct: 9, tone: 'none' });
+  });
+
+  test('without references there is a total and no percentage', () => {
+    const { row } = observe('day', '2026-10-26', goals);
+    expect(row('iron')).toMatchObject({ value: 11, reference: undefined, pct: undefined, tone: 'none' });
+  });
 });

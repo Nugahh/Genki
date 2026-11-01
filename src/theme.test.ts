@@ -46,6 +46,10 @@ test.each([
   expect(contrast(foreground, background)).toBeGreaterThanOrEqual(4.5);
 });
 
+test.each(Object.entries(colors.chart))('the %s mark of a chart reads at 4.5:1 or more on the page', (_, mark) => {
+  expect(contrast(mark, colors.background)).toBeGreaterThanOrEqual(4.5);
+});
+
 test.each([
   ['the border of a field, a segment or an outlined button', colors.outline, colors.surface],
   ['the tick of a gauge on its track', colors.onSurface, colors.surfaceVariant],

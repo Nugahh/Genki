@@ -1,6 +1,6 @@
 import { StyleSheet, View } from 'react-native';
 import { Button, Dialog, IconButton, Portal, Text } from 'react-native-paper';
-import { METRICS, metricById } from '../domain/metrics';
+import { ALL_METRICS, findMetric } from '../application/registry';
 
 type Props = {
   /** The statistics on the hub, in order. */
@@ -13,7 +13,7 @@ const swap = (list: string[], i: number, j: number) => list.map((id, k) => (k ==
 
 /** Which statistics the hub shows and in which order: move, hide, or add one back (no drag and drop). The host mounts it while it is open. */
 export function HubEditor({ shown, onChange, onClose }: Props) {
-  const hidden = METRICS.filter((m) => !shown.includes(m.id));
+  const hidden = ALL_METRICS.filter((m) => !shown.includes(m.id));
   return (
     <Portal>
       <Dialog visible onDismiss={onClose}>
@@ -21,7 +21,7 @@ export function HubEditor({ shown, onChange, onClose }: Props) {
         <Dialog.ScrollArea>
           <View style={styles.body}>
             {shown.map((id, i) => {
-              const label = metricById(id)?.label ?? id;
+              const label = findMetric(id)?.label ?? id;
               return (
                 <View key={id} style={styles.row}>
                   <Text variant="bodyLarge" style={styles.label}>

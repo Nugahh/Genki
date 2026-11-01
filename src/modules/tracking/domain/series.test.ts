@@ -154,3 +154,45 @@ describe('macroSplit', () => {
 
   test('is undefined with no macros', () => expect(macroSplit(rangeOf(WEEK), facts({}), TODAY)).toBeUndefined());
 });
+
+describe('a nutrient', () => {
+  const nutrient = (target: 'atLeast' | 'atMost', incomplete = false) =>
+    ({ ...protein, id: 'n', target, value: (f: DayFacts) => f.nutrients?.n, goal: (g: Goals) => g.nutrients?.n, incomplete: (f: DayFacts) => (incomplete ? true : (f.incomplete?.includes('n') ?? false)) }) as typeof protein;
+  const withRef: Goals = { ...goals, nutrients: { n: 100 } };
+
+  test.each([
+    [1, 'good'],
+    [1.2, 'warn'],
+    [1.21, 'bad'],
+    [0.2, 'good'],
+  ] as const)('a limit at %s of its ceiling is %s', (ratio, tone) => expect(toneOf(nutrient('atMost'), withRef, ratio * 100)).toBe(tone));
+
+  test('a total with foods missing is a minimum: short of the reference it stays neutral, at it it is good', () => {
+    expect(toneOf(nutrient('atLeast'), withRef, 30, true)).toBe('none');
+    expect(toneOf(nutrient('atLeast'), withRef, 70, true)).toBe('none');
+    expect(toneOf(nutrient('atLeast'), withRef, 95, true)).toBe('good');
+    expect(toneOf(nutrient('atLeast'), withRef, 30, false)).toBe('bad');
+  });
+
+  test('a limit already passed is passed whatever is missing', () => {
+    expect(toneOf(nutrient('atMost'), withRef, 150, true)).toBe('bad');
+  });
+
+  test('no reference, no tone', () => {
+    expect(toneOf(nutrient('atLeast'), goals, 50)).toBe('none');
+  });
+
+  test('the points and the days on target follow the incomplete days', () => {
+    const def = nutrient('atLeast');
+    const days = facts({ '2026-10-26': { nutrients: { n: 40 }, incomplete: ['n'] }, '2026-10-27': { nutrients: { n: 40 }, incomplete: [] } });
+    const points = seriesFor(def, withRef, WEEK, days, TODAY);
+    expect(points.map((p) => p.tone).slice(0, 2)).toEqual(['none', 'bad']);
+    expect(summarize(def, withRef, rangeOf(WEEK), days, TODAY)).toMatchObject({ average: 40, daysInTarget: 0, daysCounted: 2 });
+  });
+
+  test('the best day of a limit is the lowest', () => {
+    const def = nutrient('atMost');
+    const days = facts({ '2026-10-26': { nutrients: { n: 90 } }, '2026-10-27': { nutrients: { n: 20 } } });
+    expect(summarize(def, withRef, rangeOf(WEEK), days, TODAY).best).toEqual({ day: '2026-10-27', value: 20 });
+  });
+});

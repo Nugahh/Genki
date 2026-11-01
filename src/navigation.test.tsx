@@ -60,7 +60,7 @@ jest.mock('@/composition', () => {
       steps: stepsUseCases({ health: inMemoryHealthSource({ granted: false }), repo: inMemoryStepsRepository(), device: { id: 'phone-a', name: 'Pixel' }, clock, timezone: DEFAULT_PROFILE.timezone }),
       data: dataUseCases({ store: inMemoryDataStore(), clock, timezone: DEFAULT_PROFILE.timezone }),
       tobacco: tobaccoUseCases({ repo: inMemoryCravingRepository(), clock, timezone: DEFAULT_PROFILE.timezone }),
-      tracking: trackingUseCases({ sources: { days: inMemoryFactsSource(), training: inMemoryFactsSource(), tobacco: inMemoryFactsSource() }, clock, timezone: DEFAULT_PROFILE.timezone }),
+      tracking: trackingUseCases({ sources: { days: inMemoryFactsSource(), training: inMemoryFactsSource(), tobacco: inMemoryFactsSource(), meals: inMemoryFactsSource() }, clock, timezone: DEFAULT_PROFILE.timezone }),
       nutrition: {
         meals: mealUseCases({
           entries: inMemoryFoodEntryRepository(),

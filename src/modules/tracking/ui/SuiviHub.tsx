@@ -6,7 +6,7 @@ import { dayKey, type Clock } from '@/shared/clock';
 import { useNow } from '@/shared/useNow';
 import type { TrackingUseCases } from '../application/trackingUseCases';
 import type { Goals, MetricDefinition, SectionId } from '../domain/metric';
-import { metricById } from '../domain/metrics';
+import { findMetric } from '../application/registry';
 import { periodTitle } from '../domain/period';
 import { HubEditor } from './HubEditor';
 import { MetricCard } from './MetricCard';
@@ -51,7 +51,7 @@ export function SuiviHub({ tracking, goals, ui, onUiChange, clock, timezone, onO
         </Text>
       )}
       {hubMetrics.map((id) => (
-        <HubCard key={id} tracking={tracking} goals={goals} def={metricById(id)!} period={period} today={today} onOpen={onOpen} />
+        <HubCard key={id} tracking={tracking} goals={goals} def={findMetric(id)!} period={period} today={today} onOpen={onOpen} />
       ))}
       {editing && <HubEditor shown={hubMetrics} onChange={(next) => onUiChange({ hubMetrics: next })} onClose={() => setEditing(false)} />}
     </ScrollView>

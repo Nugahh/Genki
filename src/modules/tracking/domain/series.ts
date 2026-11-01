@@ -16,25 +16,28 @@ function calorieTone(mode: Goals['kcalMode'], ratio: number): Tone {
 }
 
 /** How a value compares with the goal of its metric (spec §9, "Couleur des graphiques"). */
-export function toneOf(def: MetricDefinition, goals: Goals, value: number): Tone {
+export function toneOf(def: MetricDefinition, goals: Goals, value: number, incomplete = false): Tone {
   const goal = def.goal?.(goals);
   if (def.target === 'none' || !goal) return 'none';
   const ratio = value / goal;
   if (def.target === 'calories') return calorieTone(goals.kcalMode, ratio);
-  if (ratio >= 0.9) return 'good';
-  return ratio >= 0.6 ? 'warn' : 'bad';
+  if (def.target === 'atMost') return ratio <= 1 ? 'good' : ratio <= 1.2 ? 'warn' : 'bad';
+  const tone = ratio >= 0.9 ? 'good' : ratio >= 0.6 ? 'warn' : 'bad';
+  // A total with a food missing is a minimum: falling short of the reference proves nothing.
+  return incomplete && tone !== 'good' ? 'none' : tone;
 }
 
-export const inTarget = (def: MetricDefinition, goals: Goals, value: number) => toneOf(def, goals, value) === 'good';
+export const inTarget = (def: MetricDefinition, goals: Goals, value: number, incomplete = false) => toneOf(def, goals, value, incomplete) === 'good';
 
 const mean = (values: number[]) => values.reduce((sum, v) => sum + v, 0) / values.length;
 
 /** The days of `from..to` that are over, with the value the metric has on them. Today is not over. */
 function finishedValues(def: MetricDefinition, from: string, to: string, facts: Map<string, DayFacts>, today: string) {
-  const values: { day: string; value: number }[] = [];
+  const values: { day: string; value: number; incomplete: boolean }[] = [];
   for (let day = from; day <= to && day < today; day = addDays(day, 1)) {
-    const value = def.value(facts.get(day) ?? {});
-    if (value !== undefined) values.push({ day, value });
+    const f = facts.get(day) ?? {};
+    const value = def.value(f);
+    if (value !== undefined) values.push({ day, value, incomplete: def.incomplete?.(f) ?? false });
   }
   return values;
 }
@@ -48,22 +51,24 @@ export function seriesFor(def: MetricDefinition, goals: Goals, buckets: Bucket[]
     const done = finishedValues(def, bucket.from, bucket.to, facts, today);
     if (done.length > 0) {
       const value = mean(done.map((d) => d.value));
-      return { bucket, value, partial: false, tone: toneOf(def, goals, value) };
+      return { bucket, value, partial: false, tone: toneOf(def, goals, value, done.some((d) => d.incomplete)) };
     }
     const sofar = bucket.from <= today && today <= bucket.to ? def.value(facts.get(today) ?? {}) : undefined;
     return { bucket, value: sofar, partial: sofar !== undefined, tone: 'none' };
   });
 }
 
-/** Average, days on target and best day over the finished days of a range. The best of calories is the day closest to the goal. */
+/** Average, days on target and best day over the finished days of a range. */
 export function summarize(def: MetricDefinition, goals: Goals, range: { from: string; to: string }, facts: Map<string, DayFacts>, today: string): Summary {
   const days = finishedValues(def, range.from, range.to, facts, today);
   const goal = def.goal?.(goals);
-  const score = (value: number) => (def.target === 'calories' && goal ? -Math.abs(value - goal) : value);
-  const best = def.target === 'none' ? undefined : days.reduce<{ day: string; value: number } | undefined>((top, d) => (!top || score(d.value) > score(top.value) ? d : top), undefined);
+  // The best day of calories is the closest to the goal; of a limit, the lowest.
+  const score = (value: number) => (def.target === 'calories' && goal ? -Math.abs(value - goal) : def.target === 'atMost' ? -value : value);
+  const top = def.target === 'none' ? undefined : days.reduce<(typeof days)[number] | undefined>((top, d) => (!top || score(d.value) > score(top.value) ? d : top), undefined);
+  const best = top && { day: top.day, value: top.value };
   return {
     average: days.length > 0 ? mean(days.map((d) => d.value)) : undefined,
-    daysInTarget: days.filter((d) => inTarget(def, goals, d.value)).length,
+    daysInTarget: days.filter((d) => inTarget(def, goals, d.value, d.incomplete)).length,
     daysCounted: days.length,
     best,
   };
