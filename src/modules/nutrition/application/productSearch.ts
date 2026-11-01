@@ -31,14 +31,14 @@ export type Lookup = { kind: 'found'; food: FoodInput } | { kind: 'unknown' } | 
  * The products of brands: the search by name (after a pause in the typing, from 3 characters, never more than the limiter allows, cancelled as
  * soon as the signal says so) and the read of one barcode. Open Food Facts asks for no more than 10 searches a minute.
  */
-export function productSearch(deps: { source: ProductSource; limiter: ReturnType<typeof rateLimiter> }) {
-  const { source, limiter } = deps;
+export function productSearch(deps: { source: ProductSource; limiter: ReturnType<typeof rateLimiter>; pauseMs?: number }) {
+  const { source, limiter, pauseMs = PAUSE_MS } = deps;
   return {
     /** The foods the products can become, usable ones only, each barcode once. Rejects with an `AbortError` when replaced. */
     async search(query: string, signal: AbortSignal): Promise<FoodInput[]> {
       const text = query.trim();
       if (text.length < MIN_CHARACTERS) return [];
-      await wait(PAUSE_MS, signal);
+      await wait(pauseMs, signal);
       await wait(limiter.reserve(), signal);
       const found = await source.search(text, signal);
       const seen = new Set<string>();

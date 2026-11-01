@@ -22,3 +22,9 @@ export const parseNumber = (text: string) => (text.trim() === '' ? NaN : Number(
 
 /** A number as it is typed in a field, with a comma: the way back from `parseNumber`. */
 export const asText = (n: number) => String(n).replace('.', ',');
+
+/** « 330 ml » for a product: the size of its package, else of its portion (« Emballage 330 ml ≈ 330 g » → « 330 ml »). */
+export function productQuantity(portions: { label: string }[]): string | undefined {
+  const pack = portions.find((p) => p.label.startsWith('Emballage ')) ?? portions.find((p) => p.label.startsWith('Portion '));
+  return pack?.label.replace(/^(Emballage|Portion) /, '').replace(/ ≈ .*$/, '');
+}

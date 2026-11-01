@@ -7,8 +7,12 @@ import { inMemoryFoodCatalog } from '../adapters/inMemoryFoodCatalog';
 import { inMemoryFoodEntryRepository } from '../adapters/inMemoryFoodEntryRepository';
 import { inMemoryFoodRepository } from '../adapters/inMemoryFoodRepository';
 import { foodUseCases, type FoodUseCases } from '../application/foodUseCases';
+import { productSearch } from '../application/productSearch';
+import { rateLimiter } from '../domain/rateLimiter';
+import { inMemoryProductSource } from '../adapters/inMemoryProductSource';
+import type { OffProduct } from '../domain/openFoodFacts';
 import { mealUseCases } from '../application/mealUseCases';
-import type { FoodCatalog } from '../application/ports';
+import type { FoodCatalog, ProductSource } from '../application/ports';
 import type { Food, FoodInput } from '../domain/food';
 import type { Meal } from '../domain/meal';
 import { AddFoodScreen } from './AddFoodScreen';
@@ -30,17 +34,19 @@ const orange: Food = {
   nutrients: { vitC: 50, fiber: 1.8, salt: 0.01 },
 };
 
-type Options = { profile?: Profile; catalog?: FoodCatalog; meal?: Meal; observeCustom?: FoodUseCases['observeCustom']; run?: (write: () => Promise<void>) => void };
+type Options = { brandProducts?: OffProduct[]; productSource?: ProductSource; profile?: Profile; catalog?: FoodCatalog; meal?: Meal; observeCustom?: FoodUseCases['observeCustom']; run?: (write: () => Promise<void>) => void };
 
-async function setup({ catalog = inMemoryFoodCatalog([rawRice, cookedRice, orange]), meal = 'lunch', observeCustom, profile = DEFAULT_PROFILE, run = (write) => void write() }: Options = {}) {
+async function setup({ catalog = inMemoryFoodCatalog([rawRice, cookedRice, orange]), meal = 'lunch', observeCustom, profile = DEFAULT_PROFILE, brandProducts = [], productSource, run = (write) => void write() }: Options = {}) {
   const entries = inMemoryFoodEntryRepository();
   const favorites = inMemoryFavoriteMealRepository();
   const foods = { ...foodUseCases({ catalog, repo: inMemoryFoodRepository() }), ...(observeCustom && { observeCustom }) };
   const meals = mealUseCases({ entries, favorites, clock, timezone: DEFAULT_PROFILE.timezone });
+  // No pause before asking: the tests are not about the typing.
+  const products = productSearch({ source: productSource ?? inMemoryProductSource(brandProducts), limiter: rateLimiter(10, 60000, Date.now), pauseMs: 0 });
   const onDone = jest.fn();
   await render(
     <PaperProvider theme={theme}>
-      <AddFoodScreen meal={meal} meals={meals} foods={foods} run={run} onDone={onDone} profile={profile} clock={clock} pickWhen={pickWhen} />
+      <AddFoodScreen meal={meal} meals={meals} foods={foods} products={products} run={run} onDone={onDone} profile={profile} clock={clock} pickWhen={pickWhen} />
     </PaperProvider>,
   );
   return { entries, favorites, foods, meals, onDone };
@@ -125,7 +131,8 @@ test('the « Cuit » filter keeps the cooked foods only, custom ones included, a
   await search('riz');
   await screen.findByText('Riz blanc, cru');
   expect(isSelected('Tous')).toBe(true);
-  expect(titles()).toEqual(['Riz au lait', 'Riz sauté maison', 'Riz blanc, cru', 'Riz blanc, cuit, sans sel ajouté']);
+  // By relevance, wherever the food comes from: all start with « riz », so the shorter name first.
+  expect(titles()).toEqual(['Riz au lait', 'Riz blanc, cru', 'Riz sauté maison', 'Riz blanc, cuit, sans sel ajouté']);
   // A pill for each cru or cuit food, none for « Riz au lait ».
   expect(screen.getAllByText(/^(cru|cuit)$/)).toHaveLength(3);
 
@@ -751,4 +758,125 @@ test('editing a custom food from its sheet keeps the quantity, group and time ty
   await fireEvent.press(screen.getByText('Annuler'));
   expect(screen.getByLabelText('Quantité (g)')).toHaveDisplayValue('55');
   expect(screen.getByText('Ajouter à Dîner')).toBeTruthy();
+});
+
+describe('the products of brands', () => {
+  const cocaCola: OffProduct = {
+    code: '5449000000996', product_name_fr: 'Coca-Cola', brands: 'Coca-Cola Services', quantity: '330 ml', serving_size: '1 portion (330 ml)',
+    nutriments: { 'energy-kcal_100g': 42.4, proteins_100g: 0, carbohydrates_100g: 10.6, fat_100g: 0, sugars_100g: 10.6 },
+  };
+  const zero: OffProduct = {
+    code: '5449000131805', product_name_fr: 'Zéro sucres', brands: 'Coca-Cola Services', quantity: '1,5 L',
+    nutriments: { 'energy-kcal_100g': 0.3, proteins_100g: 0, carbohydrates_100g: 0, fat_100g: 0 },
+  };
+  /** A source whose answer comes when the test says so. */
+  const deferred = () => {
+    let resolve!: (products: OffProduct[]) => void;
+    const answer = new Promise<OffProduct[]>((r) => (resolve = r));
+    const source: ProductSource = { search: () => answer, byBarcode: async () => undefined };
+    return { source, resolve };
+  };
+
+  test('are in the one list, under their name: the size of the package and the brand, and the source on the right', async () => {
+    await setup({ brandProducts: [cocaCola] });
+    await search('coca');
+    expect(await screen.findByText('Coca-Cola')).toBeTruthy();
+    expect(screen.getByText('330 ml · Coca-Cola Services · 42 kcal / 100 g')).toBeTruthy();
+    expect(screen.getByText('Open Food Facts')).toBeTruthy();
+  });
+
+  test('arrive after Ciqual and the foods of the user, and take their place by relevance', async () => {
+    const { source, resolve } = deferred();
+    const ciqualCoco: Food = { ref: { type: 'ciqual', id: '1' }, name: 'Boisson cocacolatée', state: 'other', per100g: { kcal: 40, protein: 0, carbs: 10, fat: 0 }, portions: [] };
+    await setup({ catalog: inMemoryFoodCatalog([ciqualCoco]), productSource: source });
+    await search('coca');
+    expect(await screen.findByText('Boisson cocacolatée')).toBeTruthy();
+    expect(screen.getByText('Recherche de produits…')).toBeTruthy();
+    expect(screen.queryByText('Aucun aliment trouvé.')).toBeNull();
+
+    await act(async () => resolve([cocaCola]));
+    await screen.findByText('Coca-Cola');
+    expect(screen.queryByText('Recherche de produits…')).toBeNull();
+    // « Coca-Cola » starts with the search, « Boisson cocacolatée » only contains it.
+    const names = screen.getAllByText(/^(Coca-Cola|Boisson cocacolatée)$/).map((n) => n.props.children);
+    expect(names).toEqual(['Coca-Cola', 'Boisson cocacolatée']);
+  });
+
+  test('the brand answers too: « coca » finds « Zéro sucres » of Coca-Cola, below the names that start with it', async () => {
+    await setup({ brandProducts: [zero, cocaCola] });
+    await search('coca');
+    await screen.findByText('Zéro sucres');
+    const names = screen.getAllByText(/^(Coca-Cola|Zéro sucres)$/).map((n) => n.props.children);
+    expect(names).toEqual(['Coca-Cola', 'Zéro sucres']);
+  });
+
+  test('say when they cannot be reached, and keep the rest', async () => {
+    const source: ProductSource = { search: async () => { throw new Error('Network request failed'); }, byBarcode: async () => undefined };
+    jest.spyOn(console, 'warn').mockImplementation(() => {});
+    await setup({ productSource: source });
+    await search('riz');
+    expect(await screen.findByText('Produits de marque indisponibles hors-ligne.')).toBeTruthy();
+    expect(screen.getByText('Riz blanc, cru')).toBeTruthy();
+    expect(screen.queryByText('Aucun aliment trouvé.')).toBeNull();
+  });
+
+  test('are not asked for under three characters, nor with the raw or cooked filter', async () => {
+    const asked: string[] = [];
+    const source: ProductSource = { search: async (q) => (asked.push(q), []), byBarcode: async () => undefined };
+    await setup({ productSource: source });
+    await search('ri');
+    await search('riz');
+    await waitFor(() => expect(asked).toEqual(['riz']));
+    await fireEvent.press(screen.getByText('Cru'));
+    await search('riz blanc');
+    await new Promise((r) => setTimeout(r, 20));
+    expect(asked).toEqual(['riz']);
+  });
+
+  test('are not asked again when the user comes back from a fiche', async () => {
+    const asked: string[] = [];
+    const source: ProductSource = { search: async (q) => (asked.push(q), [cocaCola]), byBarcode: async () => undefined };
+    await setup({ productSource: source });
+    await search('coca');
+    await fireEvent.press(await screen.findByText('Coca-Cola'));
+    await fireEvent.press(screen.getByText('Retour'));
+    expect(await screen.findByText('Coca-Cola')).toBeTruthy();
+    expect(asked).toEqual(['coca']);
+  });
+
+  test('a product opens a fiche that names Open Food Facts, and adding it makes it a food of the user, once', async () => {
+    const { entries, foods } = await setup({ brandProducts: [cocaCola] });
+    await search('coca');
+    await fireEvent.press(await screen.findByText('Coca-Cola'));
+    expect(screen.getByText('Source : Open Food Facts')).toBeTruthy();
+    expect(screen.queryByText('Modifier l’aliment')).toBeNull();
+    // The portion of the label, a volume taken for water, says so.
+    await fireEvent.press(screen.getByText('Portion 330 ml ≈ 330 g'));
+    expect(screen.getByLabelText('Quantité (g)')).toHaveDisplayValue('330');
+    await fireEvent.press(screen.getByText('Ajouter à Déjeuner'));
+
+    let mine: Food[] = [];
+    foods.observeCustom((list) => (mine = list), () => {});
+    await waitFor(() => expect(entries.entries).toHaveLength(1));
+    expect(mine).toHaveLength(1);
+    expect(mine[0]).toMatchObject({ name: 'Coca-Cola', source: 'off', brand: 'Coca-Cola Services', barcode: '5449000000996' });
+    expect(entries.entries[0]).toMatchObject({ foodRef: mine[0].ref, foodName: 'Coca-Cola', grams: 330, macros: { kcal: 139.9 } });
+  });
+
+  test('a product the user already has is shown as theirs, not twice', async () => {
+    const { foods } = await setup({ brandProducts: [cocaCola] });
+    await act(async () => {
+      await foods.create({ ...bread, name: 'Coca-Cola', barcode: '5449000000996', source: 'off', brand: 'Coca-Cola Services' });
+    });
+    await search('coca');
+    await screen.findByText('Coca-Cola');
+    await waitFor(() => expect(screen.queryByText('Recherche de produits…')).toBeNull());
+    expect(screen.getAllByText('Coca-Cola')).toHaveLength(1);
+  });
+
+  test('a product that is refused is not proposed', async () => {
+    await setup({ brandProducts: [{ ...cocaCola, nutriments: {} }] });
+    await search('coca');
+    expect(await screen.findByText('Aucun aliment trouvé.')).toBeTruthy();
+  });
 });

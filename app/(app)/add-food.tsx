@@ -15,6 +15,7 @@ export default function AddFood() {
         meal={MEALS.find((m) => m === meal) ?? 'snack'}
         meals={app.nutrition.meals}
         foods={app.nutrition.foods}
+        products={app.nutrition.products}
         profile={profile}
         clock={app.clock}
         pickWhen={pickWhen}

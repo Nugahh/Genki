@@ -5,6 +5,7 @@ import type { Profile } from '@/modules/settings';
 import type { Clock } from '@/shared/clock';
 import type { FoodUseCases } from '../application/foodUseCases';
 import type { MealUseCases } from '../application/mealUseCases';
+import type { ProductSearch } from '../application/productSearch';
 import type { Food, FoodInput } from '../domain/food';
 import type { Meal } from '../domain/meal';
 import { FavoritesList } from './FavoritesList';
@@ -12,6 +13,7 @@ import { FoodDetail } from './FoodDetail';
 import { FoodForm } from './FoodForm';
 import { FoodSearch, type Search } from './FoodSearch';
 import { RecentsList } from './RecentsList';
+import { useBrandProducts } from './useBrandProducts';
 import type { PickWhen } from './WhenPicker';
 
 type Segment = 'favorites' | 'recents' | 'search' | 'create';
@@ -27,6 +29,8 @@ type Props = {
   meal: Meal;
   meals: MealUseCases;
   foods: FoodUseCases;
+  /** The products of brands (Open Food Facts). */
+  products: ProductSearch;
   /** The goals, the zone and the references of the sheet of a food. */
   profile: Profile;
   clock: Clock;
@@ -39,11 +43,14 @@ type Props = {
 };
 
 /** Adds a food to a meal: from a favorite, a recent, the search, or a food created on the spot. */
-export function AddFoodScreen({ meal, meals, foods, profile, clock, pickWhen, run, onDone }: Props) {
+export function AddFoodScreen({ meal, meals, foods, products, profile, clock, pickWhen, run, onDone }: Props) {
   const [segment, setSegment] = useState<Segment>('search');
   // The food whose fiche replaces the segments, with the quantity to start from when it comes from « Récents ».
-  const [selected, setSelected] = useState<{ food: Food; grams?: number } | null>(null);
+  // A product of a brand that is not one of the user's foods yet has no reference.
+  const [selected, setSelected] = useState<{ food: Food | FoodInput; grams?: number } | null>(null);
   const [search, setSearch] = useState<Search>({ query: '' });
+  // Held here, not by the list: the products of a search are not asked again when the user comes back from a fiche. Raw or cooked leaves them out.
+  const brand = useBrandProducts(products, search.query, !search.state);
   // The custom foods, live: the search, the recents and the favorites all look foods up in them. null until the first list.
   const [custom, setCustom] = useState<Food[] | null>(null);
   // Listener errors show on the SyncIcon, which watches the same user's data.
@@ -65,6 +72,7 @@ export function AddFoodScreen({ meal, meals, foods, profile, clock, pickWhen, ru
           meal={meal}
           meals={meals}
           foods={foods}
+          custom={custom ?? []}
           profile={profile}
           clock={clock}
           pickWhen={pickWhen}
@@ -85,7 +93,7 @@ export function AddFoodScreen({ meal, meals, foods, profile, clock, pickWhen, ru
           </View>
           {segment === 'favorites' && <FavoritesList meal={meal} meals={meals} foods={foods} custom={custom} run={run} onDone={onDone} />}
           {segment === 'recents' && <RecentsList meals={meals} foods={foods} custom={custom} onPick={(food, grams) => setSelected({ food, grams })} />}
-          {segment === 'search' && <FoodSearch foods={foods} custom={custom} search={search} onSearch={setSearch} onSelect={(food) => setSelected({ food })} />}
+          {segment === 'search' && <FoodSearch foods={foods} custom={custom} brand={brand} search={search} onSearch={setSearch} onSelect={(choice) => setSelected({ food: 'food' in choice ? choice.food : choice.product })} />}
           {segment === 'create' && <FoodForm submitLabel="Enregistrer" onSubmit={create} />}
         </>
       )}

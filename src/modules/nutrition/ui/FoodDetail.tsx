@@ -5,7 +5,7 @@ import type { Profile } from '@/modules/settings';
 import type { Clock } from '@/shared/clock';
 import type { FoodUseCases } from '../application/foodUseCases';
 import type { MealUseCases } from '../application/mealUseCases';
-import type { Food } from '../domain/food';
+import type { Food, FoodInput } from '../domain/food';
 import { macrosFor } from '../domain/macros';
 import type { Meal } from '../domain/meal';
 import { nutrientsFor } from '../domain/nutrients';
@@ -17,12 +17,15 @@ import { StateChip } from './StateChip';
 import type { PickWhen } from './WhenPicker';
 
 type Props = {
-  food: Food;
+  /** A product of a brand that is not one of the user's foods yet has no reference: it becomes one when it is added. */
+  food: Food | FoodInput;
   /** The quantity eaten last time, when the food comes from « Récents ». */
   grams?: number;
   meal: Meal;
   meals: MealUseCases;
   foods: FoodUseCases;
+  /** The foods of the user, to find the one a product already is. */
+  custom: Food[];
   profile: Profile;
   clock: Clock;
   pickWhen: PickWhen;
@@ -34,18 +37,22 @@ type Props = {
 };
 
 const SOURCES = { ciqual: 'Ciqual (ANSES)', custom: 'Mon aliment' } as const;
+const sourceOf = (food: Food | FoodInput) => (food.source === 'off' ? 'Open Food Facts' : SOURCES[(food as Food).ref.type]);
 
 /** A food chosen from a list: pick a quantity, a group and a time, read the figures, add it. A custom food can also be changed or deleted here. */
-export function FoodDetail({ food: chosen, grams: last, meal, meals, foods, profile, clock, pickWhen, run, onDone, onBack, onRemoved }: Props) {
+export function FoodDetail({ food: chosen, grams: last, meal, meals, foods, custom, profile, clock, pickWhen, run, onDone, onBack, onRemoved }: Props) {
   // Held here so that a saved change shows at once.
-  const [food, setFood] = useState(chosen);
+  const [food, setFood] = useState<Food | FoodInput>(chosen);
+  // The food of the user it is, once it has a reference.
+  const owned = 'ref' in food ? food : undefined;
   const [editing, setEditing] = useState(false);
   const [removing, setRemoving] = useState(false);
   // Set by the first touch of « Ajouter à … »: a second one, before the host has left the screen, must not log the food again.
   const submitted = useRef(false);
 
   const quantities = [
-    ...food.portions.map((portion) => ({ label: `${portion.label} (${gramsText(portion.grams)} g)`, grams: portion.grams })),
+    // The label of a product's portion says its weight already (« 330 ml ≈ 330 g »).
+    ...food.portions.map((portion) => ({ label: food.source === 'off' ? portion.label : `${portion.label} (${gramsText(portion.grams)} g)`, grams: portion.grams })),
     { label: '100 g', grams: 100 },
     ...(last !== undefined && last !== 100 ? [{ label: `${gramsText(last)} g`, grams: last }] : []),
   ];
@@ -58,8 +65,9 @@ export function FoodDetail({ food: chosen, grams: last, meal, meals, foods, prof
             initial={food}
             submitLabel="Enregistrer les modifications"
             onSubmit={(input) => {
-              run(() => foods.update(food.ref.id, input));
-              setFood({ ref: food.ref, ...input });
+              if (!owned) return;
+              run(() => foods.update(owned.ref.id, input));
+              setFood({ ref: owned.ref, ...input });
               setEditing(false);
             }}
           />
@@ -73,7 +81,7 @@ export function FoodDetail({ food: chosen, grams: last, meal, meals, foods, prof
         <PortionSheet
           name={food.name}
           badge={<StateChip state={food.state} />}
-          source={SOURCES[food.ref.type]}
+          source={sourceOf(food)}
           portions={quantities}
           initialGrams={last ?? 100}
           macrosAt={(grams) => macrosFor(food.per100g, grams)}
@@ -87,11 +95,16 @@ export function FoodDetail({ food: chosen, grams: last, meal, meals, foods, prof
           onSubmit={({ grams, meal: chosenMeal, at }) => {
             if (submitted.current) return;
             submitted.current = true;
-            run(() => meals.logFood(chosenMeal, food, grams, at));
+            run(async () => {
+            if (owned) return meals.logFood(chosenMeal, owned, grams, at);
+            // A product becomes a food of the user's (written, not awaited one after the other: offline they settle together), then the line refers to it.
+            const { food: adopted, written } = foods.adopt(food, custom);
+            await Promise.all([written, meals.logFood(chosenMeal, adopted, grams, at)]);
+          });
             onDone();
           }}
         >
-          {food.ref.type === 'custom' && (
+          {owned?.ref.type === 'custom' && (
             <>
               <Button mode="outlined" icon="pencil" contentStyle={styles.button} onPress={() => setEditing(true)}>
                 Modifier l’aliment
@@ -111,7 +124,8 @@ export function FoodDetail({ food: chosen, grams: last, meal, meals, foods, prof
           title={`Supprimer l’aliment ${food.name} ?`}
           onCancel={() => setRemoving(false)}
           onConfirm={() => {
-            run(() => foods.remove(food.ref.id));
+            if (!owned) return;
+            run(() => foods.remove(owned.ref.id));
             onRemoved();
           }}
         />
