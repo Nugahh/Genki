@@ -387,7 +387,7 @@ Standard Paper components, restrained: a tonal button, a soft card, a flat field
 - **The star:** a 48 dp icon button at the end of the title row of a fiche, a star outline to mark a food, a filled star to unmark it, read as « Mettre en favori » / « Retirer des favoris ».
 
 ### Custom food form
-- **Values for:** a two-segment switch, « Pour 100 g » / « Pour une portion » (one row of two, with the check). Choosing the portion adds a field « Poids d'une portion (g) » above the macros, whose labels read « … pour une portion ». The food is saved for 100 g, with a portion « 1 portion » of that weight unless one of the same weight is listed.
+- **Values for:** a two-segment switch, « Pour 100 g » / « Par portion » (one row of two, with the check; only when creating, since the values of a food that exists are for 100 g). Choosing the portion adds a field « Poids d'une portion (g) » above the macros, whose labels read « … pour une portion ». The food is saved for 100 g, with a portion « 1 portion » of that weight unless one of the same weight is listed, the weight is 100 g or the list is full.
 - **Micronutrients:** under the macros, a title « Micronutriments (pour 100 g / pour une portion) », one 48 dp row per nutrient added (a field labelled with its name and unit, « Magnésium (mg) », and a bin « Retirer Magnésium »), and a text button « Ajouter un micronutriment » that opens a dialog listing what is not added yet, with its unit under each name. An empty or invalid value stops the save and says why, politely.
 
 ### Segmented switch

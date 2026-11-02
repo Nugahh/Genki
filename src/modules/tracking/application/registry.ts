@@ -12,7 +12,7 @@ function nutrientMetric(n: NutrientInfo): MetricDefinition {
     target: n.group === 'limit' ? 'atMost' : 'atLeast',
     format: (v) => formatAmount(v, n.unit),
     dayCompare: false,
-    emptyHint: 'Ajoute un aliment de la table Ciqual pour voir ce nutriment.',
+    emptyHint: 'Ajoute un aliment qui indique ce nutriment pour le voir.',
     incomplete: (f) => f.incomplete?.includes(n.id) ?? false,
   };
 }

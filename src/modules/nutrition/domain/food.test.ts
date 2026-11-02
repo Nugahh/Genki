@@ -97,9 +97,12 @@ describe('the nutrients of a food', () => {
   test.each([
     ['negative', { iron: -1 }],
     ['not a number', { iron: Number.NaN }],
-    ['above 1 000 000', { magnesium: 1000001 }],
   ])('refuses a micronutrient that is %s', (_, nutrients) => {
     expect(validateFood({ ...base, nutrients })).toBe('Les micronutriments doivent être des nombres positifs.');
+  });
+
+  test('names the micronutrient that is above 1 000 000 for 100 g', () => {
+    expect(validateFood({ ...base, nutrients: { magnesium: 1000001 } })).toBe('Magnésium : valeur trop grande pour 100 g.');
   });
 
   test('refuses more than 100 g of a nutrient counted in grams for 100 g', () => {

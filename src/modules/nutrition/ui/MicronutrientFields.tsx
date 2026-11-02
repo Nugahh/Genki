@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { Keyboard, ScrollView, StyleSheet, View } from 'react-native';
 import { Button, Dialog, IconButton, List, Portal, Text, TextInput } from 'react-native-paper';
 import { NUTRIENTS, type NutrientId } from '../domain/nutrients';
 
@@ -17,6 +17,11 @@ type Props = {
 export function MicronutrientFields({ rows, onChange, basis }: Props) {
   const [choosing, setChoosing] = useState(false);
   const left = NUTRIENTS.filter((n) => !rows.some((row) => row.id === n.id));
+  const choose = () => {
+    // The dialog is taller than what the keyboard leaves of the screen.
+    Keyboard.dismiss();
+    setChoosing(true);
+  };
 
   return (
     <View style={styles.box}>
@@ -38,7 +43,7 @@ export function MicronutrientFields({ rows, onChange, basis }: Props) {
         );
       })}
       {left.length > 0 && (
-        <Button icon="plus" contentStyle={styles.button} onPress={() => setChoosing(true)}>
+        <Button icon="plus" contentStyle={styles.button} onPress={choose}>
           Ajouter un micronutriment
         </Button>
       )}

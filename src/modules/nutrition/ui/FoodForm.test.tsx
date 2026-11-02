@@ -245,13 +245,15 @@ describe('the micronutrients', () => {
     });
     expect(screen.getByLabelText('Calcium (mg)')).toHaveDisplayValue('450');
     expect(screen.getByLabelText('Vitamine D (µg)')).toHaveDisplayValue('1,5');
+    // Its values are for 100 g: no switch to read them as for a portion.
+    expect(screen.queryByText('Par portion')).toBeNull();
     await fireEvent.press(screen.getByText('Enregistrer les modifications'));
     expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ nutrients: { calcium: 450, vitD: 1.5 } }));
   });
 });
 
 describe('the values for a portion', () => {
-  const perPortion = () => fireEvent.press(screen.getByText('Pour une portion'));
+  const perPortion = () => fireEvent.press(screen.getByText('Par portion'));
 
   test('are what the label gives: a capsule of 0,5 g with 300 mg of magnesium', async () => {
     const { onSubmit } = await setup();
@@ -295,6 +297,29 @@ describe('the values for a portion', () => {
     expect(onSubmit.mock.calls[0][0].portions).toEqual([{ label: '1 mesure', grams: 30 }]);
   });
 
+  test('the portion is not added when it weighs 100 g, which the quantity chips have already', async () => {
+    const { onSubmit } = await setup();
+    await type('Nom', 'Poudre');
+    await perPortion();
+    await type('Poids d’une portion (g)', '100');
+    for (const label of ['Calories pour une portion', 'Protéines pour une portion', 'Glucides pour une portion', 'Lipides pour une portion']) await type(label, '1');
+    await fireEvent.press(screen.getByText('Enregistrer'));
+    expect(onSubmit.mock.calls[0][0].portions).toEqual([]);
+  });
+
+  test('a micronutrient that becomes too large for 100 g is named, not just called wrong', async () => {
+    await setup();
+    await type('Nom', 'Comprimé');
+    await perPortion();
+    await type('Poids d’une portion (g)', '0,3');
+    for (const label of ['Calories pour une portion', 'Protéines pour une portion', 'Glucides pour une portion', 'Lipides pour une portion']) await type(label, '0');
+    await fireEvent.press(screen.getByText('Ajouter un micronutriment'));
+    await fireEvent.press(screen.getByText('Vitamine B12'));
+    await type('Vitamine B12 (µg)', '5000');
+    expect(screen.getByText('Vitamine B12 : valeur trop grande pour 100 g.')).toBeTruthy();
+    expect(screen.getByText('Enregistrer')).toBeDisabled();
+  });
+
   test('need a weight of the portion between 0 and 5 000 g', async () => {
     await setup();
     await type('Nom', 'Whey');
@@ -324,7 +349,7 @@ describe('the values for a portion', () => {
     await setup();
     expect(isChecked('Pour 100 g')).toBe(true);
     await perPortion();
-    expect(isChecked('Pour une portion')).toBe(true);
+    expect(isChecked('Par portion')).toBe(true);
     expect(isChecked('Pour 100 g')).toBe(false);
   });
 });

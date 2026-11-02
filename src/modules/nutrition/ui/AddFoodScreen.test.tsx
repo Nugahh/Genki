@@ -1218,7 +1218,7 @@ describe('a supplement created by hand', () => {
     const { foods, entries } = await setup();
     await openCreate();
     await type('Nom', 'Magnésium 300');
-    await fireEvent.press(screen.getByText('Pour une portion'));
+    await fireEvent.press(screen.getByText('Par portion'));
     await type('Poids d’une portion (g)', '0,5');
     for (const label of ['Calories pour une portion', 'Protéines pour une portion', 'Glucides pour une portion', 'Lipides pour une portion']) await type(label, '0');
     await fireEvent.press(screen.getByText('Ajouter un micronutriment'));

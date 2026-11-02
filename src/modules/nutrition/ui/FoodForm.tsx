@@ -21,17 +21,17 @@ type Draft = {
 };
 
 const NUTRIENTS: [Nutrient, string][] = [
-  ['kcal', 'Calories pour 100 g'],
-  ['protein', 'Protéines pour 100 g'],
-  ['carbs', 'Glucides pour 100 g'],
-  ['fat', 'Lipides pour 100 g'],
+  ['kcal', 'Calories'],
+  ['protein', 'Protéines'],
+  ['carbs', 'Glucides'],
+  ['fat', 'Lipides'],
 ];
 // Paper's segments are 40 dp tall: 4 dp more above and below the label make the 48 dp target. The check tells the chosen one by more than its tint.
 const option = (value: FoodState, label: string) => ({ value, label, labelStyle: { paddingVertical: 4 }, showSelectedCheck: true });
 const STATES = [option('raw', 'Cru'), option('cooked', 'Cuit'), option('other', 'Autre')];
 const BASES = [
   { value: 'per100g', label: 'Pour 100 g', labelStyle: { paddingVertical: 4 }, showSelectedCheck: true },
-  { value: 'portion', label: 'Pour une portion', labelStyle: { paddingVertical: 4 }, showSelectedCheck: true },
+  { value: 'portion', label: 'Par portion', labelStyle: { paddingVertical: 4 }, showSelectedCheck: true },
 ];
 
 const BLANK: Draft = { name: '', state: 'other', basis: 'per100g', portionGrams: '', per100g: { kcal: '', protein: '', carbs: '', fat: '' }, nutrients: [], portions: [] };
@@ -79,8 +79,8 @@ export function FoodForm({ initial, barcode, submitLabel, onSubmit }: Props) {
     state: draft.state,
     per100g: convert ? scaleMacros(typed, portionGrams, 100) : typed,
     ...(draft.nutrients.length > 0 && { nutrients: convert ? scaleNutrients(typedNutrients, portionGrams, 100) : typedNutrients }),
-    // The portion the values were given for stays offered, unless one of that weight is listed already.
-    portions: convert && !portions.some((portion) => portion.grams === portionGrams) ? [...portions, { label: '1 portion', grams: portionGrams }] : portions,
+    // The portion the values were given for stays offered, unless one of that weight is listed already, it is the 100 g of the quantity chips, or the list is full.
+    portions: convert && portionGrams !== 100 && portions.length < 20 && !portions.some((portion) => portion.grams === portionGrams) ? [...portions, { label: '1 portion', grams: portionGrams }] : portions,
   };
   const problem = weightProblem ?? validateFood(food);
   const basis = perPortion ? 'pour une portion' : 'pour 100 g';
@@ -90,7 +90,8 @@ export function FoodForm({ initial, barcode, submitLabel, onSubmit }: Props) {
       {barcode && !initial && <Text variant="bodyMedium">{`Code-barres : ${barcode}`}</Text>}
       <TextInput label="Nom" accessibilityLabel="Nom" value={draft.name} onChangeText={(name) => change({ name })} />
       <SegmentedButtons value={draft.state} onValueChange={(state) => change({ state })} buttons={STATES} />
-      <SegmentedButtons value={draft.basis} onValueChange={(value) => change({ basis: value as Draft['basis'] })} buttons={BASES} />
+      {/* The values of a food that exists are for 100 g: reading them as for a portion would silently rescale them. */}
+      {!initial && <SegmentedButtons value={draft.basis} onValueChange={(value) => change({ basis: value as Draft['basis'] })} buttons={BASES} />}
       {perPortion && (
         <TextInput
           label="Poids d’une portion (g)"
@@ -100,11 +101,11 @@ export function FoodForm({ initial, barcode, submitLabel, onSubmit }: Props) {
           keyboardType="decimal-pad"
         />
       )}
-      {NUTRIENTS.map(([nutrient, label]) => (
+      {NUTRIENTS.map(([nutrient, stem]) => (
         <TextInput
           key={nutrient}
-          label={perPortion ? label.replace('pour 100 g', 'pour une portion') : label}
-          accessibilityLabel={perPortion ? label.replace('pour 100 g', 'pour une portion') : label}
+          label={`${stem} ${basis}`}
+          accessibilityLabel={`${stem} ${basis}`}
           value={p[nutrient]}
           onChangeText={(text) => change({ per100g: { ...p, [nutrient]: text } })}
           keyboardType="decimal-pad"

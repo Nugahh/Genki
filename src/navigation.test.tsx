@@ -341,7 +341,7 @@ test('the nutrition section opens the micronutrients, and a nutrient opens its c
   expect(await screen.findByText('Pas encore de moyenne : elle compte les jours terminés avec un repas.')).toBeTruthy();
   await act(async () => router.push({ pathname: '/suivi/[section]', params: { section: 'micro', metric: 'iron' } }));
   expect(screen).toHaveSearchParams({ section: 'micro', metric: 'iron' });
-  expect(await screen.findByText('Ajoute un aliment de la table Ciqual pour voir ce nutriment.')).toBeTruthy();
+  expect(await screen.findByText('Ajoute un aliment qui indique ce nutriment pour le voir.')).toBeTruthy();
 });
 
 test('the Protéines gauge opens the protein curve', async () => {

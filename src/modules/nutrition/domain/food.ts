@@ -8,7 +8,7 @@ export type FoodRef = { type: 'ciqual' | 'custom'; id: string };
 export type Portion = { label: string; grams: number };
 /**
  * `nutrients` are per 100 g: from Ciqual, or from the product of Open Food Facts that became a food of one's own (`source: 'off'`, with its `brand`
- * and `barcode`). A food the user typed has none of them.
+ * and `barcode`) or the ones typed for a supplement; a food typed without any has none.
  */
 export type Food = {
   ref: FoodRef; name: string; state: FoodState; per100g: Macros; portions: Portion[];
@@ -26,7 +26,7 @@ export type FoodEntry = {
   grams: number;
   /** Frozen when the entry was logged (spec §4 rule 5). */
   macros: Macros;
-  /** The nutrients of the portion, frozen with the macros; none for a custom food or an entry from before they existed. */
+  /** The nutrients of the portion, frozen with the macros; none for a food that has none, or an entry from before they existed. */
   nutrients?: Nutrients;
   createdAt: Date;
 };
@@ -61,7 +61,9 @@ export function validateFood(food: FoodInput): string | null {
   if (protein > 100 || carbs > 100 || fat > 100 || protein + carbs + fat > 100.5) return 'Protéines, glucides et lipides dépassent 100 g pour 100 g.';
   for (const [id, value] of Object.entries(food.nutrients ?? {})) {
     const info = NUTRIENTS.find((n) => n.id === id);
-    if (!info || !Number.isFinite(value) || value < 0 || value > 1000000) return 'Les micronutriments doivent être des nombres positifs.';
+    if (!info || !Number.isFinite(value) || value < 0) return 'Les micronutriments doivent être des nombres positifs.';
+    // In portion mode this is the converted value: the message names the nutrient, since the user typed another number.
+    if (value > 1000000) return `${info.label} : valeur trop grande pour 100 g.`;
     // 100 g of a food cannot hold more than 100 g of anything.
     if (info.unit === 'g' && value > 100) return `${info.label} : plus de 100 g pour 100 g n’est pas possible.`;
   }

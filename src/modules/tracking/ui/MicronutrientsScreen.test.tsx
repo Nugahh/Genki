@@ -73,7 +73,7 @@ test('says it is not medical advice', async () => {
 
 test('with no meal on the day it says what to do instead of listing empty rows', async () => {
   await setup({ ui: { period: 'day' }, meals: {} });
-  expect(screen.getByText('Ajoute un aliment de la table Ciqual pour voir tes vitamines et minéraux.')).toBeTruthy();
+  expect(screen.getByText('Ajoute un aliment qui indique ses vitamines et minéraux pour les voir.')).toBeTruthy();
   expect(screen.queryByText('Vitamines')).toBeNull();
 });
 

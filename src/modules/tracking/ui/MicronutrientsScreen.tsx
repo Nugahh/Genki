@@ -73,7 +73,7 @@ export function MicronutrientsScreen({ tracking, goals, ui, onUiChange, clock, t
         <Surface mode="flat" elevation={1} style={styles.empty}>
           <Icon source="leaf" size={32} color={colors.onSurfaceVariant} />
           <Text variant="bodyLarge" accessibilityLiveRegion="polite" style={styles.emptyText}>
-            {period === 'day' ? 'Ajoute un aliment de la table Ciqual pour voir tes vitamines et minéraux.' : 'Pas encore de moyenne : elle compte les jours terminés avec un repas.'}
+            {period === 'day' ? 'Ajoute un aliment qui indique ses vitamines et minéraux pour les voir.' : 'Pas encore de moyenne : elle compte les jours terminés avec un repas.'}
           </Text>
         </Surface>
       )}
