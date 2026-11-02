@@ -25,14 +25,14 @@ Success, as defined by the author:
 
 ## Positioning
 
-A private, offline-first tracker built around one person's own programme and the official French food composition table (Anses Ciqual), rather than a social or coaching app with a crowd-sourced food database. It has no server to run and no subscription.
+A private, offline-first tracker built around one person's own programme and the official French food composition table (Anses Ciqual), embedded in the app, completed by the products of brands from Open Food Facts, a public crowd-sourced database that is read online and kept only when a product is used. It is not a social or coaching app. It has no server to run and no subscription.
 
 ## Operating Context
 
 - The gym, with poor or no network, one hand free, the phone used between sets.
-- The kitchen and the table, to log meals from the Ciqual table with raw and cooked foods, portions, custom foods and favourite meals.
-- Steps come from the phone or a Fitbit through Android Health Connect (planned).
-- Data lives in Cloud Firestore in the Paris region (Firebase Spark plan, Google sign-in); the food table ships inside the app.
+- The kitchen and the table, to log meals from the Ciqual table with raw and cooked foods, portions, custom foods and favourite meals, or from a product of a brand found by name or by scanning its barcode (Open Food Facts, which needs the network the first time). A meal can be logged at another time or day than now.
+- Steps come from the phone or a Fitbit through Android Health Connect.
+- Data lives in Cloud Firestore in the Paris region (Firebase Spark plan, Google sign-in); the food table ships inside the app. The only other service the app talks to is Open Food Facts: only the text searched or the barcode scanned leaves the phone, with nothing that identifies the account.
 
 ## Capabilities and Constraints
 
@@ -40,8 +40,9 @@ A private, offline-first tracker built around one person's own programme and the
 - The interface is in French, with metric units (kg, cm, L, kcal) and French dates and number formats.
 - Offline-first with automatic sync between two phones. No backend and no REST API of its own. One developer; running cost must stay at zero.
 - Health data is private by default and kept in a European region. The app gives no medical advice: it shows a reminder to consult a professional before changing diet or resuming intense activity. Safety floors are domain constants that cannot be edited from the interface: at least 1,500 kcal per day proposed, at most 1% of body weight lost per week.
-- Planned scope: water and Today screen, food, training programme with progression and milestones, a stats hub with configurable metrics, steps, tobacco and settings, then iPhone.
-- Out of the MVP: a parkour-style skill tree, an LLM assistant, friends and multi-user, Google Health API, barcode scanning, readings from a connected scale.
+- Scope in the app: water and the Today screen; food (Ciqual, products of brands, barcode scan, 26 micronutrients against the ANSES references of the profile, macro goals with net carbs, a day and time for each meal); the training programme with progression and milestones; a stats hub over a day, week, month or year with configurable metrics; steps; tobacco; body measures; settings with a JSON export and import. The iPhone version is on its own branch and is not merged.
+- Planned next: tabs on the add-food page (all, favourites, custom), supplements and recipes among the custom foods.
+- Out of scope: a parkour-style skill tree, an LLM assistant, friends and multi-user, Google Health API, readings from a connected scale, reading QR codes.
 
 ## Brand Commitments
 
@@ -50,7 +51,7 @@ The product is called Genki. The name has not been declared final.
 ## Evidence on Hand
 
 - The design specification and the implementation plans: `docs/superpowers/specs/2026-10-23-fitness-tracker-design.md` and `docs/superpowers/plans/`.
-- The Ciqual 2025 table (Anses, Etalab 2.0 licence) is embedded; the food database holds 3,400 foods.
+- The Ciqual 2025 table (Anses, Etalab 2.0 licence) is embedded; the food database holds 3,400 foods, with 26 nutrients each where Ciqual gives them. Open Food Facts (ODbL licence) supplies the products of brands.
 - Absent, and not to be fabricated: any real usage data, screenshots from a device, user testimonials, customers or benchmarks.
 
 ## Product Principles
