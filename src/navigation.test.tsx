@@ -72,7 +72,7 @@ jest.mock('@/composition', () => {
           timezone: DEFAULT_PROFILE.timezone,
         }),
         foods: foodUseCases({ catalog: inMemoryFoodCatalog([rice]), repo: inMemoryFoodRepository() }),
-        products: productSearch({ source: inMemoryProductSource(), limiter: rateLimiter(10, 60000, Date.now) }),
+        products: productSearch({ source: inMemoryProductSource(), limiter: rateLimiter(10, 60000, Date.now), lookupLimiter: rateLimiter(15, 60000, Date.now) }),
       },
     }),
   };

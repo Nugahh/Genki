@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
-import { Button, SegmentedButtons } from 'react-native-paper';
+import { ActivityIndicator, Button, SegmentedButtons, Text } from 'react-native-paper';
 import type { Profile } from '@/modules/settings';
 import type { Clock } from '@/shared/clock';
 import type { FoodUseCases } from '../application/foodUseCases';
@@ -11,7 +11,7 @@ import type { Meal } from '../domain/meal';
 import { FavoritesList } from './FavoritesList';
 import { FoodDetail } from './FoodDetail';
 import { FoodForm } from './FoodForm';
-import { FoodSearch, type Search } from './FoodSearch';
+import { FoodSearch, type Choice, type Search } from './FoodSearch';
 import { RecentsList } from './RecentsList';
 import { ScanScreen, type ScanCamera } from './ScanScreen';
 import { useBrandProducts } from './useBrandProducts';
@@ -55,12 +55,37 @@ export function AddFoodScreen({ meal, meals, foods, products, camera, profile, c
   // The scan takes the place of the lists; a barcode it could not find a product for is kept for the form that creates the food.
   const [scanning, setScanning] = useState(false);
   const [scanned, setScanned] = useState<string | undefined>();
+  // The product being read in full after a touch on the list; null when none.
+  const [opening, setOpening] = useState<AbortController | null>(null);
+  useEffect(() => () => opening?.abort(), [opening]);
   // Held here, not by the list: the products of a search are not asked again when the user comes back from a fiche. Raw or cooked leaves them out.
   const brand = useBrandProducts(products, search.query, !search.state && !search.quiet);
   // The custom foods, live: the search, the recents and the favorites all look foods up in them. null until the first list.
   const [custom, setCustom] = useState<Food[] | null>(null);
   // Listener errors show on the SyncIcon, which watches the same user's data.
   useEffect(() => foods.observeCustom(setCustom, () => {}), [foods]);
+
+  // The list holds a product's name, quantity and macros; its portion of the label and its vitamins are in the product itself, read before it opens.
+  // If that cannot be read (offline, busy), the product opens as the list has it: the macros are there already.
+  const choose = (choice: Choice) => {
+    if ('food' in choice) return setSelected({ food: choice.food });
+    const { product } = choice;
+    if (!product.barcode) return setSelected({ food: product });
+    const controller = new AbortController();
+    setOpening(controller);
+    products.lookup(product.barcode, controller.signal).then(
+      (found) => {
+        if (controller.signal.aborted) return;
+        setOpening(null);
+        setSelected({ food: found.kind === 'found' ? found.food : product });
+      },
+      () => {
+        if (controller.signal.aborted) return;
+        setOpening(null);
+        setSelected({ food: product });
+      },
+    );
+  };
 
   const create = (food: FoodInput) => {
     run(() => foods.create(food));
@@ -72,7 +97,7 @@ export function AddFoodScreen({ meal, meals, foods, products, camera, profile, c
 
   return (
     // Its own key for the sheet: the scroll offset of the lists must not carry over to it.
-    <ScrollView key={selected ? 'sheet' : scanning ? 'scan' : 'lists'} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+    <ScrollView key={selected ? 'sheet' : scanning ? 'scan' : opening ? 'opening' : 'lists'} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
       {selected ? (
         <FoodDetail
           food={selected.food}
@@ -92,6 +117,16 @@ export function AddFoodScreen({ meal, meals, foods, products, camera, profile, c
             setSegment('search');
           }}
         />
+      ) : opening ? (
+        <View style={styles.opening}>
+          <View style={styles.loading} accessible accessibilityLiveRegion="polite">
+            <ActivityIndicator size="small" />
+            <Text variant="bodyLarge">Chargement du produit…</Text>
+          </View>
+          <Button contentStyle={styles.scan} onPress={() => setOpening(null)}>
+            Retour
+          </Button>
+        </View>
       ) : scanning ? (
         <ScanScreen
           camera={camera}
@@ -121,7 +156,7 @@ export function AddFoodScreen({ meal, meals, foods, products, camera, profile, c
           </Button>
           {segment === 'favorites' && <FavoritesList meal={meal} meals={meals} foods={foods} custom={custom} run={run} onDone={onDone} />}
           {segment === 'recents' && <RecentsList meals={meals} foods={foods} custom={custom} onPick={(food, grams) => setSelected({ food, grams })} />}
-          {segment === 'search' && <FoodSearch foods={foods} custom={custom} brand={brand} search={search} onSearch={setSearch} onSelect={(choice) => setSelected({ food: 'food' in choice ? choice.food : choice.product })} />}
+          {segment === 'search' && <FoodSearch foods={foods} custom={custom} brand={brand} search={search} onSearch={setSearch} onSelect={choose} />}
           {segment === 'create' && <FoodForm submitLabel="Enregistrer" barcode={scanned} onSubmit={create} />}
         </>
       )}
@@ -129,4 +164,4 @@ export function AddFoodScreen({ meal, meals, foods, products, camera, profile, c
   );
 }
 
-const styles = StyleSheet.create({ content: { padding: 16, gap: 16 }, segments: { gap: 8 }, scan: { minHeight: 48 } });
+const styles = StyleSheet.create({ content: { padding: 16, gap: 16 }, segments: { gap: 8 }, scan: { minHeight: 48 }, opening: { gap: 12 }, loading: { flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 48 } });

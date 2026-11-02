@@ -23,7 +23,7 @@ async function setup({ source = inMemoryProductSource([COCA]), custom = [] as Fo
     return <Text>Caméra</Text>;
   };
   const foods = foodUseCases({ catalog: inMemoryFoodCatalog([]), repo: inMemoryFoodRepository() });
-  const products = productSearch({ source, limiter: rateLimiter(10, 60000, Date.now), pauseMs: 0 });
+  const products = productSearch({ source, limiter: rateLimiter(10, 60000, Date.now), lookupLimiter: rateLimiter(15, 60000, Date.now), pauseMs: 0 });
   const onFound = jest.fn();
   const onCreate = jest.fn();
   const onBack = jest.fn();

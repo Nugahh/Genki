@@ -28,11 +28,12 @@ function wait(ms: number, signal: AbortSignal): Promise<void> {
 export type Lookup = { kind: 'found'; food: FoodInput } | { kind: 'unknown' } | { kind: 'refused'; reason: string };
 
 /**
- * The products of brands: the search by name (after a pause in the typing, from 3 characters, never more than the limiter allows, cancelled as
- * soon as the signal says so) and the read of one barcode. Open Food Facts asks for no more than 10 searches a minute.
+ * The products of brands: the search by name (after a pause in the typing, from 3 characters, never more than `limiter` allows, cancelled as soon
+ * as the signal says so) and the read of one product by its barcode (within `lookupLimiter`). Open Food Facts asks for no more than 10 searches
+ * and 15 product reads a minute, each limit apart.
  */
-export function productSearch(deps: { source: ProductSource; limiter: ReturnType<typeof rateLimiter>; pauseMs?: number }) {
-  const { source, limiter, pauseMs = PAUSE_MS } = deps;
+export function productSearch(deps: { source: ProductSource; limiter: ReturnType<typeof rateLimiter>; lookupLimiter: ReturnType<typeof rateLimiter>; pauseMs?: number }) {
+  const { source, limiter, lookupLimiter, pauseMs = PAUSE_MS } = deps;
   return {
     /** The foods the products can become, usable ones only, each barcode once. Rejects with an `AbortError` when replaced. */
     async search(query: string, signal: AbortSignal): Promise<FoodInput[]> {
@@ -51,9 +52,9 @@ export function productSearch(deps: { source: ProductSource; limiter: ReturnType
       }
       return foods;
     },
-    /** One barcode: at once (a scan is one deliberate request), but within the same limit. */
+    /** One product by its barcode: at once (a scan, or the touch of a result, is one deliberate request), but within the limit of product reads. */
     async lookup(code: string, signal: AbortSignal): Promise<Lookup> {
-      await wait(limiter.reserve(), signal);
+      await wait(lookupLimiter.reserve(), signal);
       const product = await source.byBarcode(code, signal);
       if (!product) return { kind: 'unknown' };
       const converted = fromOpenFoodFacts({ ...product, code: product.code ?? code });

@@ -44,7 +44,7 @@ async function setup({ catalog = inMemoryFoodCatalog([rawRice, cookedRice, orang
   const foods = { ...foodUseCases({ catalog, repo: inMemoryFoodRepository() }), ...(observeCustom && { observeCustom }) };
   const meals = mealUseCases({ entries, favorites, clock, timezone: DEFAULT_PROFILE.timezone });
   // No pause before asking: the tests are not about the typing.
-  const products = productSearch({ source: productSource ?? inMemoryProductSource(brandProducts), limiter: rateLimiter(10, 60000, Date.now), pauseMs: 0 });
+  const products = productSearch({ source: productSource ?? inMemoryProductSource(brandProducts), limiter: rateLimiter(10, 60000, Date.now), lookupLimiter: rateLimiter(15, 60000, Date.now), pauseMs: 0 });
   let scan: (code: string) => void = () => {};
   const camera: ScanCamera = ({ onScan }) => {
     scan = onScan;
@@ -876,7 +876,7 @@ describe('the products of brands', () => {
     await setup({ productSource: source });
     await search('coca');
     await fireEvent.press(await screen.findByText('Coca-Cola'));
-    await fireEvent.press(screen.getByText('Retour'));
+    await fireEvent.press(await screen.findByText('Retour'));
     expect(await screen.findByText('Coca-Cola')).toBeTruthy();
     expect(asked).toEqual(['coca']);
   });
@@ -885,7 +885,7 @@ describe('the products of brands', () => {
     const { entries, foods } = await setup({ brandProducts: [cocaCola] });
     await search('coca');
     await fireEvent.press(await screen.findByText('Coca-Cola'));
-    expect(screen.getByText('Source : Open Food Facts')).toBeTruthy();
+    expect(await screen.findByText('Source : Open Food Facts')).toBeTruthy();
     expect(screen.queryByText('Modifier l’aliment')).toBeNull();
     // The portion of the label, a volume taken for water, says so.
     await fireEvent.press(screen.getByText('Portion 330 ml ≈ 330 g'));
@@ -905,7 +905,7 @@ describe('the products of brands', () => {
     const { foods } = await setup({ brandProducts: [cocaCola], run: (write) => void writes.push(write) });
     await search('coca');
     await fireEvent.press(await screen.findByText('Coca-Cola'));
-    await fireEvent.press(screen.getByText('Ajouter à Déjeuner'));
+    await fireEvent.press(await screen.findByText('Ajouter à Déjeuner'));
     expect(writes).toHaveLength(1);
     await act(async () => {
       await writes[0]();
@@ -914,6 +914,57 @@ describe('the products of brands', () => {
     let mine: Food[] = [];
     foods.observeCustom((list) => (mine = list), () => {});
     expect(mine).toHaveLength(1);
+  });
+
+  describe('touching a product', () => {
+    // The list holds the name, the quantity and the macros; the portion of the label and the vitamins are in the product itself.
+    const hit: OffProduct = { code: '5449000000996', product_name_fr: 'Coca-Cola', brands: 'Coca-Cola Services', quantity: '330 ml', nutriments: cocaCola.nutriments };
+    const full: OffProduct = { ...hit, serving_size: '1 portion (150 ml)', nutriments: { ...cocaCola.nutriments, 'vitamin-c_100g': 0.01 } };
+
+    test('reads the product, for its portion and its nutrients, before opening it', async () => {
+      let release!: (p: OffProduct) => void;
+      const byBarcode = jest.fn(() => new Promise<OffProduct>((r) => (release = r)));
+      await setup({ productSource: { search: async () => [hit], byBarcode } });
+      await search('coca');
+      await fireEvent.press(await screen.findByText('Coca-Cola'));
+      expect(byBarcode).toHaveBeenCalledWith('5449000000996', expect.anything());
+      expect(screen.getByText('Chargement du produit…')).toBeTruthy();
+      await act(async () => release(full));
+      expect(await screen.findByText('Portion 150 ml ≈ 150 g')).toBeTruthy();
+      expect(screen.getByText('Emballage 330 ml ≈ 330 g')).toBeTruthy();
+      expect(screen.queryByText('Chargement du produit…')).toBeNull();
+    });
+
+    test('opens from the list when the product cannot be read: the macros are there already', async () => {
+      jest.spyOn(console, 'warn').mockImplementation(() => {});
+      const byBarcode = jest.fn(async () => { throw new Error('HTTP 503'); });
+      await setup({ productSource: { search: async () => [hit], byBarcode } });
+      await search('coca');
+      await fireEvent.press(await screen.findByText('Coca-Cola'));
+      expect(await screen.findByText('Source : Open Food Facts')).toBeTruthy();
+      expect(screen.getByText('Emballage 330 ml ≈ 330 g')).toBeTruthy();
+      expect(screen.queryByText('Portion 150 ml ≈ 150 g')).toBeNull();
+    });
+
+    test('opens from the list when Open Food Facts has no such product any more', async () => {
+      await setup({ productSource: { search: async () => [hit], byBarcode: async () => undefined } });
+      await search('coca');
+      await fireEvent.press(await screen.findByText('Coca-Cola'));
+      expect(await screen.findByText('Source : Open Food Facts')).toBeTruthy();
+    });
+
+    test('« Retour » while it loads comes back to the list, and the late answer opens nothing', async () => {
+      let release!: (p: OffProduct) => void;
+      const byBarcode = jest.fn(() => new Promise<OffProduct>((r) => (release = r)));
+      await setup({ productSource: { search: async () => [hit], byBarcode } });
+      await search('coca');
+      await fireEvent.press(await screen.findByText('Coca-Cola'));
+      await fireEvent.press(screen.getByText('Retour'));
+      expect(screen.queryByText('Chargement du produit…')).toBeNull();
+      expect(screen.getByLabelText('Rechercher un aliment')).toBeTruthy();
+      await act(async () => release(full));
+      expect(screen.queryByText('Source : Open Food Facts')).toBeNull();
+    });
   });
 
   test('a product the user already has is found by its brand too, even when the network has nothing', async () => {

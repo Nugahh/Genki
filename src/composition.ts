@@ -65,8 +65,8 @@ export function compose(uid: string) {
     nutrition: {
       meals,
       foods: foodUseCases({ catalog: ciqualCatalog(openCiqual), repo: firestoreFoodRepository(db, uid) }),
-      // Open Food Facts allows 10 searches a minute.
-      products: productSearch({ source: openFoodFactsClient(), limiter: rateLimiter(10, 60000, Date.now) }),
+      // Open Food Facts allows 10 searches and 15 product reads a minute.
+      products: productSearch({ source: openFoodFactsClient(), limiter: rateLimiter(10, 60000, Date.now), lookupLimiter: rateLimiter(15, 60000, Date.now) }),
     },
   };
 }

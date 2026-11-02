@@ -12,7 +12,7 @@ function setup(source: Partial<ProductSource> = {}) {
     byBarcode: jest.fn(async () => COCA),
     ...source,
   };
-  return { full, products: productSearch({ source: full, limiter: rateLimiter(10, 60000, Date.now) }) };
+  return { full, products: productSearch({ source: full, limiter: rateLimiter(10, 60000, Date.now), lookupLimiter: rateLimiter(15, 60000, Date.now) }) };
 }
 const signal = () => new AbortController().signal;
 
@@ -103,5 +103,31 @@ describe('lookup', () => {
   test('a network failure is thrown', async () => {
     const { products } = setup({ byBarcode: jest.fn(async () => { throw new Error('Network request failed'); }) });
     await expect(products.lookup('5449000000996', signal())).rejects.toThrow('Network request failed');
+  });
+});
+
+describe('the two limits', () => {
+  test('reading a product has its own limit of 15 a minute, apart from the 10 searches', async () => {
+    const { full, products } = setup();
+    for (let i = 0; i < 10; i++) {
+      const done = products.search(`coca ${i}`, signal());
+      await jest.advanceTimersByTimeAsync(700);
+      await done;
+    }
+    // Ten searches have used all the searches of the minute; reading a product is not held back by them.
+    expect(await products.lookup('5449000000996', signal())).toMatchObject({ kind: 'found' });
+    expect(full.byBarcode).toHaveBeenCalledTimes(1);
+  });
+
+  test('the 16th product read of a minute waits for a slot', async () => {
+    const { full, products } = setup();
+    for (let i = 0; i < 15; i++) await products.lookup('5449000000996', signal());
+    expect(full.byBarcode).toHaveBeenCalledTimes(15);
+    const sixteenth = products.lookup('5449000000996', signal());
+    await jest.advanceTimersByTimeAsync(59000);
+    expect(full.byBarcode).toHaveBeenCalledTimes(15);
+    await jest.advanceTimersByTimeAsync(1000);
+    await sixteenth;
+    expect(full.byBarcode).toHaveBeenCalledTimes(16);
   });
 });

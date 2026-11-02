@@ -63,6 +63,10 @@
 
 - [ ] README (état, mention ODbL, règle « jamais une requête à chaque lettre », règles à redéployer, **reconstruire le client** pour la caméra, vérifications sur téléphone), Réglages (mention de la source), DESIGN.md, spec principale. Les cinq vérifications ; commit `docs: brand products and scan`.
 
+## Suite (2026-11-02) : Search-a-licious
+
+La recherche par nom est passée de `cgi/search.pl` (503 une fois sur deux) à `https://search.openfoodfacts.org/search` : même conversion, mais le client lit `hits` (marques en liste, requête réduite aux lettres et chiffres), un limiteur de 15 par minute sert la lecture d'un produit, et toucher un résultat lit le produit complet (portion, vitamines) avant d'ouvrir la fiche, avec repli sur la liste.
+
 ## Hors de ce plan
 
 Contribuer à Open Food Facts, QR codes, photo du produit, Nutri-Score, mise à jour d'un produit déjà enregistré quand OFF le corrige, essai du scan sur l'émulateur (caméra réelle nécessaire).
