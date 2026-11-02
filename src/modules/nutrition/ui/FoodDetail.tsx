@@ -12,7 +12,7 @@ import type { Meal } from '../domain/meal';
 import { nutrientsFor } from '../domain/nutrients';
 import { ConfirmDelete } from './ConfirmDelete';
 import { FoodForm } from './FoodForm';
-import { gramsText, MEAL_LABELS } from './format';
+import { gramsText, MEAL_LABELS, productGrams } from './format';
 import { PortionSheet } from './PortionSheet';
 import { StateChip } from './StateChip';
 import type { PickWhen } from './WhenPicker';
@@ -115,7 +115,7 @@ export function FoodDetail({ food: chosen, grams: last, meal, meals, foods, star
         }
           source={sourceOf(food)}
           portions={quantities}
-          initialGrams={last ?? 100}
+          initialGrams={last ?? (food.source === 'off' ? productGrams(food.portions) : undefined) ?? 100}
           macrosAt={(grams) => macrosFor(food.per100g, grams)}
           nutrientsAt={(grams) => food.nutrients && nutrientsFor(food.nutrients, grams)}
           initialMeal={meal}

@@ -1,4 +1,4 @@
-import type { Food, FoodInput } from '../domain/food';
+import type { Food, FoodInput, Portion } from '../domain/food';
 import type { Macros } from '../domain/macros';
 import type { Meal } from '../domain/meal';
 
@@ -24,11 +24,14 @@ export const parseNumber = (text: string) => (text.trim() === '' ? NaN : Number(
 /** A number as it is typed in a field, with a comma: the way back from `parseNumber`. */
 export const asText = (n: number) => String(n).replace('.', ',');
 
+/** The package of a product, else its portion: the quantity it is sold in. */
+const productPortion = (portions: Portion[]) => portions.find((p) => p.label.startsWith('Emballage ')) ?? portions.find((p) => p.label.startsWith('Portion '));
+
 /** « 330 ml » for a product: the size of its package, else of its portion (« Emballage 330 ml ≈ 330 g » → « 330 ml »). */
-export function productQuantity(portions: { label: string }[]): string | undefined {
-  const pack = portions.find((p) => p.label.startsWith('Emballage ')) ?? portions.find((p) => p.label.startsWith('Portion '));
-  return pack?.label.replace(/^(Emballage|Portion) /, '').replace(/ ≈ .*$/, '');
-}
+export const productQuantity = (portions: Portion[]) => productPortion(portions)?.label.replace(/^(Emballage|Portion) /, '').replace(/ ≈ .*$/, '');
+
+/** The grams of that quantity (« Emballage 330 ml ≈ 330 g » → 330): what a product is added at unless told otherwise. */
+export const productGrams = (portions: Portion[]) => productPortion(portions)?.grams;
 
 /** The one line under a name in a list: « 330 ml · Coca-Cola · 42 kcal / 100 g » for a product of a brand, « 350 kcal / 100 g » for the other foods. */
 export const foodLine = (food: Food | FoodInput) =>

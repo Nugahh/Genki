@@ -934,6 +934,43 @@ describe('the products of brands', () => {
     expect(mine).toHaveLength(1);
   });
 
+  describe('the quantity a product opens with', () => {
+    test('is its own: the can of 330 ml of Coca-Cola is 330 g, not 100 g', async () => {
+      await setup({ brandProducts: [cocaCola] });
+      await search('coca');
+      await fireEvent.press(await screen.findByText('Coca-Cola'));
+      expect(await screen.findByLabelText('Quantité (g)')).toHaveDisplayValue('330');
+      expect(screen.getByText('140 kcal · 0 g de protéines · 35 g de glucides · 0 g de lipides')).toBeTruthy();
+    });
+
+    test('is the package rather than the portion of the label', async () => {
+      const withPortion: OffProduct = { ...cocaCola, serving_size: '1 portion (150 ml)' };
+      await setup({ brandProducts: [withPortion] });
+      await search('coca');
+      await fireEvent.press(await screen.findByText('Coca-Cola'));
+      expect(await screen.findByLabelText('Quantité (g)')).toHaveDisplayValue('330');
+    });
+
+    test('is 100 g when the product tells no quantity', async () => {
+      await setup({ brandProducts: [{ ...cocaCola, quantity: undefined, serving_size: undefined }] });
+      await search('coca');
+      await fireEvent.press(await screen.findByText('Coca-Cola'));
+      expect(await screen.findByLabelText('Quantité (g)')).toHaveDisplayValue('100');
+    });
+
+    test('gives way to the quantity eaten last time, from the recents', async () => {
+      await setup({ brandProducts: [cocaCola] });
+      await search('coca');
+      await fireEvent.press(await screen.findByText('Coca-Cola'));
+      await fireEvent.changeText(await screen.findByLabelText('Quantité (g)'), '200');
+      await fireEvent.press(screen.getByText('Ajouter à Déjeuner'));
+      await fireEvent.press(await screen.findByText('Retour'));
+      await search('');
+      await fireEvent.press(await screen.findByText('Coca-Cola'));
+      expect(await screen.findByLabelText('Quantité (g)')).toHaveDisplayValue('200');
+    });
+  });
+
   describe('touching a product', () => {
     // The list holds the name, the quantity and the macros; the portion of the label and the vitamins are in the product itself.
     const hit: OffProduct = { code: '5449000000996', product_name_fr: 'Coca-Cola', brands: 'Coca-Cola Services', quantity: '330 ml', nutriments: cocaCola.nutriments };
@@ -1036,7 +1073,7 @@ describe('the scan', () => {
     expect(screen.getByText('Coca-Cola')).toBeTruthy();
     await fireEvent.press(screen.getByText('Ajouter à Déjeuner'));
     await waitFor(() => expect(entries.entries).toHaveLength(1));
-    expect(entries.entries[0]).toMatchObject({ foodName: 'Coca-Cola', grams: 100 });
+    expect(entries.entries[0]).toMatchObject({ foodName: 'Coca-Cola', grams: 330 });
   });
 
   test('an unknown barcode leads to the form that creates the food, with the barcode, and the food keeps it', async () => {
