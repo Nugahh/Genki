@@ -131,8 +131,8 @@ export function MealsScreen({ profile, clock, meals, onAdd, onOpenNutrients, pic
               />
             ))}
             {list.length > 0 && (
-              <Button icon="star-outline" accessibilityLabel={`Enregistrer comme favori, ${label}`} contentStyle={styles.button} onPress={() => setFavorite({ meal, name: label })}>
-                Enregistrer comme favori
+              <Button icon="star-outline" accessibilityLabel={`Enregistrer comme repas, ${label}`} contentStyle={styles.button} onPress={() => setFavorite({ meal, name: label })}>
+                Enregistrer comme repas
               </Button>
             )}
           </Surface>
@@ -141,7 +141,7 @@ export function MealsScreen({ profile, clock, meals, onAdd, onOpenNutrients, pic
       {favorite && (
         <Portal>
           <Dialog visible onDismiss={() => setFavorite(null)}>
-            <Dialog.Title>Nom du favori</Dialog.Title>
+            <Dialog.Title>Nom du repas</Dialog.Title>
             <Dialog.Content>
               <TextInput label="Nom" accessibilityLabel="Nom" maxLength={100} value={favorite.name} onChangeText={(name) => setFavorite({ ...favorite, name })} />
             </Dialog.Content>

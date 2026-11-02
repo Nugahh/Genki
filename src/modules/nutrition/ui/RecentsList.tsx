@@ -35,7 +35,7 @@ export function RecentsList({ meals, foods, custom, onPick }: Props) {
 
   return (
     <View>
-      {recents?.length === 0 && <Text accessibilityLiveRegion="polite">Aucun aliment récent.</Text>}
+      {recents?.length === 0 && <Text accessibilityLiveRegion="polite">Aucun aliment récent. Cherche un aliment ou scanne un code-barres.</Text>}
       {problem && (
         <HelperText type="error" accessibilityLiveRegion="polite">
           {problem}

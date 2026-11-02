@@ -381,8 +381,13 @@ Standard Paper components, restrained: a tonal button, a soft card, a flat field
 - **Focus:** label and underline turn Ink Blue.
 - **Error:** helper text in Error Red, Body Small, under the field, announced politely to a screen reader (« La quantité doit être comprise entre 0 et 5 000 g. »).
 
+### Tabs
+- **Style:** a row of equal tabs under the header, each 48 dp tall: the label in Label Large, Ink when the tab is open and Ink Soft otherwise, and a 3 dp line in Ink (not Ink Blue) along the bottom of the open tab, its top corners rounded. No divider under the row, and no Ink Tint pill (that is the bottom bar's).
+- **Behavior:** each tab is announced as a tab with its selected state, the row as a tab list; the line is never the only sign. The add-food page has three: Tout (the search, the scan icon next to the field, and the recents while nothing is typed), Favoris (the foods with a star) and Personnalisé (two choice chips, Aliments and Repas, each a list under a tonal « Créer … » button).
+- **The star:** a 48 dp icon button at the end of the title row of a fiche, a star outline to mark a food, a filled star to unmark it, read as « Mettre en favori » / « Retirer des favoris ».
+
 ### Segmented switch
-- **Style:** the four add-food modes (Favoris, Récents, Recherche, Créer) in two rows of two, Pencil borders and 20 dp outer corners. The chosen segment takes Ink Tint and a check, so it is not told by its tint alone. The four Suivi periods (Jour, Semaine, Mois, Année) follow the same two rows of two, since « Semaine » and the check do not fit four in a row on a 360 dp phone. The Cru / Cuit / Autre switch of the custom-food form is one row of three with the same check.
+- **Style:** a switch of two to four choices that change a value (the four Suivi periods, the group of a meal, Cru / Cuit / Autre), in rows of two, Pencil borders and 20 dp outer corners. The chosen segment takes Ink Tint and a check, so it is not told by its tint alone. Views of one list (the add-food page) are tabs, not a switch. The four Suivi periods (Jour, Semaine, Mois, Année) follow the same two rows of two, since « Semaine » and the check do not fit four in a row on a 360 dp phone. The Cru / Cuit / Autre switch of the custom-food form is one row of three with the same check.
 
 ### Dialogs and sheet
 - **Dialog:** Paper Dialog level 3, 28 dp corners, Headline Small title, text-button actions at the bottom right. For decisions that must interrupt: changing a journal line, naming a favorite, and confirming a delete that cannot be undone (« Supprimer {nom} du journal ? », « Supprimer l'aliment {nom} ? », « Supprimer le favori {nom} ? »), each with the same « Annuler » and « Supprimer ».

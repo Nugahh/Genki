@@ -1,35 +1,43 @@
 import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
-import { ActivityIndicator, Button, SegmentedButtons, Text } from 'react-native-paper';
+import { ActivityIndicator, Button, Chip, Text } from 'react-native-paper';
 import type { Profile } from '@/modules/settings';
 import type { Clock } from '@/shared/clock';
+import { Tabs } from '@/shared/Tabs';
 import type { FoodUseCases } from '../application/foodUseCases';
 import type { MealUseCases } from '../application/mealUseCases';
 import type { ProductSearch } from '../application/productSearch';
+import type { StarredFoodUseCases } from '../application/starredFoods';
 import type { Food, FoodInput } from '../domain/food';
 import type { Meal } from '../domain/meal';
+import { CustomFoodsList } from './CustomFoodsList';
 import { FavoritesList } from './FavoritesList';
 import { FoodDetail } from './FoodDetail';
 import { FoodForm } from './FoodForm';
 import { FoodSearch, type Choice, type Search } from './FoodSearch';
-import { RecentsList } from './RecentsList';
 import { ScanScreen, type ScanCamera } from './ScanScreen';
+import { StarredList } from './StarredList';
 import { useBrandProducts } from './useBrandProducts';
 import type { PickWhen } from './WhenPicker';
 
-type Segment = 'favorites' | 'recents' | 'search' | 'create';
+type Tab = 'all' | 'starred' | 'custom';
+type Kind = 'foods' | 'meals';
 
-// Paper's segments are 40 dp tall: 4 dp more above and below the label make the 48 dp target. The check tells the chosen one by more than its tint.
-const option = (value: Segment, label: string) => ({ value, label, labelStyle: { paddingVertical: 4 }, showSelectedCheck: true });
-const SEGMENTS = [option('favorites', 'Favoris'), option('recents', 'Récents'), option('search', 'Recherche'), option('create', 'Créer')];
-// Two rows of two: four in a row left « Recherche » 1 or 2 dp of room on a 360 dp phone, none for the selected check or a larger system font.
-const ROWS = [SEGMENTS.slice(0, 2), SEGMENTS.slice(2)];
+const TABS = [
+  { key: 'all', label: 'Tout' },
+  { key: 'starred', label: 'Favoris' },
+  { key: 'custom', label: 'Personnalisé' },
+];
+// A chip is 32 dp tall: 8 dp more above and below make the 48 dp target.
+const HIT_SLOP = { top: 8, bottom: 8 };
 
 type Props = {
   /** The meal the food is added to. */
   meal: Meal;
   meals: MealUseCases;
   foods: FoodUseCases;
+  /** The foods with a star. */
+  stars: StarredFoodUseCases;
   /** The products of brands (Open Food Facts). */
   products: ProductSearch;
   /** The camera that reads the barcode of a product. */
@@ -45,9 +53,12 @@ type Props = {
   onDone: () => void;
 };
 
-/** Adds a food to a meal: from a favorite, a recent, the search, or a food created on the spot. */
-export function AddFoodScreen({ meal, meals, foods, products, camera, profile, clock, pickWhen, run, onDone }: Props) {
-  const [segment, setSegment] = useState<Segment>('search');
+/** Adds a food to a meal, in three tabs: all (the search and the recents), the favorites (the foods with a star) and the user's own (foods, saved meals). */
+export function AddFoodScreen({ meal, meals, foods, stars, products, camera, profile, clock, pickWhen, run, onDone }: Props) {
+  const [tab, setTab] = useState<Tab>('all');
+  // What the third tab lists, and whether the form that creates a food is open in it.
+  const [kind, setKind] = useState<Kind>('foods');
+  const [creating, setCreating] = useState(false);
   // The food whose fiche replaces the segments, with the quantity to start from when it comes from « Récents ».
   // A product of a brand that is not one of the user's foods yet has no reference.
   const [selected, setSelected] = useState<{ food: Food | FoodInput; grams?: number } | null>(null);
@@ -59,7 +70,7 @@ export function AddFoodScreen({ meal, meals, foods, products, camera, profile, c
   const [opening, setOpening] = useState<AbortController | null>(null);
   useEffect(() => () => opening?.abort(), [opening]);
   // Held here, not by the list: the products of a search are not asked again when the user comes back from a fiche. Raw or cooked leaves them out.
-  const brand = useBrandProducts(products, search.query, !search.state && !search.quiet);
+  const brand = useBrandProducts(products, search.query, !search.state);
   // The custom foods, live: the search, the recents and the favorites all look foods up in them. null until the first list.
   const [custom, setCustom] = useState<Food[] | null>(null);
   // Listener errors show on the SyncIcon, which watches the same user's data.
@@ -89,9 +100,7 @@ export function AddFoodScreen({ meal, meals, foods, products, camera, profile, c
 
   const create = (food: FoodInput) => {
     run(() => foods.create(food));
-    // The name is put in the field to show the food just created: it is not something the user typed, so it is not sent to Open Food Facts.
-    setSearch({ query: food.name, quiet: true });
-    setSegment('search');
+    setCreating(false);
     setScanned(undefined);
   };
 
@@ -105,6 +114,7 @@ export function AddFoodScreen({ meal, meals, foods, products, camera, profile, c
           meal={meal}
           meals={meals}
           foods={foods}
+          stars={stars}
           custom={custom ?? []}
           profile={profile}
           clock={clock}
@@ -112,10 +122,7 @@ export function AddFoodScreen({ meal, meals, foods, products, camera, profile, c
           run={run}
           onDone={onDone}
           onBack={() => setSelected(null)}
-          onRemoved={() => {
-            setSelected(null);
-            setSegment('search');
-          }}
+          onRemoved={() => setSelected(null)}
         />
       ) : opening ? (
         <View style={styles.opening}>
@@ -140,28 +147,55 @@ export function AddFoodScreen({ meal, meals, foods, products, camera, profile, c
           onCreate={(barcode) => {
             setScanning(false);
             setScanned(barcode);
-            setSegment('create');
+            setTab('custom');
+            setKind('foods');
+            setCreating(true);
           }}
           onBack={() => setScanning(false)}
         />
       ) : (
         <>
-          <View style={styles.segments}>
-            {ROWS.map((buttons, i) => (
-              <SegmentedButtons key={i} value={segment} onValueChange={setSegment} buttons={buttons} />
-            ))}
-          </View>
-          <Button mode="outlined" icon="barcode-scan" contentStyle={styles.scan} onPress={() => setScanning(true)}>
-            Scanner un code-barres
-          </Button>
-          {segment === 'favorites' && <FavoritesList meal={meal} meals={meals} foods={foods} custom={custom} run={run} onDone={onDone} />}
-          {segment === 'recents' && <RecentsList meals={meals} foods={foods} custom={custom} onPick={(food, grams) => setSelected({ food, grams })} />}
-          {segment === 'search' && <FoodSearch foods={foods} custom={custom} brand={brand} search={search} onSearch={setSearch} onSelect={choose} />}
-          {segment === 'create' && <FoodForm submitLabel="Enregistrer" barcode={scanned} onSubmit={create} />}
+          <Tabs tabs={TABS} value={tab} onChange={(key) => setTab(key as Tab)} />
+          {tab === 'all' && (
+            <FoodSearch
+              foods={foods}
+              meals={meals}
+              custom={custom}
+              brand={brand}
+              search={search}
+              onSearch={setSearch}
+              onSelect={choose}
+              onPickRecent={(food, grams) => setSelected({ food, grams })}
+              onScan={() => setScanning(true)}
+            />
+          )}
+          {tab === 'starred' && <StarredList stars={stars} foods={foods} custom={custom} onPick={(food) => setSelected({ food })} />}
+          {tab === 'custom' && (
+            <>
+              <View style={styles.kinds}>
+                <Chip hitSlop={HIT_SLOP} selected={kind === 'foods'} onPress={() => setKind('foods')}>
+                  Aliments
+                </Chip>
+                <Chip hitSlop={HIT_SLOP} selected={kind === 'meals'} onPress={() => setKind('meals')}>
+                  Repas
+                </Chip>
+              </View>
+              {kind === 'foods' && !creating && <CustomFoodsList custom={custom} onPick={(food) => setSelected({ food })} onCreate={() => setCreating(true)} />}
+              {kind === 'foods' && creating && (
+                <>
+                  <FoodForm submitLabel="Enregistrer" barcode={scanned} onSubmit={create} />
+                  <Button contentStyle={styles.scan} onPress={() => setCreating(false)}>
+                    Annuler
+                  </Button>
+                </>
+              )}
+              {kind === 'meals' && <FavoritesList meal={meal} meals={meals} foods={foods} custom={custom} run={run} onDone={onDone} />}
+            </>
+          )}
         </>
       )}
     </ScrollView>
   );
 }
 
-const styles = StyleSheet.create({ content: { padding: 16, gap: 16 }, segments: { gap: 8 }, scan: { minHeight: 48 }, opening: { gap: 12 }, loading: { flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 48 } });
+const styles = StyleSheet.create({ content: { padding: 16, gap: 16 }, kinds: { flexDirection: 'row', gap: 8 }, scan: { minHeight: 48 }, opening: { gap: 12 }, loading: { flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 48 } });

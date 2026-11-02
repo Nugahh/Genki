@@ -231,15 +231,15 @@ describe('the sheet of a line', () => {
   });
 });
 
-test('a meal is saved as a favorite: the name starts as its label and only its lines are kept', async () => {
+test('a meal is saved as a saved meal: the name starts as its label and only its lines are kept', async () => {
   const { meals } = await setup();
   await lunchOfRice(meals);
   await act(async () => {
     await meals.logFood('dinner', yogurt, 125);
   });
 
-  await fireEvent.press(screen.getByLabelText('Enregistrer comme favori, Déjeuner'));
-  expect(screen.getByRole('header', { name: 'Nom du favori' })).toBeTruthy();
+  await fireEvent.press(screen.getByLabelText('Enregistrer comme repas, Déjeuner'));
+  expect(screen.getByRole('header', { name: 'Nom du repas' })).toBeTruthy();
   expect(screen.getByLabelText('Nom')).toHaveDisplayValue('Déjeuner');
   await fireEvent.changeText(screen.getByLabelText('Nom'), 'Riz du midi');
   await fireEvent.press(screen.getByText('Enregistrer'));
@@ -250,13 +250,13 @@ test('a meal is saved as a favorite: the name starts as its label and only its l
   expect(screen.queryByLabelText('Nom')).toBeNull();
 });
 
-test('a favorite needs a name, and « Annuler » saves nothing', async () => {
+test('a saved meal needs a name, and « Annuler » saves nothing', async () => {
   const { meals } = await setup();
   await lunchOfRice(meals);
   // Only a meal with something in it can be saved.
-  expect(screen.getAllByText('Enregistrer comme favori')).toHaveLength(1);
+  expect(screen.getAllByText('Enregistrer comme repas')).toHaveLength(1);
 
-  await fireEvent.press(screen.getByLabelText('Enregistrer comme favori, Déjeuner'));
+  await fireEvent.press(screen.getByLabelText('Enregistrer comme repas, Déjeuner'));
   // The rules refuse a longer name, which could then never be saved.
   expect(screen.getByLabelText('Nom')).toHaveProp('maxLength', 100);
   for (const blank of ['', '   ']) {
@@ -285,7 +285,7 @@ test('a quantity change, a removal and a favorite are handed to run: nothing is 
   await runWrite(0);
   expect(entries.entries[0].grams).toBe(150);
 
-  await fireEvent.press(screen.getByLabelText('Enregistrer comme favori, Déjeuner'));
+  await fireEvent.press(screen.getByLabelText('Enregistrer comme repas, Déjeuner'));
   await fireEvent.press(screen.getByText('Enregistrer'));
   expect(writes).toHaveLength(2);
   expect(savedFavorites(meals)).toEqual([]);

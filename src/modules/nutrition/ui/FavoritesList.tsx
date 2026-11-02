@@ -19,7 +19,7 @@ type Props = {
 
 /** The saved meals: a touch adds all their foods to the meal, the bin forgets one once confirmed. */
 export function FavoritesList({ meal, meals, foods, custom, run, onDone }: Props) {
-  // null until the first list arrives, so that « Aucun favori. » is never a guess.
+  // null until the first list arrives, so that the empty line is never a guess.
   const [favorites, setFavorites] = useState<FavoriteMeal[] | null>(null);
   // Listener errors show on the SyncIcon, which watches the same user's data.
   useEffect(() => meals.observeFavorites(setFavorites, () => {}), [meals]);
@@ -38,7 +38,7 @@ export function FavoritesList({ meal, meals, foods, custom, run, onDone }: Props
 
   return (
     <View>
-      {favorites?.length === 0 && <Text>Aucun favori. Enregistre un repas depuis le journal.</Text>}
+      {favorites?.length === 0 && <Text>Aucun repas enregistré. Dans le journal, touche « Enregistrer comme repas » sous un repas.</Text>}
       {favorites?.map((favorite) => (
         <View key={favorite.id} style={styles.row}>
           <List.Item
@@ -52,14 +52,14 @@ export function FavoritesList({ meal, meals, foods, custom, run, onDone }: Props
           <IconButton
             icon="delete-outline"
             style={styles.iconButton}
-            accessibilityLabel={`Supprimer le favori ${favorite.name}`}
+            accessibilityLabel={`Supprimer le repas ${favorite.name}`}
             onPress={() => setRemoving(favorite)}
           />
         </View>
       ))}
       {removing && (
         <ConfirmDelete
-          title={`Supprimer le favori ${removing.name} ?`}
+          title={`Supprimer le repas ${removing.name} ?`}
           onCancel={() => setRemoving(null)}
           onConfirm={() => {
             run(() => meals.removeFavorite(removing.id));

@@ -25,6 +25,8 @@ type Props = {
   name: string;
   /** Next to the name: the cooked or raw chip of a food. */
   badge?: ReactNode;
+  /** At the end of the title row: the star of a food. */
+  action?: ReactNode;
   /** Where the figures come from: « Ciqual (ANSES) », « Mon aliment ». */
   source: string;
   portions: { label: string; grams: number }[];
@@ -54,7 +56,7 @@ const totalsOf = (entries: FoodEntry[]) => {
 
 /** A quantity of a food, for a group, a day and a time: the figures of the portion, the day's goals with it, and the way to log or save it. */
 export function PortionSheet(props: Props) {
-  const { name, badge, source, portions, initialGrams, macrosAt, nutrientsAt, initialMeal, initialAt, entryId, meals, profile, clock, pickWhen, submitLabel, onSubmit, children } = props;
+  const { name, badge, action, source, portions, initialGrams, macrosAt, nutrientsAt, initialMeal, initialAt, entryId, meals, profile, clock, pickWhen, submitLabel, onSubmit, children } = props;
   const now = useNow(clock);
   const [text, setText] = useState(asText(initialGrams));
   const [meal, setMeal] = useState(initialMeal);
@@ -83,6 +85,7 @@ export function PortionSheet(props: Props) {
           {name}
         </Text>
         {badge}
+        {action}
       </View>
       <Text variant="bodyMedium">{`Source : ${source}`}</Text>
       <View style={styles.chips}>
@@ -121,7 +124,7 @@ export function PortionSheet(props: Props) {
 const styles = StyleSheet.create({
   sheet: { gap: 12 },
   title: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  name: { flexShrink: 1 },
+  name: { flexShrink: 1, flex: 1 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   button: { minHeight: 48 },
 });

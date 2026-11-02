@@ -1,11 +1,12 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { Button } from 'react-native-paper';
+import { Button, IconButton } from 'react-native-paper';
 import type { Profile } from '@/modules/settings';
 import type { Clock } from '@/shared/clock';
 import type { FoodUseCases } from '../application/foodUseCases';
 import type { MealUseCases } from '../application/mealUseCases';
-import type { Food, FoodInput } from '../domain/food';
+import type { StarredFoodUseCases } from '../application/starredFoods';
+import type { Food, FoodInput, StarredFood } from '../domain/food';
 import { macrosFor } from '../domain/macros';
 import type { Meal } from '../domain/meal';
 import { nutrientsFor } from '../domain/nutrients';
@@ -24,6 +25,7 @@ type Props = {
   meal: Meal;
   meals: MealUseCases;
   foods: FoodUseCases;
+  stars: StarredFoodUseCases;
   /** The foods of the user, to find the one a product already is. */
   custom: Food[];
   profile: Profile;
@@ -40,11 +42,31 @@ const SOURCES = { ciqual: 'Ciqual (ANSES)', custom: 'Mon aliment' } as const;
 const sourceOf = (food: Food | FoodInput) => (food.source === 'off' ? 'Open Food Facts' : SOURCES[(food as Food).ref.type]);
 
 /** A food chosen from a list: pick a quantity, a group and a time, read the figures, add it. A custom food can also be changed or deleted here. */
-export function FoodDetail({ food: chosen, grams: last, meal, meals, foods, custom, profile, clock, pickWhen, run, onDone, onBack, onRemoved }: Props) {
+export function FoodDetail({ food: chosen, grams: last, meal, meals, foods, stars, custom, profile, clock, pickWhen, run, onDone, onBack, onRemoved }: Props) {
   // Held here so that a saved change shows at once.
   const [food, setFood] = useState<Food | FoodInput>(chosen);
   // The food of the user it is, once it has a reference.
   const owned = 'ref' in food ? food : undefined;
+  const [starred, setStarred] = useState<StarredFood[]>([]);
+  // Listener errors show on the SyncIcon, which watches the same user's data.
+  useEffect(() => stars.observe(setStarred, () => {}), [stars]);
+  const isStarred = owned ? stars.isStarred(starred, owned.ref) : false;
+  const toggleStar = () => {
+    if (owned) return run(() => (isStarred ? stars.unstar(owned.ref) : stars.star({ ref: owned.ref, name: owned.name })));
+    // A product of a brand is starred as a food of the user's: it becomes one first (and then it is the food of the fiche).
+    let adoption: ReturnType<typeof foods.adopt>;
+    try {
+      adoption = foods.adopt(food, custom);
+    } catch (error) {
+      return run(async () => {
+        throw error;
+      });
+    }
+    setFood(adoption.food);
+    run(async () => {
+      await Promise.all([adoption.write(), stars.star({ ref: adoption.food.ref, name: adoption.food.name })]);
+    });
+  };
   const [editing, setEditing] = useState(false);
   const [removing, setRemoving] = useState(false);
   // Set by the first touch of « Ajouter à … »: a second one, before the host has left the screen, must not log the food again.
@@ -81,6 +103,14 @@ export function FoodDetail({ food: chosen, grams: last, meal, meals, foods, cust
         <PortionSheet
           name={food.name}
           badge={<StateChip state={food.state} />}
+        action={
+          <IconButton
+            icon={isStarred ? 'star' : 'star-outline'}
+            style={styles.star}
+            accessibilityLabel={isStarred ? 'Retirer des favoris' : 'Mettre en favori'}
+            onPress={toggleStar}
+          />
+        }
           source={sourceOf(food)}
           portions={quantities}
           initialGrams={last ?? 100}
@@ -142,5 +172,7 @@ export function FoodDetail({ food: chosen, grams: last, meal, meals, foods, cust
 const styles = StyleSheet.create({
   detail: { gap: 12 },
   hidden: { display: 'none' },
+  // Paper's icon button is 40 dp, and its container clips the extra hit area: 48 dp make the touch target.
+  star: { width: 48, height: 48, borderRadius: 24 },
   button: { minHeight: 48 },
 });

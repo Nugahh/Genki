@@ -1,3 +1,4 @@
+import type { Food, FoodInput } from '../domain/food';
 import type { Macros } from '../domain/macros';
 import type { Meal } from '../domain/meal';
 
@@ -28,3 +29,9 @@ export function productQuantity(portions: { label: string }[]): string | undefin
   const pack = portions.find((p) => p.label.startsWith('Emballage ')) ?? portions.find((p) => p.label.startsWith('Portion '));
   return pack?.label.replace(/^(Emballage|Portion) /, '').replace(/ ≈ .*$/, '');
 }
+
+/** The one line under a name in a list: « 330 ml · Coca-Cola · 42 kcal / 100 g » for a product of a brand, « 350 kcal / 100 g » for the other foods. */
+export const foodLine = (food: Food | FoodInput) =>
+  food.source === 'off'
+    ? [productQuantity(food.portions) ?? '100 g', food.brand, `${kcalText(food.per100g.kcal)} kcal / 100 g`].filter(Boolean).join(' · ')
+    : `${kcalText(food.per100g.kcal)} kcal / 100 g`;

@@ -9,6 +9,8 @@ import { inMemoryFoodEntryRepository } from '../adapters/inMemoryFoodEntryReposi
 import { inMemoryFoodRepository } from '../adapters/inMemoryFoodRepository';
 import { foodUseCases, type FoodUseCases } from '../application/foodUseCases';
 import { productSearch } from '../application/productSearch';
+import { starredFoodUseCases } from '../application/starredFoods';
+import { inMemoryStarredFoodRepository } from '../adapters/inMemoryStarredFoodRepository';
 import { rateLimiter } from '../domain/rateLimiter';
 import { inMemoryProductSource } from '../adapters/inMemoryProductSource';
 import type { OffProduct } from '../domain/openFoodFacts';
@@ -43,6 +45,7 @@ async function setup({ catalog = inMemoryFoodCatalog([rawRice, cookedRice, orang
   const favorites = inMemoryFavoriteMealRepository();
   const foods = { ...foodUseCases({ catalog, repo: inMemoryFoodRepository() }), ...(observeCustom && { observeCustom }) };
   const meals = mealUseCases({ entries, favorites, clock, timezone: DEFAULT_PROFILE.timezone });
+  const stars = starredFoodUseCases(inMemoryStarredFoodRepository());
   // No pause before asking: the tests are not about the typing.
   const products = productSearch({ source: productSource ?? inMemoryProductSource(brandProducts), limiter: rateLimiter(10, 60000, Date.now), lookupLimiter: rateLimiter(15, 60000, Date.now), pauseMs: 0 });
   let scan: (code: string) => void = () => {};
@@ -53,18 +56,25 @@ async function setup({ catalog = inMemoryFoodCatalog([rawRice, cookedRice, orang
   const onDone = jest.fn();
   await render(
     <PaperProvider theme={theme}>
-      <AddFoodScreen meal={meal} meals={meals} foods={foods} products={products} camera={camera} run={run} onDone={onDone} profile={profile} clock={clock} pickWhen={pickWhen} />
+      <AddFoodScreen meal={meal} meals={meals} foods={foods} stars={stars} products={products} camera={camera} run={run} onDone={onDone} profile={profile} clock={clock} pickWhen={pickWhen} />
     </PaperProvider>,
   );
-  return { entries, favorites, foods, meals, onDone, scan: (code: string) => act(async () => scan(code)) };
+  return { entries, favorites, foods, meals, stars, onDone, scan: (code: string) => act(async () => scan(code)) };
 }
 
+/** The saved meals sit in the third tab, under « Repas ». */
+const openMeals = async () => {
+  await fireEvent.press(screen.getByText('Personnalisé'));
+  await fireEvent.press(screen.getByText('Repas'));
+};
+/** The form that creates a food: the third tab, « Créer un aliment ». */
+const openCreate = async () => {
+  await fireEvent.press(screen.getByText('Personnalisé'));
+  await fireEvent.press(screen.getByText('Créer un aliment'));
+};
 const search = (text: string) => fireEvent.changeText(screen.getByLabelText('Rechercher un aliment'), text);
 const type = (label: string, text: string) => fireEvent.changeText(screen.getByLabelText(label), text);
 
-/** Paper marks the chosen segment with `accessibilityState.checked`, which the `checked` filter of `getByRole` only reads on checkboxes and radios. */
-// The text content of the chosen segment also holds the glyph of its check, which screen readers skip.
-const isChecked = (name: string) => screen.getByRole('button', { name: new RegExp(`^${name}|${name}$`) }).props.accessibilityState.checked;
 /** A selected chip holds its check icon in its accessible name, hence the regular expression. */
 const isSelected = (label: string) => screen.queryByRole('button', { name: new RegExp(label), selected: true }) !== null;
 
@@ -94,7 +104,7 @@ afterEach(() => jest.restoreAllMocks());
 test('a search finds the food, its fiche previews the macros, and adding logs it with those macros frozen', async () => {
   const { entries, onDone } = await setup();
 
-  expect(screen.getByText('Tape le nom d’un aliment.')).toBeTruthy();
+  expect(screen.getByText('Récents')).toBeTruthy();
   await search('riz');
   expect(await screen.findByText('Riz blanc, cru')).toBeTruthy();
   expect(screen.getByText('Riz blanc, cuit, sans sel ajouté')).toBeTruthy();
@@ -103,7 +113,7 @@ test('a search finds the food, its fiche previews the macros, and adding logs it
   expect(screen.getByText('cuit')).toBeTruthy();
   expect(screen.getByText('350 kcal / 100 g')).toBeTruthy();
   expect(screen.getByText('130 kcal / 100 g')).toBeTruthy();
-  expect(screen.queryByText('Tape le nom d’un aliment.')).toBeNull();
+  expect(screen.queryByText('Récents')).toBeNull();
 
   await fireEvent.press(screen.getByText('Riz blanc, cru'));
   expect(screen.getByLabelText('Quantité (g)')).toHaveDisplayValue('100');
@@ -174,11 +184,9 @@ test('a portion chip sets the quantity to the weight of the portion', async () =
   expect(screen.getByLabelText('Quantité (g)')).toHaveDisplayValue('100');
 });
 
-test('a created food shows up in the search of its name, on the « Recherche » segment', async () => {
+test('a created food is listed under Personnalisé, with its line, and found by the search', async () => {
   const { foods } = await setup();
-  await fireEvent.press(screen.getByText('Créer'));
-  expect(isChecked('Créer')).toBe(true);
-  expect(isChecked('Recherche')).toBe(false);
+  await openCreate();
   await type('Nom', 'Pain maison');
   await type('Calories pour 100 g', '250');
   await type('Protéines pour 100 g', '8');
@@ -189,25 +197,37 @@ test('a created food shows up in the search of its name, on the « Recherche » 
   await type('Poids (g)', '30');
   await fireEvent.press(screen.getByText('Enregistrer'));
 
-  expect(isChecked('Recherche')).toBe(true);
-  expect(isChecked('Créer')).toBe(false);
-  expect(screen.getByLabelText('Rechercher un aliment')).toHaveDisplayValue('Pain maison');
-  expect(await screen.findByText('250 kcal / 100 g')).toBeTruthy();
+  // The form closes on the list of the user's foods.
+  expect(screen.queryByLabelText('Nom')).toBeNull();
   expect(screen.getByText('Pain maison')).toBeTruthy();
+  expect(await screen.findByText('250 kcal / 100 g')).toBeTruthy();
   expect(customFoods(foods)).toEqual([{ ref: { type: 'custom', id: expect.any(String) }, ...bread }]);
+
+  await fireEvent.press(screen.getByText('Tout'));
+  await search('pain');
+  expect(await screen.findByText('Pain maison')).toBeTruthy();
 });
 
-test('a created food shows even when a state filter was on', async () => {
-  await setup();
-  await search('pain');
-  await fireEvent.press(screen.getByText('Cuit'));
-  await fireEvent.press(screen.getByText('Créer'));
-  await type('Nom', 'Pain maison');
-  for (const label of ['Calories pour 100 g', 'Protéines pour 100 g', 'Glucides pour 100 g', 'Lipides pour 100 g']) await type(label, '10');
-  await fireEvent.press(screen.getByText('Enregistrer'));
+test('« Annuler » closes the form without creating anything', async () => {
+  const { foods } = await setup();
+  await openCreate();
+  await type('Nom', 'Brouillon');
+  await fireEvent.press(screen.getByText('Annuler'));
+  expect(screen.getByText('Créer un aliment')).toBeTruthy();
+  expect(customFoods(foods)).toEqual([]);
+});
 
-  expect(isSelected('Tous')).toBe(true);
-  expect(screen.getByText('Pain maison')).toBeTruthy();
+test('the foods of the user are listed by name under « Aliments », and one opens its fiche', async () => {
+  const { foods } = await setup();
+  await act(async () => {
+    await foods.create({ ...bread, name: 'Pain maison' });
+    await foods.create({ ...bread, name: 'Yaourt maison' });
+    await foods.create({ ...bread, name: 'Boeuf haché' });
+  });
+  await fireEvent.press(screen.getByText('Personnalisé'));
+  expect(screen.getAllByText(/ maison$| haché$/).map((n) => n.props.children)).toEqual(['Boeuf haché', 'Pain maison', 'Yaourt maison']);
+  await fireEvent.press(screen.getByText('Yaourt maison'));
+  expect(screen.getByText('Source : Mon aliment')).toBeTruthy();
 });
 
 test('a custom food can be changed or deleted from its fiche', async () => {
@@ -264,7 +284,7 @@ test('a Ciqual food has no edit or delete button, and its fiche names the meal o
   expect(screen.queryByText('Supprimer l’aliment')).toBeNull();
 });
 
-test('« Récents » lists what was added with its quantity, opens it with that quantity, and says when the food is gone', async () => {
+test('the recents list what was added with its quantity, opens it with that quantity, and says when the food is gone', async () => {
   const { foods, meals } = await setup();
   await search('riz');
   await fireEvent.press(await screen.findByText('Riz blanc, cru'));
@@ -272,7 +292,9 @@ test('« Récents » lists what was added with its quantity, opens it with that 
   await fireEvent.press(screen.getByText('Ajouter à Déjeuner'));
   await fireEvent.press(screen.getByText('Retour'));
 
-  await fireEvent.press(screen.getByText('Récents'));
+  // Nothing typed: the recents are under the field.
+  await search('');
+  expect(screen.getByText('Récents')).toBeTruthy();
   expect(screen.getByText('Riz blanc, cru')).toBeTruthy();
   expect(screen.getByText('150,5 g')).toBeTruthy();
   await fireEvent.press(screen.getByText('Riz blanc, cru'));
@@ -307,14 +329,13 @@ test('the quantity eaten last is not offered twice when it is 100 g', async () =
     await meals.logFood('lunch', rawRice, 100);
   });
 
-  await fireEvent.press(screen.getByText('Récents'));
   await fireEvent.press(screen.getByText('Riz blanc, cru'));
 
   expect(await screen.findByLabelText('Quantité (g)')).toHaveDisplayValue('100');
   expect(screen.getAllByText('100 g')).toHaveLength(1);
 });
 
-test('deleting a custom food opened from « Récents » lands on the search', async () => {
+test('deleting a custom food opened from « Récents » comes back to the search', async () => {
   const { foods, meals } = await setup();
   await act(async () => {
     await foods.create(bread);
@@ -323,13 +344,11 @@ test('deleting a custom food opened from « Récents » lands on the search', as
     await meals.logFood('lunch', customFoods(foods)[0], 50);
   });
 
-  await fireEvent.press(screen.getByText('Récents'));
   await fireEvent.press(screen.getByText('Pain maison'));
   await fireEvent.press(await screen.findByText('Supprimer l’aliment'));
   await fireEvent.press(screen.getByText('Supprimer'));
 
   expect(customFoods(foods)).toEqual([]);
-  expect(isChecked('Recherche')).toBe(true);
   expect(screen.getByLabelText('Rechercher un aliment')).toBeTruthy();
 });
 
@@ -342,7 +361,7 @@ test('a favorite is logged into the meal of the screen', async () => {
     await meals.saveFavorite('Riz du midi', entries.entries);
   });
 
-  await fireEvent.press(screen.getByText('Favoris'));
+  await openMeals();
   expect(screen.getByText('Riz du midi')).toBeTruthy();
   expect(screen.getByText('Riz blanc, cru')).toBeTruthy();
   await fireEvent.press(screen.getByText('Riz du midi'));
@@ -362,25 +381,25 @@ test('the bin of a favorite asks first: « Annuler » keeps it, « Supprimer » 
     await meals.saveFavorite('Riz du midi', entries.entries);
     await meals.saveFavorite('Pain du soir', entries.entries);
   });
-  await fireEvent.press(screen.getByText('Favoris'));
+  await openMeals();
 
-  await fireEvent.press(screen.getByLabelText('Supprimer le favori Riz du midi'));
-  expect(screen.getByText('Supprimer le favori Riz du midi ?')).toBeTruthy();
+  await fireEvent.press(screen.getByLabelText('Supprimer le repas Riz du midi'));
+  expect(screen.getByText('Supprimer le repas Riz du midi ?')).toBeTruthy();
   expect(writes).toHaveLength(0);
   await fireEvent.press(screen.getByText('Annuler'));
-  expect(screen.queryByText('Supprimer le favori Riz du midi ?')).toBeNull();
+  expect(screen.queryByText('Supprimer le repas Riz du midi ?')).toBeNull();
   expect(screen.getByText('Riz du midi')).toBeTruthy();
   expect(writes).toHaveLength(0);
 
   // Touching outside the dialog (Paper's backdrop) keeps it too.
-  await fireEvent.press(screen.getByLabelText('Supprimer le favori Riz du midi'));
+  await fireEvent.press(screen.getByLabelText('Supprimer le repas Riz du midi'));
   await fireEvent.press(screen.getByLabelText('Close modal'));
-  expect(screen.queryByText('Supprimer le favori Riz du midi ?')).toBeNull();
+  expect(screen.queryByText('Supprimer le repas Riz du midi ?')).toBeNull();
   expect(writes).toHaveLength(0);
 
-  await fireEvent.press(screen.getByLabelText('Supprimer le favori Riz du midi'));
+  await fireEvent.press(screen.getByLabelText('Supprimer le repas Riz du midi'));
   await fireEvent.press(screen.getByText('Supprimer'));
-  expect(screen.queryByText('Supprimer le favori Riz du midi ?')).toBeNull();
+  expect(screen.queryByText('Supprimer le repas Riz du midi ?')).toBeNull();
   // Nothing is deleted until run runs the write.
   expect(writes).toHaveLength(1);
   expect(screen.getByText('Riz du midi')).toBeTruthy();
@@ -424,23 +443,22 @@ test('« Aucun aliment trouvé. » waits for the answer to the current search', 
 
 test('each list says when it is empty', async () => {
   await setup();
-  expect(screen.getByText('Tape le nom d’un aliment.')).toBeTruthy();
+  expect(screen.getByText('Récents')).toBeTruthy();
   expect(screen.queryByText('Aucun aliment trouvé.')).toBeNull();
 
   // A search that finds nothing, then nothing typed or only spaces: back to the hint.
   for (const blank of ['', '   ']) {
     await search('zzz');
     expect(await screen.findByText('Aucun aliment trouvé.')).toBeTruthy();
-    expect(screen.queryByText('Tape le nom d’un aliment.')).toBeNull();
+    expect(screen.queryByText('Récents')).toBeNull();
     await search(blank);
-    expect(screen.getByText('Tape le nom d’un aliment.')).toBeTruthy();
+    expect(screen.getByText('Récents')).toBeTruthy();
     expect(screen.queryByText('Aucun aliment trouvé.')).toBeNull();
   }
 
-  await fireEvent.press(screen.getByText('Récents'));
-  expect(screen.getByText('Aucun aliment récent.')).toBeTruthy();
-  await fireEvent.press(screen.getByText('Favoris'));
-  expect(screen.getByText('Aucun favori. Enregistre un repas depuis le journal.')).toBeTruthy();
+  expect(screen.getByText('Aucun aliment récent. Cherche un aliment ou scanne un code-barres.')).toBeTruthy();
+  await openMeals();
+  expect(screen.getByText('Aucun repas enregistré. Dans le journal, touche « Enregistrer comme repas » sous un repas.')).toBeTruthy();
 });
 
 test('custom foods that match come before the Ciqual results', async () => {
@@ -544,9 +562,9 @@ test('a favorite or a recent does nothing until the custom foods have arrived', 
     await meals.saveFavorite('Riz du midi', entries.entries);
   });
 
-  await fireEvent.press(screen.getByText('Favoris'));
+  await openMeals();
   await fireEvent.press(screen.getByText('Riz du midi'));
-  await fireEvent.press(screen.getByText('Récents'));
+  await fireEvent.press(screen.getByText('Tout'));
   await fireEvent.press(screen.getByText('Riz blanc, cru'));
   expect(entries.entries).toHaveLength(1);
   expect(onDone).not.toHaveBeenCalled();
@@ -578,7 +596,7 @@ test('a favorite is logged once, however often it is touched before the screen i
     await meals.saveFavorite('Riz du midi', entries.entries);
   });
 
-  await fireEvent.press(screen.getByText('Favoris'));
+  await openMeals();
   await fireEvent.press(screen.getByText('Riz du midi'));
   await fireEvent.press(screen.getByText('Riz du midi'));
 
@@ -594,7 +612,6 @@ test('a recent whose lookup fails says the search is unavailable, not that the f
     await meals.logFood('lunch', rawRice, 100);
   });
 
-  await fireEvent.press(screen.getByText('Récents'));
   await fireEvent.press(screen.getByText('Riz blanc, cru'));
 
   expect(await screen.findByText('Recherche indisponible.')).toBeTruthy();
@@ -619,8 +636,8 @@ test('what appears under the fields is announced to a screen reader: the empty a
   expect(polite(screen.getByText(/de protéines/))).toBe('polite');
   await fireEvent.press(screen.getByText('Retour'));
 
-  await fireEvent.press(screen.getByText('Récents'));
-  expect(polite(screen.getByText('Aucun aliment récent.'))).toBe('polite');
+  await search('');
+  expect(polite(screen.getByText('Aucun aliment récent. Cherche un aliment ou scanne un code-barres.'))).toBe('polite');
 });
 
 test('a search that cannot run is announced too', async () => {
@@ -838,11 +855,11 @@ describe('the products of brands', () => {
     expect(search_).toHaveBeenCalledTimes(2);
   });
 
-  test('are not asked for the name of a food that has just been created: the user did not type it', async () => {
+  test('are not asked for a food that has just been created: only what the user types is asked', async () => {
     const asked: string[] = [];
     const source: ProductSource = { search: async (q) => (asked.push(q), []), byBarcode: async () => undefined };
     await setup({ productSource: source });
-    await fireEvent.press(screen.getByText('Créer'));
+    await openCreate();
     await type('Nom', 'Gâteau maison');
     await type('Calories pour 100 g', '300');
     await type('Protéines pour 100 g', '5');
@@ -853,6 +870,7 @@ describe('the products of brands', () => {
     await new Promise((r) => setTimeout(r, 20));
     expect(asked).toEqual([]);
     // What the user types next is asked.
+    await fireEvent.press(screen.getByText('Tout'));
     await search('gâteau');
     await waitFor(() => expect(asked).toEqual(['gâteau']));
   });
@@ -1002,7 +1020,7 @@ describe('the scan', () => {
 
   test('opens the camera from the add screen, and « Retour » comes back to the lists', async () => {
     await setup();
-    await fireEvent.press(screen.getByText('Scanner un code-barres'));
+    await fireEvent.press(screen.getByLabelText('Scanner un code-barres'));
     expect(screen.getByText('Caméra')).toBeTruthy();
     expect(screen.queryByText('Favoris')).toBeNull();
     await fireEvent.press(screen.getByText('Retour'));
@@ -1012,7 +1030,7 @@ describe('the scan', () => {
 
   test('a barcode of a product of Open Food Facts opens its fiche, to be added to the meal', async () => {
     const { scan, entries } = await setup({ brandProducts: [cocaProduct] });
-    await fireEvent.press(screen.getByText('Scanner un code-barres'));
+    await fireEvent.press(screen.getByLabelText('Scanner un code-barres'));
     await scan('5449000000996');
     expect(await screen.findByText('Source : Open Food Facts')).toBeTruthy();
     expect(screen.getByText('Coca-Cola')).toBeTruthy();
@@ -1023,7 +1041,7 @@ describe('the scan', () => {
 
   test('an unknown barcode leads to the form that creates the food, with the barcode, and the food keeps it', async () => {
     const { scan, foods } = await setup();
-    await fireEvent.press(screen.getByText('Scanner un code-barres'));
+    await fireEvent.press(screen.getByLabelText('Scanner un code-barres'));
     await scan('3017620422003');
     await fireEvent.press(await screen.findByText('Créer un aliment'));
     expect(screen.getByText('Code-barres : 3017620422003')).toBeTruthy();
@@ -1047,9 +1065,107 @@ describe('the scan', () => {
     await act(async () => {
       await foods.create({ ...bread, name: 'Mon yaourt', barcode: '3033710065967' });
     });
-    await fireEvent.press(screen.getByText('Scanner un code-barres'));
+    await fireEvent.press(screen.getByLabelText('Scanner un code-barres'));
     await scan('3033710065967');
     expect(await screen.findByText('Source : Mon aliment')).toBeTruthy();
     expect(asked).toEqual([]);
+  });
+});
+
+describe('the tabs', () => {
+  const starredList = (stars: { observe: (n: (l: { name: string }[]) => void, e: () => void) => () => void }) => {
+    let list: { name: string }[] = [];
+    stars.observe((next) => (list = next), () => {})();
+    return list;
+  };
+
+  test('are Tout, Favoris and Personnalisé, and the page opens on Tout with the search field', async () => {
+    await setup();
+    expect(screen.getAllByRole('tab').map((t) => t.props.accessibilityState.selected)).toEqual([true, false, false]);
+    expect(screen.getAllByText(/^(Tout|Favoris|Personnalisé)$/).map((t) => t.props.children)).toEqual(['Tout', 'Favoris', 'Personnalisé']);
+    expect(screen.getByLabelText('Rechercher un aliment')).toBeTruthy();
+  });
+
+  test('the scan icon sits next to the search field and opens the camera', async () => {
+    await setup();
+    await fireEvent.press(screen.getByLabelText('Scanner un code-barres'));
+    expect(screen.getByText('Caméra')).toBeTruthy();
+  });
+
+  test('Favoris says what to do while no food has a star', async () => {
+    await setup();
+    await fireEvent.press(screen.getByText('Favoris'));
+    expect(screen.getByText('Touche l’étoile sur la fiche d’un aliment pour le retrouver ici.')).toBeTruthy();
+  });
+
+  test('Favoris lists the foods with a star, and one opens its fiche', async () => {
+    const { stars } = await setup();
+    await act(async () => {
+      await stars.star({ ref: rawRice.ref, name: rawRice.name });
+    });
+    await fireEvent.press(screen.getByText('Favoris'));
+    await fireEvent.press(await screen.findByLabelText('Riz blanc, cru, favori'));
+    expect(await screen.findByText('Source : Ciqual (ANSES)')).toBeTruthy();
+    expect(screen.getByLabelText('Retirer des favoris')).toBeTruthy();
+  });
+
+  test('a food that is gone is said, not opened', async () => {
+    const { stars } = await setup();
+    await act(async () => {
+      await stars.star({ ref: { type: 'custom', id: 'disparu' }, name: 'Gâteau d’hier' });
+    });
+    await fireEvent.press(screen.getByText('Favoris'));
+    await fireEvent.press(await screen.findByLabelText('Gâteau d’hier, favori'));
+    expect(await screen.findByText('Cet aliment n’existe plus.')).toBeTruthy();
+  });
+
+  test('the star of a fiche puts the food in Favoris, and touching it again takes it out', async () => {
+    const { stars } = await setup();
+    await search('riz');
+    await fireEvent.press(await screen.findByText('Riz blanc, cru'));
+    await fireEvent.press(screen.getByLabelText('Mettre en favori'));
+    expect(screen.getByLabelText('Retirer des favoris')).toBeTruthy();
+    expect(starredList(stars).map((f) => f.name)).toEqual(['Riz blanc, cru']);
+
+    await fireEvent.press(screen.getByLabelText('Retirer des favoris'));
+    expect(screen.getByLabelText('Mettre en favori')).toBeTruthy();
+    expect(starredList(stars)).toEqual([]);
+  });
+
+  test('stay on the tab that was open when the user comes back from a fiche', async () => {
+    const { stars } = await setup();
+    await act(async () => {
+      await stars.star({ ref: rawRice.ref, name: rawRice.name });
+    });
+    await fireEvent.press(screen.getByText('Favoris'));
+    await fireEvent.press(await screen.findByLabelText('Riz blanc, cru, favori'));
+    await fireEvent.press(await screen.findByText('Retour'));
+    expect(screen.getAllByRole('tab').map((t) => t.props.accessibilityState.selected)).toEqual([false, true, false]);
+  });
+
+  test('the third tab offers the foods and the saved meals', async () => {
+    await setup();
+    await fireEvent.press(screen.getByText('Personnalisé'));
+    expect(screen.getByText('Créer un aliment')).toBeTruthy();
+    await fireEvent.press(screen.getByText('Repas'));
+    expect(screen.queryByText('Créer un aliment')).toBeNull();
+    expect(screen.getByText('Aucun repas enregistré. Dans le journal, touche « Enregistrer comme repas » sous un repas.')).toBeTruthy();
+  });
+
+  test('the star of a product of a brand makes it a food of the user, then stars it', async () => {
+    const cocaCola: OffProduct = {
+      code: '5449000000996', product_name_fr: 'Coca-Cola', brands: 'Coca-Cola Services', quantity: '330 ml',
+      nutriments: { 'energy-kcal_100g': 42.4, proteins_100g: 0, carbohydrates_100g: 10.6, fat_100g: 0 },
+    };
+    const { foods, stars } = await setup({ brandProducts: [cocaCola] });
+    await search('coca');
+    await fireEvent.press(await screen.findByText('Coca-Cola'));
+    await fireEvent.press(await screen.findByLabelText('Mettre en favori'));
+    expect(customFoods(foods)).toHaveLength(1);
+    expect(customFoods(foods)[0]).toMatchObject({ name: 'Coca-Cola', barcode: '5449000000996' });
+    expect(starredList(stars).map((f) => f.name)).toEqual(['Coca-Cola']);
+    // The fiche is now the food of the user: adding it uses it and makes no second one.
+    await fireEvent.press(screen.getByText('Ajouter à Déjeuner'));
+    await waitFor(() => expect(customFoods(foods)).toHaveLength(1));
   });
 });
