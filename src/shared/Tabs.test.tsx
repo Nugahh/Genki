@@ -49,3 +49,15 @@ test('each tab is at least 48 dp tall', async () => {
   await draw();
   for (const tab of screen.getAllByRole('tab')) expect(StyleSheet.flatten(tab.props.style).minHeight).toBeGreaterThanOrEqual(48);
 });
+
+test('the row is not one stop for a screen reader: each tab is', async () => {
+  await draw();
+  expect(screen.getByTestId('tabs').props.accessible).not.toBe(true);
+});
+
+test('a label stays on one line and shrinks rather than breaks at a large font', async () => {
+  await draw();
+  const label = screen.getByText('Personnalisé');
+  expect(label.props.numberOfLines).toBe(1);
+  expect(label.props.adjustsFontSizeToFit).toBe(true);
+});

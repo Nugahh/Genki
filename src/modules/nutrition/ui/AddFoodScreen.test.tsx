@@ -1143,6 +1143,17 @@ describe('the tabs', () => {
     expect(screen.getAllByRole('tab').map((t) => t.props.accessibilityState.selected)).toEqual([false, true, false]);
   });
 
+  test('« Annuler » forgets the barcode of a scan: the next food created is not given it', async () => {
+    const { scan } = await setup();
+    await fireEvent.press(screen.getByLabelText('Scanner un code-barres'));
+    await scan('3017620422003');
+    await fireEvent.press(await screen.findByText('Créer un aliment'));
+    expect(screen.getByText('Code-barres : 3017620422003')).toBeTruthy();
+    await fireEvent.press(screen.getByText('Annuler'));
+    await fireEvent.press(screen.getByText('Créer un aliment'));
+    expect(screen.queryByText(/Code-barres/)).toBeNull();
+  });
+
   test('the third tab offers the foods and the saved meals', async () => {
     await setup();
     await fireEvent.press(screen.getByText('Personnalisé'));
@@ -1152,12 +1163,42 @@ describe('the tabs', () => {
     expect(screen.getByText('Aucun repas enregistré. Dans le journal, touche « Enregistrer comme repas » sous un repas.')).toBeTruthy();
   });
 
+  test('deleting a food takes its star with it', async () => {
+    const { foods, stars } = await setup();
+    await act(async () => {
+      await foods.create(bread);
+    });
+    const food = customFoods(foods)[0];
+    await act(async () => {
+      await stars.star({ ref: food.ref, name: food.name });
+    });
+    await fireEvent.press(screen.getByText('Favoris'));
+    await fireEvent.press(await screen.findByLabelText('Pain maison, favori'));
+    await fireEvent.press(await screen.findByText('Supprimer l’aliment'));
+    await fireEvent.press(screen.getByText('Supprimer'));
+    expect(customFoods(foods)).toEqual([]);
+    expect(starredList(stars)).toEqual([]);
+  });
+
+  test('the star of a food that is gone can be taken off from the list', async () => {
+    const { stars } = await setup();
+    await act(async () => {
+      await stars.star({ ref: { type: 'custom', id: 'disparu' }, name: 'Gâteau d’hier' });
+    });
+    await fireEvent.press(screen.getByText('Favoris'));
+    await fireEvent.press(await screen.findByLabelText('Gâteau d’hier, favori'));
+    await fireEvent.press(await screen.findByText('Retirer Gâteau d’hier des favoris'));
+    expect(starredList(stars)).toEqual([]);
+    expect(screen.queryByText('Cet aliment n’existe plus.')).toBeNull();
+    expect(screen.getByText('Touche l’étoile sur la fiche d’un aliment pour le retrouver ici.')).toBeTruthy();
+  });
+
   test('the star of a product of a brand makes it a food of the user, then stars it', async () => {
     const cocaCola: OffProduct = {
       code: '5449000000996', product_name_fr: 'Coca-Cola', brands: 'Coca-Cola Services', quantity: '330 ml',
       nutriments: { 'energy-kcal_100g': 42.4, proteins_100g: 0, carbohydrates_100g: 10.6, fat_100g: 0 },
     };
-    const { foods, stars } = await setup({ brandProducts: [cocaCola] });
+    const { foods, stars, entries } = await setup({ brandProducts: [cocaCola] });
     await search('coca');
     await fireEvent.press(await screen.findByText('Coca-Cola'));
     await fireEvent.press(await screen.findByLabelText('Mettre en favori'));
@@ -1166,6 +1207,8 @@ describe('the tabs', () => {
     expect(starredList(stars).map((f) => f.name)).toEqual(['Coca-Cola']);
     // The fiche is now the food of the user: adding it uses it and makes no second one.
     await fireEvent.press(screen.getByText('Ajouter à Déjeuner'));
-    await waitFor(() => expect(customFoods(foods)).toHaveLength(1));
+    await waitFor(() => expect(entries.entries).toHaveLength(1));
+    expect(customFoods(foods)).toHaveLength(1);
+    expect(entries.entries[0].foodRef).toEqual(customFoods(foods)[0].ref);
   });
 });

@@ -76,7 +76,7 @@ export function DataScreen({ data, files }: Props) {
           Sauvegarde
         </Text>
         <Text variant="bodyMedium" style={{ color: colors.onSurfaceVariant }}>
-          Un fichier JSON avec tout ton compte, à garder sur Drive ou dans Fichiers. Il est fait pour restaurer un compte vide : l’importer remplace ton profil et les jours, aliments, favoris et programmes de mêmes identifiants.
+          Un fichier JSON avec tout ton compte, à garder sur Drive ou dans Fichiers. Il est fait pour restaurer un compte vide : l’importer remplace ton profil et les jours, aliments, repas, favoris et programmes de mêmes identifiants.
         </Text>
         <Button mode="contained-tonal" icon="export-variant" contentStyle={styles.button} disabled={busy !== null} loading={busy === 'export'} onPress={() => void exportAll()}>
           Exporter mes données

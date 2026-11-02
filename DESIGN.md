@@ -245,10 +245,10 @@ The palette was chosen on 2026-10-31, after the first critique found the Materia
 Ink blue on ivory paper: a restrained Material 3 scheme with warm neutrals, plus a traffic-light trio that exists only to read pace on the gauges.
 
 ### Primary
-- **Ink Blue** (rgb(38, 94, 167)): the ballpoint. Filled buttons (« Se connecter avec Google », « Ajouter à Déjeuner », « Enregistrer »), the labels of text buttons (Annuler, Enregistrer, « Enregistrer comme favori »), a focused field's label and underline. White (rgb(255, 255, 255)) is its on-color. Rare on a screen by construction, because most actions are tonal.
+- **Ink Blue** (rgb(38, 94, 167)): the ballpoint. Filled buttons (« Se connecter avec Google », « Ajouter à Déjeuner », « Enregistrer »), the labels of text buttons (Annuler, Enregistrer, « Enregistrer comme repas »), a focused field's label and underline. White (rgb(255, 255, 255)) is its on-color. Rare on a screen by construction, because most actions are tonal.
 
 ### Secondary
-- **Ink Tint** (rgb(217, 227, 248)) with **Ink Tint Text** (rgb(18, 28, 43)): the working surface of actions and selection. Every « +250 ml », « + Repas » and « Ajouter » button, the pill under the open tab, the chosen segment of the add-food switch, the « cru » / « cuit » chip.
+- **Ink Tint** (rgb(217, 227, 248)) with **Ink Tint Text** (rgb(18, 28, 43)): the working surface of actions and selection. Every « +250 ml », « + Repas » and « Ajouter » button, the pill under the open tab, the chosen segment of a switch, the « cru » / « cuit » chip.
 
 ### Neutral
 - **Ink** (rgb(29, 27, 23)): primary text, and the gauge tick.
@@ -323,7 +323,7 @@ Ink blue on ivory paper: a restrained Material 3 scheme with warm neutrals, plus
 
 One column per screen on a phone in portrait. Screens use a 16 dp gutter and a 16 dp gap between blocks; inside a card the padding is 16 dp and the gap 8 dp; a gauge's touch area pads 12 dp with 4 dp between its rows; a form's fields stack with a 12 dp gap and wrapping rows of buttons or chips use 8 dp. The sign-in screen centers its content with 24 dp padding. There are no breakpoints and no tablet layout; the reference width is 360 dp.
 
-Today splits into two groups. The upper region scrolls: a greeting (« Bonjour » until 18 h, « Bonsoir » after, then the first name from the Google account) with one sentence on what is left of the water and protein goals (or a bravo when they are reached; calories wait for the goal modes), then the gauge cards, then, with a programme in progress, the « Séance du jour » card (a dumbbell on a disc, the session name, its phase and week, and a tonal « Démarrer »). Below them, outside the scroll, the action bar holds the water amounts and « + Repas » on one row (wrapping to two on a narrow phone or a large font); a take-back snackbar rests on the bar's top edge. The add-food screen opens as a modal with the header « Ajouter un aliment » and a bottom inset, and its four modes sit in two rows of two.
+Today splits into two groups. The upper region scrolls: a greeting (« Bonjour » until 18 h, « Bonsoir » after, then the first name from the Google account) with one sentence on what is left of the water and protein goals (or a bravo when they are reached; calories wait for the goal modes), then the gauge cards, then, with a programme in progress, the « Séance du jour » card (a dumbbell on a disc, the session name, its phase and week, and a tonal « Démarrer »). Below them, outside the scroll, the action bar holds the water amounts and « + Repas » on one row (wrapping to two on a narrow phone or a large font); a take-back snackbar rests on the bar's top edge. The add-food screen opens as a modal with the header « Ajouter un aliment » and a bottom inset, and its three tabs (Tout, Favoris, Personnalisé) sit under the header.
 
 Sport lists the programme in progress as cards, one per session of the phase (the next one marked « Prochaine », each with a tonal « Démarrer »), then « Modifier le programme », « Repartir du modèle » and the milestones. A workout is one column of exercises, each with its last result and one row per set (load and reps, prefilled), a rest timer under the thumb (« Repos 1:30 », « Passer ») and a summary at the end; leaving it asks « Abandonner la séance ? ». The editor opens an exercise in a form, and an exercise opens its history.
 
@@ -355,7 +355,7 @@ Standard Paper components, restrained: a tonal button, a soft card, a flat field
 - **Tonal (default):** Ink Tint fill, Ink Tint Text label, an optional leading icon: a glass on « +250 ml » and « +500 ml », a fork and knife on « + Repas », a plus on « Ajouter » of each meal.
 - **Filled:** Ink Blue fill, white label. Only a screen's committing action: « Se connecter avec Google » (with a loading state), « Ajouter à {repas} » on a fiche, « Enregistrer » on the custom-food form.
 - **Outlined:** Pencil border, blue label. Secondary actions on a custom food's fiche (« Modifier l'aliment », « Supprimer l'aliment »).
-- **Text:** blue label, no container. Dialog actions, « Retour », « Enregistrer comme favori » (star-outline).
+- **Text:** blue label, no container. Dialog actions, « Retour », « Enregistrer comme repas » (star-outline).
 - **Disabled:** Paper's disabled colors (a faded fill and label); a filled button stays disabled until the quantity or the form is valid.
 
 ### Gauge (signature component)
@@ -374,7 +374,7 @@ Standard Paper components, restrained: a tonal button, a soft card, a flat field
 - **Corner Style:** 12 dp.
 - **Background:** Paper Card (Paper surface level 1); see Elevation & Depth.
 - **Border:** none.
-- **Internal Padding:** 16 dp, 8 dp gap. A meal card holds a header row (heading and kcal at the left, a tonal « Ajouter » at the right), the entries as list items with a chevron-right and « {grams} g · {kcal} kcal » as the secondary line, the empty line « Rien pour l'instant. », and a text button to save the meal as a favorite.
+- **Internal Padding:** 16 dp, 8 dp gap. A meal card holds a header row (heading and kcal at the left, a tonal « Ajouter » at the right), the entries as list items with a chevron-right and « {grams} g · {kcal} kcal » as the secondary line, the empty line « Rien pour l'instant. », and a text button to save the meal as a saved meal.
 
 ### Inputs / Fields
 - **Style:** Paper's flat text field: Sand fill, 4 dp top corners, a floating French label (« Quantité (g) », « Rechercher un aliment », « Nom »), numeric keyboard for quantities.
@@ -390,7 +390,7 @@ Standard Paper components, restrained: a tonal button, a soft card, a flat field
 - **Style:** a switch of two to four choices that change a value (the four Suivi periods, the group of a meal, Cru / Cuit / Autre), in rows of two, Pencil borders and 20 dp outer corners. The chosen segment takes Ink Tint and a check, so it is not told by its tint alone. Views of one list (the add-food page) are tabs, not a switch. The four Suivi periods (Jour, Semaine, Mois, Année) follow the same two rows of two, since « Semaine » and the check do not fit four in a row on a 360 dp phone. The Cru / Cuit / Autre switch of the custom-food form is one row of three with the same check.
 
 ### Dialogs and sheet
-- **Dialog:** Paper Dialog level 3, 28 dp corners, Headline Small title, text-button actions at the bottom right. For decisions that must interrupt: changing a journal line, naming a favorite, and confirming a delete that cannot be undone (« Supprimer {nom} du journal ? », « Supprimer l'aliment {nom} ? », « Supprimer le favori {nom} ? »), each with the same « Annuler » and « Supprimer ».
+- **Dialog:** Paper Dialog level 3, 28 dp corners, Headline Small title, text-button actions at the bottom right. For decisions that must interrupt: changing a journal line, naming a saved meal, and confirming a delete that cannot be undone (« Supprimer {nom} du journal ? », « Supprimer l'aliment {nom} ? », « Supprimer le repas {nom} ? »), each with the same « Annuler » and « Supprimer ».
 - **Water amount:** « Quantité d'eau », a small dialog with one numeric field in ml (above 0, up to 5 000, comma or point) and « Annuler » / « Ajouter ». It opens from the Eau gauge and replaces the former sheet of the day's glasses, which returns in Suivi (M4).
 
 ### Snackbar

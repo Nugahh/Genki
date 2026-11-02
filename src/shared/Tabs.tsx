@@ -21,7 +21,8 @@ export function Tabs({ tabs, value, onChange }: Props) {
         return (
           <TouchableRipple key={key} accessibilityRole="tab" accessibilityState={{ selected }} style={styles.tab} onPress={() => onChange(key)}>
             <View style={styles.content}>
-              <Text variant="labelLarge" style={{ color: selected ? colors.onSurface : colors.onSurfaceVariant }}>
+              {/* One line that shrinks to fit: « Personnalisé » is 83 dp at the normal size and does not fit a third of 360 dp at 1.3× or more. */}
+              <Text variant="labelLarge" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75} style={[styles.label, { color: selected ? colors.onSurface : colors.onSurfaceVariant }]}>
                 {label}
               </Text>
               <View testID={`tab-indicator-${key}`} style={[styles.line, { backgroundColor: selected ? colors.onSurface : 'transparent' }]} />
@@ -36,6 +37,8 @@ export function Tabs({ tabs, value, onChange }: Props) {
 const styles = StyleSheet.create({
   row: { flexDirection: 'row' },
   tab: { flex: 1, minHeight: 48 },
-  content: { minHeight: 48, alignItems: 'center', justifyContent: 'center' },
+  // The whole tab, so that the line stays on the bottom of the row whatever its neighbours do.
+  content: { flex: 1, minHeight: 48, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 8 },
+  label: { textAlign: 'center' },
   line: { position: 'absolute', left: 8, right: 8, bottom: 0, height: 3, borderTopLeftRadius: 3, borderTopRightRadius: 3 },
 });

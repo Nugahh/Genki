@@ -47,10 +47,11 @@ export function FoodDetail({ food: chosen, grams: last, meal, meals, foods, star
   const [food, setFood] = useState<Food | FoodInput>(chosen);
   // The food of the user it is, once it has a reference.
   const owned = 'ref' in food ? food : undefined;
-  const [starred, setStarred] = useState<StarredFood[]>([]);
+  // null until the first list arrives: the star is not offered before it knows whether the food has one.
+  const [starred, setStarred] = useState<StarredFood[] | null>(null);
   // Listener errors show on the SyncIcon, which watches the same user's data.
   useEffect(() => stars.observe(setStarred, () => {}), [stars]);
-  const isStarred = owned ? stars.isStarred(starred, owned.ref) : false;
+  const isStarred = owned && starred ? stars.isStarred(starred, owned.ref) : false;
   const toggleStar = () => {
     if (owned) return run(() => (isStarred ? stars.unstar(owned.ref) : stars.star({ ref: owned.ref, name: owned.name })));
     // A product of a brand is starred as a food of the user's: it becomes one first (and then it is the food of the fiche).
@@ -106,6 +107,7 @@ export function FoodDetail({ food: chosen, grams: last, meal, meals, foods, star
         action={
           <IconButton
             icon={isStarred ? 'star' : 'star-outline'}
+            disabled={starred === null}
             style={styles.star}
             accessibilityLabel={isStarred ? 'Retirer des favoris' : 'Mettre en favori'}
             onPress={toggleStar}
@@ -160,7 +162,10 @@ export function FoodDetail({ food: chosen, grams: last, meal, meals, foods, star
           onCancel={() => setRemoving(false)}
           onConfirm={() => {
             if (!owned) return;
-            run(() => foods.remove(owned.ref.id));
+            // Its star goes with it: a star of a food that is gone could not be opened, nor taken off.
+            run(async () => {
+              await Promise.all([foods.remove(owned.ref.id), stars.unstar(owned.ref)]);
+            });
             onRemoved();
           }}
         />

@@ -85,7 +85,7 @@ export function PortionSheet(props: Props) {
           {name}
         </Text>
         {badge}
-        {action}
+        {action && <View style={styles.action}>{action}</View>}
       </View>
       <Text variant="bodyMedium">{`Source : ${source}`}</Text>
       <View style={styles.chips}>
@@ -124,7 +124,8 @@ export function PortionSheet(props: Props) {
 const styles = StyleSheet.create({
   sheet: { gap: 12 },
   title: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  name: { flexShrink: 1, flex: 1 },
+  name: { flexShrink: 1 },
+  action: { marginLeft: 'auto' },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   button: { minHeight: 48 },
 });

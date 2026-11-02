@@ -35,6 +35,7 @@ async function seedAccount() {
     await put('users/alice/foodEntries/e1', { day: '2026-11-02', meal: 'lunch', foodRef: { type: 'ciqual', id: '9100' }, foodName: 'Riz blanc, cru', grams: 100, macros, createdAt: at('2026-11-02T12:00:00Z'), updatedAt: at('2026-11-02T12:00:00Z'), deletedAt: null });
     await put('users/alice/foods/f1', { name: 'Pain maison', state: 'other', per100g: { kcal: 250, protein: 8, carbs: 48, fat: 2 }, portions: [{ label: '1 tranche', grams: 30 }], updatedAt: at('2026-11-01T10:00:00Z'), deletedAt: null });
     await put('users/alice/favoriteMeals/m1', { name: 'Déjeuner habituel', items: [{ foodRef: { type: 'ciqual', id: '9100' }, foodName: 'Riz blanc, cru', grams: 150 }], updatedAt: at('2026-11-01T10:00:00Z') });
+    await put('users/alice/starredFoods/ciqual_9100', { foodRef: { type: 'ciqual', id: '9100' }, foodName: 'Riz blanc, cru', updatedAt: at('2026-11-01T11:00:00Z') });
     await put('users/alice/plans/p1', { name: 'Reprise', active: true, startDay: '2026-11-02', phases: [{ name: 'Phase 1', weeks: 4, sessions: [{ name: 'A', exercises: [{ exerciseId: 'squat', name: 'Squat', sets: 3, reps: 8, incrementKg: 2.5 }] }] }], updatedAt: at('2026-11-01T10:00:00Z') });
     await put('users/alice/workoutLogs/l1', { day: '2026-11-02', planId: 'p1', sessionName: 'A', exerciseIds: ['squat'], sets: [{ exerciseId: 'squat', setNo: 1, reps: 8, kg: 20 }], durationMin: 45, createdAt: at('2026-11-02T18:00:00Z'), deletedAt: null });
     await put('users/alice/milestones/ms1', { metric: 'waistCm', target: 90, direction: 'down', label: 'Tour de taille sous 90 cm', achievedAt: at('2026-11-02T10:00:00Z') });
@@ -49,7 +50,7 @@ test('an export restores into an empty account: the rules accept every document,
   await env.clearFirestore();
 
   const result = await dataOn(phone()).importBackup(text);
-  expect(result).toEqual({ written: 11, failed: 0, firstError: undefined }); // the profile and 10 documents (a glass was taken back)
+  expect(result).toEqual({ written: 12, failed: 0, firstError: undefined }); // the profile and 11 documents (a glass was taken back)
 
   const read = async (path: string) => (await getDoc(doc(phone(), path))).data();
   expect(await read('users/alice')).toMatchObject({ heightCm: 180, goalMode: 'deficit', goals: { kcal: 2000 }, quitDate: '2026-10-01', ui: { period: 'year' } });
@@ -61,6 +62,7 @@ test('an export restores into an empty account: the rules accept every document,
   expect((await read('users/alice/milestones/ms2'))?.achievedAt).toBeUndefined();
   expect(await read('users/alice/workoutLogs/l1')).toMatchObject({ durationMin: 45 });
   expect(await read('users/alice/cravings/c1')).toMatchObject({ resisted: false });
+  expect(await read('users/alice/starredFoods/ciqual_9100')).toMatchObject({ foodRef: { type: 'ciqual', id: '9100' }, foodName: 'Riz blanc, cru' });
   expect((await read('users/alice/foodEntries/e1'))?.macros).toEqual({ kcal: 350, protein: 7, carbs: 78, fat: 0.6 });
 });
 
@@ -73,8 +75,8 @@ test('a second restore into the same account fails on what is immutable, and say
   // Each collection is a batch of its own, so the others still go through.
   expect(result.failed).toBeGreaterThan(0);
   expect(result.written).toBeGreaterThan(0);
-  // The profile and 10 documents, and the date of the milestone (refused: it was already set) counted as one more failure.
-  expect(result.written + result.failed).toBe(12);
+  // The profile and 11 documents, and the date of the milestone (refused: it was already set) counted as one more failure.
+  expect(result.written + result.failed).toBe(13);
   expect(result.firstError).toEqual(expect.stringMatching(/\S/));
 });
 

@@ -87,7 +87,7 @@ export function mealUseCases(deps: { entries: FoodEntryRepository; favorites: Fa
       return favorites.observeAll((list) => onNext([...list].sort(byName)), onError);
     },
     async saveFavorite(name: string, list: FoodEntry[]) {
-      if (name.trim() === '' || list.length < 1 || list.length > 50) throw new Error('Un favori a un nom et 1 à 50 aliments.');
+      if (name.trim() === '' || list.length < 1 || list.length > 50) throw new Error('Un repas enregistré a un nom et 1 à 50 aliments.');
       return favorites.create({ name: name.trim(), items: list.map(({ foodRef, foodName, grams }) => ({ foodRef, foodName, grams })) });
     },
     async removeFavorite(id: string) {

@@ -24,7 +24,7 @@ function setup(now = '2026-10-24T09:00:00Z') {
 const sameTime = (entry: FoodEntry, grams: number) => ({ grams, meal: entry.meal, at: entry.createdAt });
 const latest = (entries: { entries: FoodEntry[] }) => entries.entries[entries.entries.length - 1];
 const BAD_GRAMS = 'La quantité doit être comprise entre 0 et 5 000 g.';
-const BAD_FAVORITE = 'Un favori a un nom et 1 à 50 aliments.';
+const BAD_FAVORITE = 'Un repas enregistré a un nom et 1 à 50 aliments.';
 
 test('logFood freezes the macros of the quantity and uses the profile-zone day', async () => {
   const { entries, meals } = setup('2026-10-24T22:10:00Z'); // 00:10 in Paris, already the 25th

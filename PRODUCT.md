@@ -30,7 +30,7 @@ A private, offline-first tracker built around one person's own programme and the
 ## Operating Context
 
 - The gym, with poor or no network, one hand free, the phone used between sets.
-- The kitchen and the table, to log meals from the Ciqual table with raw and cooked foods, portions, custom foods and favourite meals, or from a product of a brand found by name or by scanning its barcode (Open Food Facts, which needs the network the first time). A meal can be logged at another time or day than now.
+- The kitchen and the table, to log meals from the Ciqual table with raw and cooked foods, portions, custom foods, foods marked with a star and saved meals, or from a product of a brand found by name or by scanning its barcode (Open Food Facts, which needs the network the first time). A meal can be logged at another time or day than now.
 - Steps come from the phone or a Fitbit through Android Health Connect.
 - Data lives in Cloud Firestore in the Paris region (Firebase Spark plan, Google sign-in); the food table ships inside the app. The only other service the app talks to is Open Food Facts: only the text searched or the barcode scanned leaves the phone, with nothing that identifies the account.
 
@@ -41,7 +41,7 @@ A private, offline-first tracker built around one person's own programme and the
 - Offline-first with automatic sync between two phones. No backend and no REST API of its own. One developer; running cost must stay at zero.
 - Health data is private by default and kept in a European region. The app gives no medical advice: it shows a reminder to consult a professional before changing diet or resuming intense activity. Safety floors are domain constants that cannot be edited from the interface: at least 1,500 kcal per day proposed, at most 1% of body weight lost per week.
 - Scope in the app: water and the Today screen; food (Ciqual, products of brands, barcode scan, 26 micronutrients against the ANSES references of the profile, macro goals with net carbs, a day and time for each meal); the training programme with progression and milestones; a stats hub over a day, week, month or year with configurable metrics; steps; tobacco; body measures; settings with a JSON export and import. The iPhone version is on its own branch and is not merged.
-- Planned next: tabs on the add-food page (all, favourites, custom), supplements and recipes among the custom foods.
+- Planned next: supplements (micronutrients in the custom food form) and recipes among the custom foods.
 - Out of scope: a parkour-style skill tree, an LLM assistant, friends and multi-user, Google Health API, readings from a connected scale, reading QR codes.
 
 ## Brand Commitments

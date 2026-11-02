@@ -169,7 +169,7 @@ export function AddFoodScreen({ meal, meals, foods, stars, products, camera, pro
               onScan={() => setScanning(true)}
             />
           )}
-          {tab === 'starred' && <StarredList stars={stars} foods={foods} custom={custom} onPick={(food) => setSelected({ food })} />}
+          {tab === 'starred' && <StarredList stars={stars} foods={foods} custom={custom} onPick={(food) => setSelected({ food })} run={run} />}
           {tab === 'custom' && (
             <>
               <View style={styles.kinds}>
@@ -184,7 +184,14 @@ export function AddFoodScreen({ meal, meals, foods, stars, products, camera, pro
               {kind === 'foods' && creating && (
                 <>
                   <FoodForm submitLabel="Enregistrer" barcode={scanned} onSubmit={create} />
-                  <Button contentStyle={styles.scan} onPress={() => setCreating(false)}>
+                  <Button
+                    contentStyle={styles.scan}
+                    onPress={() => {
+                      setCreating(false);
+                      // The code of a scan belongs to the food that scan was creating, not to the next one.
+                      setScanned(undefined);
+                    }}
+                  >
                     Annuler
                   </Button>
                 </>
