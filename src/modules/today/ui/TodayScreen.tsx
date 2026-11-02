@@ -33,20 +33,18 @@ type Props = {
 };
 
 const NO_TOTALS: DayTotals = { waterMl: 0, kcal: 0, proteinG: 0, carbsG: 0, fatG: 0, steps: 0 };
-const steps = (n: number) => `${fr(n, 0)} pas`;
 const STEPS_SOURCE: Record<string, string> = { fitbit: 'Fitbit', phone: 'Ce téléphone' };
 const fr = (n: number, maximumFractionDigits: number) => n.toLocaleString('fr-FR', { maximumFractionDigits });
-const liters = (ml: number) => `${fr(ml / 1000, 2)} L`;
-const kcal = (n: number) => `${fr(n, 0)} kcal`;
-const grams = (n: number) => `${fr(n, 1)} g`;
-/** What is left of a goal: a gauge is never read from the goal alone. */
-const remaining = (value: number, goal: number, format: (n: number) => string) => (value < goal ? `reste ${format(goal - value)}` : 'objectif atteint');
+// The figures of a gauge, without their unit (the gauge shows it once, after the goal); the sentences above add theirs.
+const litres = (ml: number) => fr(ml / 1000, 2);
+const kcal = (n: number) => fr(n, 0);
+const grams = (n: number) => fr(n, 1);
 /** What is left of the water and protein goals, in a sentence: calories wait for the goal modes (spec §9). */
 function encouragement(totals: DayTotals, goals: Profile['goals']) {
   const water = totals.waterMl >= goals.waterMl;
   const protein = totals.proteinG >= goals.proteinG;
-  const waterLeft = `${liters(goals.waterMl - totals.waterMl)} d’eau`;
-  const proteinLeft = `${grams(goals.proteinG - totals.proteinG)} de protéines`;
+  const waterLeft = `${litres(goals.waterMl - totals.waterMl)} L d’eau`;
+  const proteinLeft = `${grams(goals.proteinG - totals.proteinG)} g de protéines`;
   if (water && protein) return 'Objectifs d’eau et de protéines atteints, bravo !';
   if (water) return `Objectif d’eau atteint, bravo ! Encore ${proteinLeft}.`;
   if (protein) return `Objectif de protéines atteint, bravo ! Encore ${waterLeft}.`;
@@ -106,9 +104,9 @@ export function TodayScreen({ profile, userName, clock, dayTotals, hydration, ru
           <GaugeBar
             label="Eau"
             metric="water"
-            value={liters(totals.waterMl)}
-            goal={liters(goals.waterMl)}
-            remaining={remaining(totals.waterMl, goals.waterMl, liters)}
+            value={litres(totals.waterMl)}
+            goal={litres(goals.waterMl)}
+            unit="L"
             hint="Ajoute une quantité d’eau de ton choix"
             progress={progress(totals.waterMl, goals.waterMl)}
             expected={expected}
@@ -121,7 +119,7 @@ export function TodayScreen({ profile, userName, clock, dayTotals, hydration, ru
             metric="calories"
             value={kcal(totals.kcal)}
             goal={kcal(goals.kcal)}
-            remaining={overGoal ? 'au-dessus de l’objectif' : remaining(totals.kcal, goals.kcal, kcal)}
+            unit="kcal"
             hint="Ouvre le suivi des calories"
             progress={progress(totals.kcal, goals.kcal)}
             expected={expected}
@@ -135,7 +133,7 @@ export function TodayScreen({ profile, userName, clock, dayTotals, hydration, ru
             metric="protein"
             value={grams(totals.proteinG)}
             goal={grams(goals.proteinG)}
-            remaining={remaining(totals.proteinG, goals.proteinG, grams)}
+            unit="g"
             hint="Ouvre le suivi des protéines"
             progress={progress(totals.proteinG, goals.proteinG)}
             expected={expected}
@@ -146,9 +144,8 @@ export function TodayScreen({ profile, userName, clock, dayTotals, hydration, ru
           <GaugeBar
             label="Pas"
             metric="steps"
-            value={steps(totals.steps)}
-            goal={steps(goals.steps)}
-            remaining={remaining(totals.steps, goals.steps, steps)}
+            value={fr(totals.steps, 0)}
+            goal={fr(goals.steps, 0)}
             note={stepsNote}
             hint="Ouvre le suivi des pas"
             progress={progress(totals.steps, goals.steps)}

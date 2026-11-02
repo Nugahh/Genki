@@ -1,6 +1,6 @@
-import { Animated, StyleSheet, View } from 'react-native';
+import { StyleSheet } from 'react-native';
 import { Icon, Surface, Text, TouchableRipple, useTheme } from 'react-native-paper';
-import { useFillAnimation } from '@/shared/useFillAnimation';
+import { GaugeRow } from '@/shared/GaugeRow';
 import type { AppTheme } from '@/theme';
 import type { GaugeColor } from '../domain/gauge';
 
@@ -9,22 +9,22 @@ const METRIC_ICON = { water: 'water', calories: 'fire', protein: 'arm-flex', ste
 
 type Props = {
   label: string;
-  /** The day so far, with its unit, e.g. "1,25 L": the number the screen is read for. */
+  /** The day so far, without its unit, e.g. "1,25". */
   value: string;
-  /** The goal, with its unit, e.g. "2,5 L". */
+  /** The goal, without its unit, e.g. "2,5". */
   goal: string;
-  /** What is left of the goal, or that it is reached or passed, e.g. "reste 1,25 L". */
-  remaining: string;
-  /** Progress toward the goal; drawn full from 1. */
+  /** The unit, shown once after the goal ("L", "kcal", "g"); none when the label says it (the steps). */
+  unit?: string;
+  /** Progress toward the goal, from 0; the bar is full from 1 and the percentage says how far past it. */
   progress: number;
   /** Where the user should be by now, from 0 to 1. */
   expected: number;
   color: GaugeColor;
-  /** What is measured: its icon (a drop, a flame, a flexed arm) wears the label, on a disc of its own tint. */
+  /** What is measured: its icon (a drop, a flame, a flexed arm) wears the title, on a disc of its own tint. */
   metric: keyof typeof METRIC_ICON;
   /** What a touch does, read by TalkBack after the label: the icon alone says it to the eye. */
   hint: string;
-  /** A line under the goal: where the number comes from, when it was last read. */
+  /** A line under the bar: where the number comes from, when it was last read. */
   note?: string;
   /** What the color means, read by TalkBack: the pace wording unless the gauge has something else to say. */
   status?: string;
@@ -33,43 +33,35 @@ type Props = {
   onPress: () => void;
 };
 
-export function GaugeBar({ label, value, goal, remaining, hint, metric, progress, expected, color, status = PACE[color], note, icon, onPress }: Props) {
+/** A measure of the day against its goal, as a soft card that can be pressed: the layout of every gauge of the app, with a pace on the bar. */
+export function GaugeBar({ label, value, goal, unit, hint, metric, progress, expected, color, status = PACE[color], note, icon, onPress }: Props) {
   const { colors } = useTheme<AppTheme>();
-  const fill = useFillAnimation(progress);
-  const tint = colors.metric[metric];
+  const figures = `${value} / ${goal}${unit ? ` ${unit}` : ''}`;
   return (
     <Surface mode="flat" elevation={1} style={styles.card}>
       <TouchableRipple
         onPress={onPress}
         accessibilityRole="button"
-        accessibilityLabel={`${label} : ${value}, sur ${goal}, ${remaining}${note ? `, ${note}` : ''}`}
+        accessibilityLabel={`${label} : ${value} sur ${goal}${unit ? ` ${unit}` : ''}, ${Math.round(progress * 100)} %${note ? `, ${note}` : ''}`}
         accessibilityHint={hint}
         accessibilityValue={{ text: status }}
         style={styles.touch}
       >
-        <View style={styles.content}>
-          <View style={styles.row}>
-            <View style={styles.title}>
-              <View style={[styles.badge, { backgroundColor: tint.container }]}>
-                <Icon source={METRIC_ICON[metric]} size={20} color={tint.on} />
-              </View>
-              <Text variant="labelLarge" style={[styles.label, { color: colors.onSurfaceVariant }]}>{label}</Text>
-            </View>
-            <Icon source={icon} size={24} />
-          </View>
-          <Text variant="headlineSmall" style={styles.value}>{value}</Text>
-          <View style={[styles.track, { backgroundColor: colors.surfaceVariant }]}>
-            <Animated.View style={[styles.fill, { width: fill.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] }), backgroundColor: colors.pace[color] }]} />
-            {/* Pulled back by its 2 dp width as it nears 100 %, or the track's overflow would clip it. */}
-            <View style={[styles.marker, { backgroundColor: colors.onSurface, left: `${expected * 100}%`, marginLeft: -2 * expected }]} />
-          </View>
-          <Text variant="bodyMedium" style={{ color: colors.onSurfaceVariant }}>{`sur ${goal} · ${remaining}`}</Text>
+        <GaugeRow
+          icon={METRIC_ICON[metric]}
+          tint={colors.metric[metric]}
+          title={`${label} – ${figures}`}
+          progress={progress}
+          fillColor={colors.pace[color]}
+          marker={expected}
+          trailing={<Icon source={icon} size={24} />}
+        >
           {note && (
             <Text variant="bodySmall" style={{ color: colors.onSurfaceVariant }}>
               {note}
             </Text>
           )}
-        </View>
+        </GaugeRow>
       </TouchableRipple>
     </Surface>
   );
@@ -79,14 +71,4 @@ const styles = StyleSheet.create({
   card: { borderRadius: 16 },
   // A soft card: the ripple is clipped to its corners here, since a Surface with overflow hidden loses its shadow.
   touch: { minHeight: 48, padding: 16, borderRadius: 16, overflow: 'hidden' },
-  content: { gap: 4 },
-  row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
-  title: { flexDirection: 'row', alignItems: 'center', gap: 8, flexShrink: 1 },
-  badge: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
-  label: { flexShrink: 1 },
-  // Tabular figures: the digits do not shift as the day's total grows.
-  value: { fontVariant: ['tabular-nums'] },
-  track: { height: 12, borderRadius: 6, marginVertical: 4, overflow: 'hidden' },
-  fill: { height: '100%' },
-  marker: { position: 'absolute', top: 0, bottom: 0, width: 2 },
 });

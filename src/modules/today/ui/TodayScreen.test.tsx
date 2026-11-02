@@ -52,9 +52,9 @@ async function renderToday({ kcal = 0, proteinG = 0, waterMl = 0, steps = 0, ste
 
 test('a quick-add button fills the water gauge', async () => {
   await renderToday();
-  expect(screen.getByLabelText('Eau : 0 L, sur 2,5 L, reste 2,5 L')).toHaveAccessibilityValue({ text: 'en retard' });
+  expect(screen.getByLabelText('Eau : 0 sur 2,5 L, 0 %')).toHaveAccessibilityValue({ text: 'en retard' });
   await fireEvent.press(screen.getByText('+500 ml'));
-  expect(screen.getByLabelText('Eau : 0,5 L, sur 2,5 L, reste 2 L')).toBeTruthy();
+  expect(screen.getByLabelText('Eau : 0,5 sur 2,5 L, 20 %')).toBeTruthy();
 });
 
 test('the quick-add buttons stay outside the scrolling gauges, under the thumb whatever the day holds', async () => {
@@ -114,11 +114,11 @@ test('a quick add offers to take the glass back, and « Annuler » does', async 
   const { water } = await renderToday();
   await fireEvent.press(screen.getByText('+250 ml'));
   expect(screen.getByText('+250 ml ajoutés')).toBeTruthy();
-  expect(screen.getByLabelText('Eau : 0,25 L, sur 2,5 L, reste 2,25 L')).toBeTruthy();
+  expect(screen.getByLabelText('Eau : 0,25 sur 2,5 L, 10 %')).toBeTruthy();
 
   await fireEvent.press(screen.getByText('Annuler'));
   expect(water.entries).toEqual([]);
-  expect(screen.getByLabelText('Eau : 0 L, sur 2,5 L, reste 2,5 L')).toBeTruthy();
+  expect(screen.getByLabelText('Eau : 0 sur 2,5 L, 0 %')).toBeTruthy();
   expect(screen.queryByText('+250 ml ajoutés')).toBeNull();
 });
 
@@ -140,7 +140,7 @@ test('the water gauge opens a small box to type any quantity of water, and addin
   await fireEvent.changeText(screen.getByLabelText('Quantité (ml)'), '330');
   await fireEvent.press(screen.getByText('Ajouter'));
   expect(water.entries.map((e) => e.ml)).toEqual([330]);
-  expect(screen.getByLabelText('Eau : 0,33 L, sur 2,5 L, reste 2,17 L')).toBeTruthy();
+  expect(screen.getByLabelText('Eau : 0,33 sur 2,5 L, 13 %')).toBeTruthy();
   expect(screen.queryByText('Quantité d’eau')).toBeNull();
   // The glass can be taken back, as after a quick add.
   expect(screen.getByText('+330 ml ajoutés')).toBeTruthy();
@@ -173,8 +173,8 @@ test('« Annuler » closes the box and keeps what was typed out of the day', asy
 
 test('the Calories and Protéines gauges show the day against the goals', async () => {
   await renderToday({ kcal: 1500, proteinG: 52.3 });
-  expect(screen.getByLabelText(`Calories : ${fr(1500)} kcal, sur ${fr(2200)} kcal, reste ${fr(700)} kcal`)).toBeTruthy();
-  expect(screen.getByLabelText(`Protéines : ${fr(52.3)} g, sur ${fr(130)} g, reste ${fr(77.7)} g`)).toBeTruthy();
+  expect(screen.getByLabelText(`Calories : ${fr(1500)} sur ${fr(2200)} kcal, 68 %`)).toBeTruthy();
+  expect(screen.getByLabelText(`Protéines : ${fr(52.3)} sur ${fr(130)} g, 40 %`)).toBeTruthy();
 });
 
 test('each gauge tells a screen reader what a touch does', async () => {
@@ -184,17 +184,26 @@ test('each gauge tells a screen reader what a touch does', async () => {
   expect(screen.getByLabelText(/^Protéines : /).props.accessibilityHint).toBe('Ouvre le suivi des protéines');
 });
 
-test('a gauge shows the day in big, and beneath it the goal and what is left of it', async () => {
+test('a gauge reads « Nom – valeur / objectif unité », with the percentage at the right of that line', async () => {
   await renderToday({ kcal: 1500, proteinG: 52.3 });
-  expect(screen.getByText(`${fr(1500)} kcal`)).toBeTruthy();
-  expect(screen.getByText(`sur ${fr(2200)} kcal · reste ${fr(700)} kcal`)).toBeTruthy();
-  expect(screen.getByText('sur 2,5 L · reste 2,5 L')).toBeTruthy();
+  const calories = within(screen.getAllByTestId('gauge-head')[1]);
+  expect(calories.getByText(`Calories – ${fr(1500)} / ${fr(2200)} kcal`)).toBeTruthy();
+  expect(calories.getByText('68 %')).toBeTruthy();
+  expect(screen.getByText('Eau – 0 / 2,5 L')).toBeTruthy();
 });
 
-test('a gauge at its goal says so instead of a remainder, and Calories above it says that', async () => {
+test('no gauge says what is left of its goal', async () => {
+  await renderToday({ kcal: 1500, proteinG: 130, steps: 3000 });
+  expect(screen.queryByText(/reste/i)).toBeNull();
+  expect(screen.queryByText(/objectif atteint/i)).toBeNull();
+});
+
+test('a gauge at its goal reads 100 %, and Calories above it reads how far and says it is above', async () => {
   await renderToday({ kcal: 2400, proteinG: 130 });
-  expect(screen.getByText(`sur ${fr(130)} g · objectif atteint`)).toBeTruthy();
-  expect(screen.getByText(`sur ${fr(2200)} kcal · au-dessus de l’objectif`)).toBeTruthy();
+  expect(screen.getByText(`Protéines – ${fr(130)} / ${fr(130)} g`)).toBeTruthy();
+  expect(within(screen.getAllByTestId('gauge-head')[2]).getByText('100 %')).toBeTruthy();
+  expect(within(screen.getAllByTestId('gauge-head')[1]).getByText('109 %')).toBeTruthy();
+  expect(screen.getByLabelText(/^Calories : /)).toHaveAccessibilityValue({ text: 'au-dessus de l’objectif' });
 });
 
 test('the Calories and Protéines gauges open their Suivi', async () => {
@@ -243,7 +252,7 @@ describe('the Calories gauge follows the goal mode', () => {
   test('in a surplus, going over the goal is not a problem: the goal is reached', async () => {
     await renderToday({ kcal: 2600, goalMode: 'surplus' });
     expect(read()).toHaveAccessibilityValue({ text: 'dans le rythme' });
-    expect(screen.getByText(`sur ${fr(2200)} kcal · objectif atteint`)).toBeTruthy();
+    expect(screen.getByText(`Calories – ${fr(2600)} / ${fr(2200)} kcal`)).toBeTruthy();
   });
 
   test('in a surplus, being behind the pace is late', async () => {
@@ -256,8 +265,7 @@ describe('the Steps gauge', () => {
   test('reads the steps against the goal, with the pace of the day', async () => {
     await renderToday({ steps: 3000 }); // 15:00: half of 8 000 is expected, so 75 % of the pace
     expect(screen.getByLabelText(/^Pas : /)).toHaveAccessibilityValue({ text: 'un peu en retard' });
-    expect(screen.getByText(`${fr(3000)} pas`)).toBeTruthy();
-    expect(screen.getByText(`sur ${fr(8000)} pas · reste ${fr(5000)} pas`)).toBeTruthy();
+    expect(screen.getByText(`Pas – ${fr(3000)} / ${fr(8000)}`)).toBeTruthy();
   });
 
   test('is on track with the steps of the pace', async () => {

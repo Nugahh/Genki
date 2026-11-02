@@ -231,7 +231,7 @@ The interface is Material 3 through React Native Paper, used without decoration:
 The palette was chosen on 2026-10-31, after the first critique found the Material baseline violet and the navigation library's iOS blue living side by side. It is a Material 3 scheme from a blue seed on warm neutrals, held in one file (`src/theme.ts`). The roles, not the hues, are what code depends on, so the palette can still change without touching a screen. Material governs structure, navigation and interaction; brand expresses itself through Material's theming.
 
 **Key Characteristics:**
-- One signature pattern: the gauge, in a soft card: an icon disc and a label, the day's figure in 24 sp, a 12 dp track with a tick for where the day should be by now, then the goal and what is left.
+- One signature pattern: the gauge, in a soft card: an icon disc, « Eau – 1,25 / 2,5 L » with the percentage at the right of that line, then a 12 dp track with a tick for where the day should be by now. It says nothing of what is left. The same layout (`GaugeRow`) serves Today and Repas.
 - Reading and acting are separate: the gauges scroll; the frequent actions stay pinned above the tab bar.
 - One accent, rare: ink blue on filled buttons, text buttons, focus and the pale selected tint. Three pastel tints only mark the measures on their icon discs.
 - Tonal, never loud: actions are `contained-tonal`; a filled button is a screen's single committing action.
@@ -270,7 +270,7 @@ Ink blue on ivory paper: a restrained Material 3 scheme with warm neutrals, plus
 - **Waiting and absence:** a line « Recherche de produits… » with a small activity indicator stays under the list while the network is asked, announced politely; when the products cannot be reached, a line says « Produits de marque indisponibles pour le moment (hors-ligne ou service occupé). » with a text button « Réessayer », and the rest of the list stays. No spinner replaces the list.
 
 ### Macro gauges (Repas)
-- **Block:** one level-1 card (12 dp radius, 16 dp padding, 12 dp between rows) at the top of Repas, four rows: Énergie, Protéines, Glucides nets, Lipides. Each row is 48 dp tall: a 32 dp disc with the measure's icon (flame, flexed arm, grain of wheat, drop of oil), then « Énergie – 0 / 2 079 kcal » in Title Medium with tabular figures, then a 12 dp rounded track whose fill is the measure's own hue (`colors.chart`) with the percentage in Label Large to its right (« 32 % », always the real figure, « 125 % » past the goal).
+- **Block:** one level-1 card (12 dp radius, 16 dp padding, 12 dp between rows) at the top of Repas, four rows: Énergie, Protéines, Glucides nets, Lipides. Each row is the shared gauge row of Today, 48 dp tall: a 32 dp disc with the measure's icon (flame, flexed arm, grain of wheat, drop of oil), then « Énergie – 0 / 2 079 kcal » in Title Medium with tabular figures and, at the right end of that line, the percentage in Label Large (« 32 % », always the real figure, « 125 % » past the goal), then under them a 12 dp rounded track whose fill is the measure's own hue (`colors.chart`).
 - **No pace, no remainder:** the fill is the identity of the macro, not a pace, so there is no tick and no pace color; the card does not say what is left. Past the goal the bar stays full and only the words say so, in the accessibility label (« au-dessus de l’objectif »).
 - **Behavior:** each row is one `progressbar` read as « Énergie : 700 sur 2 200 kcal, 32 % » with its value 0–100. The fill slides in 450 ms and stays still when the phone asks for no motion (the same behaviour as the Today gauges).
 
@@ -306,18 +306,18 @@ Ink blue on ivory paper: a restrained Material 3 scheme with warm neutrals, plus
 
 ### Hierarchy
 - **Headline Medium** (400, 28 / 36): the product name on the sign-in screen, the only place it appears.
-- **Headline Small** (400, 24 / 32): the day's figure on a gauge (« 1,5 L », « 1 100 kcal »), and the title of every Paper dialog.
+- **Headline Small** (400, 24 / 32): the title of every Paper dialog.
 - **Title Large** (400, 22 / 28): the greeting on Today and the food name on a food's fiche.
 - **Title Medium** (600, 16 / 24, letter-spacing 0.15): meal headings and the day totals on Repas.
 - **Body Large** (400, 16 / 24, letter-spacing 0.15): the sentence under the greeting, list titles and the macros line of a fiche.
-- **Body Medium** (400, 14 / 20, letter-spacing 0.25): the line under a gauge (« sur 2,5 L · reste 1 L »), the per-meal kcal and the Glucides · Lipides line.
+- **Body Medium** (400, 14 / 20, letter-spacing 0.25): the per-meal kcal and the secondary lines of a list.
 - **Body Small** (400, 12 / 16, letter-spacing 0.4): the helper text under a field.
 - **Label Large** (600, 14 / 20, letter-spacing 0.1): every button, segment and chip label, and a gauge's label.
 
 ### Named Rules
 **The French Number Rule.** Numbers are formatted for fr-FR: comma decimal, grouped thousands, and the unit after the value (« 1 100 kcal », « 1,5 L »). Text is sentence case with French typographic apostrophes.
 
-**The Figure-Leads Rule.** On a reading surface the number is the largest thing and its label the quietest: the eye finds « 1 100 kcal » before « Calories », and « reste 1 100 kcal » answers the question the number raises.
+**The Figure-Leads Rule.** On a reading surface the figures sit in the title itself, « Calories – 1 100 / 2 200 kcal », with the percentage in the same line at the right: the eye finds where the day stands before anything else, and nothing repeats it as a remainder.
 
 ## Layout
 
@@ -359,9 +359,9 @@ Standard Paper components, restrained: a tonal button, a soft card, a flat field
 - **Disabled:** Paper's disabled colors (a faded fill and label); a filled button stays disabled until the quantity or the form is valid.
 
 ### Gauge (signature component)
-- **Structure:** a Paper Card card (16 dp radius, 16 dp padding, 48 dp minimum, 4 dp between rows), pressable as a whole. Row 1: the measure's disc and the label in Label Large and Ink Soft, a 24 dp icon at the right (plus when the tap adds, chevron-right when it opens). Row 2: the day's figure in Headline Small, tabular. Row 3: the 12 dp track. Row 4: « sur {objectif} · reste {x} » in Body Medium and Ink Soft, or « objectif atteint », or « au-dessus de l'objectif » for calories.
+- **Structure:** a Paper Card card (16 dp radius, 16 dp padding, 48 dp minimum), pressable as a whole, holding the shared gauge row: the measure's 32 dp disc at the left; at its right a head line, « {nom} – {valeur} / {objectif} {unité} » in Title Medium (tabular figures, wrapping at a large font) and the percentage in Label Large Ink Soft at the right end of that line (« 50 % », the real figure, « 109 % » past the goal); under the head, the 12 dp track; under the track, a note in Body Small when the gauge has one (the source of the steps). A 24 dp icon ends the row (plus when the tap adds, chevron-right when it opens). The percentage sits above the bar, never beside it, on every gauge of the app.
 - **Fill:** one of the pace trio, drawn from the left up to the progress and full from 100 %, on a Sand track. It slides to its value over 450 ms when the screen opens or the total changes, and does not move when the phone asks for no animation. The 2 dp Ink tick sits at the share of the active day (7 h to 23 h) already elapsed.
-- **Behavior:** the whole block is the target. Its accessibility label reads « Eau : 1,5 L, sur 2,5 L, reste 1 L », its value the pace words, its hint what the tap does (« Ajoute une quantité d’eau de ton choix », « Ouvre le journal des repas »).
+- **Behavior:** the whole block is the target. Its accessibility label reads « Eau : 1,5 sur 2,5 L, 60 % », its value the pace words, its hint what the tap does (« Ajoute une quantité d’eau de ton choix », « Ouvre le journal des repas »).
 
 ### Action bar
 - **Style:** a level-1 flat surface under the gauges, 16 dp padding and 8 dp gap, pinned above the tab bar. The water amounts and « + Repas » share one 48 dp row and grow to fill it; on a large font they wrap onto a second row.
@@ -402,7 +402,7 @@ Standard Paper components, restrained: a tonal button, a soft card, a flat field
 - **Do** use tonal buttons for in-flow actions and keep the filled button for a screen's one committing action.
 - **Do** give every control a 48 × 48 dp target, at least 8 dp from its neighbour, and a French accessibility name that starts with its visible text.
 - **Do** read colors through the theme: roles from Paper, `colors.pace` for the gauges. No color value in a screen.
-- **Do** build any new daily metric as a gauge: label, figure, track, then the goal and what is left; plus when a tap adds and chevron-right when it opens.
+- **Do** build any new daily metric as a gauge row: icon disc, « nom – valeur / objectif unité » with the percentage at the right of that line, then the track; plus when a tap adds and chevron-right when it opens. Never write what is left.
 - **Do** announce what appears under a field (errors, empty results, previews) with a polite live region.
 - **Do** ask before deleting what cannot come back, naming the object on the message and the action on the button; offer « Annuler » for what can.
 - **Do** format numbers for fr-FR and put the unit after the value.

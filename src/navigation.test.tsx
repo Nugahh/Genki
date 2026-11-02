@@ -138,7 +138,7 @@ describe('a first launch', () => {
 test('a signed-in user lands on Today, with the sync icon in the top bar', async () => {
   signedInAs({ uid: 'alice' });
   await renderRouter();
-  expect(screen.getByLabelText('Eau : 0 L, sur 2,5 L, reste 2,5 L')).toBeTruthy();
+  expect(screen.getByLabelText('Eau : 0 sur 2,5 L, 0 %')).toBeTruthy();
   expect(screen.getByLabelText('Synchronisé')).toBeTruthy();
 });
 
@@ -146,7 +146,7 @@ test('a phone in dark mode keeps the light theme', async () => {
   jest.spyOn(Appearance, 'getColorScheme').mockReturnValue('dark');
   signedInAs({ uid: 'alice' });
   await renderRouter();
-  expect(screen.getByText('0 L')).toHaveStyle({ color: theme.colors.onSurface });
+  expect(screen.getByText('Eau – 0 / 2,5 L')).toHaveStyle({ color: theme.colors.onSurface });
 });
 
 test('the tabs are Paper’s Material bar: the open tab is the selected one, and the selection follows the route', async () => {
