@@ -13,7 +13,7 @@ export function outcomeProblem(outcome: SyncOutcome | null): string | undefined 
     case 'update-needed':
       return 'Mets à jour Health Connect pour lire les pas.';
     case 'failed':
-      return `La lecture des pas a échoué : ${outcome.error}`;
+      return `La lecture des pas a échoué : ${outcome.error}. Réessaie dans un moment.`;
     default:
       return undefined;
   }

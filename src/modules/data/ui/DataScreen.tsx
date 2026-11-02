@@ -18,7 +18,7 @@ type Busy = 'export' | 'import' | 'totals' | null;
 type Message = { text: string; error?: boolean };
 type Pending = { kind: 'import'; text: string; documents: number } | { kind: 'totals' };
 
-const reason = (error: unknown) => (error instanceof Error ? error.message : 'Une erreur est survenue.');
+const reason = (error: unknown) => (error instanceof Error ? error.message : 'L’opération a échoué, réessaie.');
 const plural = (n: number, one: string, many: string) => `${n} ${n >= 2 ? many : one}`;
 
 /** Settings › Données (spec §8): export the account to a JSON file, restore one, rebuild the totals of the days. */

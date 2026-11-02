@@ -11,7 +11,7 @@ export default function SignIn() {
     setBusy(true);
     setError(null);
     signInWithGoogle()
-      .catch((e: unknown) => setError(`La connexion a échoué. ${e instanceof Error ? e.message : String(e)}`))
+      .catch((e: unknown) => setError(`La connexion a échoué : ${e instanceof Error ? e.message : String(e)}. Réessaie.`))
       .finally(() => setBusy(false));
   };
 

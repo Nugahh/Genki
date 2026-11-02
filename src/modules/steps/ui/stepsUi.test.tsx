@@ -35,7 +35,7 @@ describe('outcomeText', () => {
     expect(outcomeProblem({ kind: 'no-permission' })).toBe('Autorise la lecture des pas dans Réglages › Pas.');
     expect(outcomeProblem({ kind: 'unavailable' })).toBe('Health Connect n’est pas disponible sur ce téléphone.');
     expect(outcomeProblem({ kind: 'update-needed' })).toBe('Mets à jour Health Connect pour lire les pas.');
-    expect(outcomeProblem({ kind: 'failed', error: 'boom' })).toBe('La lecture des pas a échoué : boom');
+    expect(outcomeProblem({ kind: 'failed', error: 'boom' })).toBe('La lecture des pas a échoué : boom. Réessaie dans un moment.');
     expect(outcomeProblem({ kind: 'not-writer' })).toBeUndefined();
     expect(outcomeProblem({ kind: 'synced', steps: 1, source: 'phone', at: new Date() })).toBeUndefined();
   });

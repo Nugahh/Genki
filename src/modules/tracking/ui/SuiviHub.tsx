@@ -30,7 +30,7 @@ function HubCard({ tracking, goals, def, period, today, onOpen }: { tracking: Tr
   return <MetricCard def={def} period={period} view={view} failed={failed} onPress={() => onOpen(def.section, def.id)} />;
 }
 
-/** The Suivi hub: one card per statistic over the period, which is chosen here; « Modifier » changes which cards and in which order. */
+/** The Suivi hub: one card per statistic over the period, which is chosen here; « Modifier les cartes » changes which cards and in which order. */
 export function SuiviHub({ tracking, goals, ui, onUiChange, clock, timezone, onOpen }: Props) {
   const { colors } = useTheme();
   const today = dayKey(useNow(clock), timezone);
@@ -42,12 +42,12 @@ export function SuiviHub({ tracking, goals, ui, onUiChange, clock, timezone, onO
       <PeriodPicker period={period} onPeriod={(next) => onUiChange({ period: next })} title={periodTitle(period, today)} />
       <View style={styles.actions}>
         <Button icon="pencil" contentStyle={styles.button} onPress={() => setEditing(true)}>
-          Modifier
+          Modifier les cartes
         </Button>
       </View>
       {hubMetrics.length === 0 && (
         <Text variant="bodyLarge" style={{ color: colors.onSurfaceVariant }}>
-          Aucune statistique ici pour l’instant. Touche « Modifier » pour en ajouter.
+          Aucune statistique ici pour l’instant. Touche « Modifier les cartes » pour en ajouter.
         </Text>
       )}
       {hubMetrics.map((id) => (

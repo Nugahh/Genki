@@ -94,7 +94,7 @@ afterEach(() => jest.restoreAllMocks());
 test('a search finds the food, its fiche previews the macros, and adding logs it with those macros frozen', async () => {
   const { entries, onDone } = await setup();
 
-  expect(screen.getByText('Tapez le nom d’un aliment.')).toBeTruthy();
+  expect(screen.getByText('Tape le nom d’un aliment.')).toBeTruthy();
   await search('riz');
   expect(await screen.findByText('Riz blanc, cru')).toBeTruthy();
   expect(screen.getByText('Riz blanc, cuit, sans sel ajouté')).toBeTruthy();
@@ -103,7 +103,7 @@ test('a search finds the food, its fiche previews the macros, and adding logs it
   expect(screen.getByText('cuit')).toBeTruthy();
   expect(screen.getByText('350 kcal / 100 g')).toBeTruthy();
   expect(screen.getByText('130 kcal / 100 g')).toBeTruthy();
-  expect(screen.queryByText('Tapez le nom d’un aliment.')).toBeNull();
+  expect(screen.queryByText('Tape le nom d’un aliment.')).toBeNull();
 
   await fireEvent.press(screen.getByText('Riz blanc, cru'));
   expect(screen.getByLabelText('Quantité (g)')).toHaveDisplayValue('100');
@@ -424,23 +424,23 @@ test('« Aucun aliment trouvé. » waits for the answer to the current search', 
 
 test('each list says when it is empty', async () => {
   await setup();
-  expect(screen.getByText('Tapez le nom d’un aliment.')).toBeTruthy();
+  expect(screen.getByText('Tape le nom d’un aliment.')).toBeTruthy();
   expect(screen.queryByText('Aucun aliment trouvé.')).toBeNull();
 
   // A search that finds nothing, then nothing typed or only spaces: back to the hint.
   for (const blank of ['', '   ']) {
     await search('zzz');
     expect(await screen.findByText('Aucun aliment trouvé.')).toBeTruthy();
-    expect(screen.queryByText('Tapez le nom d’un aliment.')).toBeNull();
+    expect(screen.queryByText('Tape le nom d’un aliment.')).toBeNull();
     await search(blank);
-    expect(screen.getByText('Tapez le nom d’un aliment.')).toBeTruthy();
+    expect(screen.getByText('Tape le nom d’un aliment.')).toBeTruthy();
     expect(screen.queryByText('Aucun aliment trouvé.')).toBeNull();
   }
 
   await fireEvent.press(screen.getByText('Récents'));
   expect(screen.getByText('Aucun aliment récent.')).toBeTruthy();
   await fireEvent.press(screen.getByText('Favoris'));
-  expect(screen.getByText('Aucun favori. Enregistrez un repas depuis le journal.')).toBeTruthy();
+  expect(screen.getByText('Aucun favori. Enregistre un repas depuis le journal.')).toBeTruthy();
 });
 
 test('custom foods that match come before the Ciqual results', async () => {

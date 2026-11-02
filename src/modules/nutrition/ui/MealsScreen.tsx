@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { BackHandler, Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import { Button, Dialog, List, Portal, Surface, Text, TextInput } from 'react-native-paper';
+import { BackHandler, ScrollView, StyleSheet, View } from 'react-native';
+import { Button, Dialog, List, Portal, Surface, Text, TextInput, TouchableRipple } from 'react-native-paper';
 import type { Profile } from '@/modules/settings';
 import { dayKey, type Clock } from '@/shared/clock';
 import { useNow } from '@/shared/useNow';
@@ -83,18 +83,26 @@ export function MealsScreen({ profile, clock, meals, onAdd, onOpenNutrients, pic
         <MacroGauge metric="fat" label="Lipides" value={total.fat} goal={profile.goals.fatG} unit="g" />
       </Surface>
       {least.length > 0 && (
-        <Pressable accessibilityRole="button" accessibilityLabel={`Nutriments du jour : ${least.map(said).join(', ')}. Ouvrir le détail`} onPress={onOpenNutrients}>
-          <Surface style={styles.card}>
-            <Text variant="titleMedium">Nutriments du jour</Text>
-            {least.map((n) => (
-              <View key={n.label} style={styles.nutrient}>
-                <Text variant="bodyMedium">{n.label}</Text>
-                <Text variant="titleSmall">{`${n.pct} %${n.atLeast ? ' au moins' : ''}`}</Text>
-              </View>
-            ))}
-            <Text variant="bodySmall">Les moins couverts du jour · Voir le détail</Text>
-          </Surface>
-        </Pressable>
+        // The ripple is clipped to the card's corners, as on the Today gauges.
+        <Surface style={styles.nutrients}>
+          <TouchableRipple
+            accessibilityRole="button"
+            accessibilityLabel={`Nutriments du jour : ${least.map(said).join(', ')}. Ouvrir le détail`}
+            style={styles.touch}
+            onPress={onOpenNutrients}
+          >
+            <View style={styles.touchContent}>
+              <Text variant="titleMedium">Nutriments du jour</Text>
+              {least.map((n) => (
+                <View key={n.label} style={styles.nutrient}>
+                  <Text variant="bodyMedium">{n.label}</Text>
+                  <Text variant="titleSmall">{`${n.pct} %${n.atLeast ? ' au moins' : ''}`}</Text>
+                </View>
+              ))}
+              <Text variant="bodySmall">Les moins couverts du jour · Voir le détail</Text>
+            </View>
+          </TouchableRipple>
+        </Surface>
       )}
       {MEALS.map((meal) => {
         const label = MEAL_LABELS[meal];
@@ -157,5 +165,8 @@ const styles = StyleSheet.create({
   card: { padding: 16, gap: 12, borderRadius: 12 },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   nutrient: { flexDirection: 'row', justifyContent: 'space-between' },
+  nutrients: { borderRadius: 12 },
+  touch: { minHeight: 48, padding: 16, borderRadius: 12, overflow: 'hidden' },
+  touchContent: { gap: 8 },
   button: { minHeight: 48 },
 });

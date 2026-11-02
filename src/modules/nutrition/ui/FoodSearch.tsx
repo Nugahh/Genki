@@ -92,7 +92,7 @@ export function FoodSearch({ foods, custom, brand, search, onSearch, onSelect }:
           </Chip>
         ))}
       </View>
-      {!typed && <Text>Tapez le nom d’un aliment.</Text>}
+      {!typed && <Text>Tape le nom d’un aliment.</Text>}
       {typed && answer?.found === null && (
         <HelperText type="error" accessibilityLiveRegion="polite">
           Recherche indisponible.

@@ -38,7 +38,7 @@ export function FavoritesList({ meal, meals, foods, custom, run, onDone }: Props
 
   return (
     <View>
-      {favorites?.length === 0 && <Text>Aucun favori. Enregistrez un repas depuis le journal.</Text>}
+      {favorites?.length === 0 && <Text>Aucun favori. Enregistre un repas depuis le journal.</Text>}
       {favorites?.map((favorite) => (
         <View key={favorite.id} style={styles.row}>
           <List.Item

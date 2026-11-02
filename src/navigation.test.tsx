@@ -99,7 +99,7 @@ test('a failed Google sign-in shows why', async () => {
   jest.mocked(signInWithGoogle).mockRejectedValue(new Error('DEVELOPER_ERROR'));
   await renderRouter();
   await fireEvent.press(screen.getByText('Se connecter avec Google'));
-  expect(screen.getByText('La connexion a échoué. DEVELOPER_ERROR')).toBeTruthy();
+  expect(screen.getByText('La connexion a échoué : DEVELOPER_ERROR. Réessaie.')).toBeTruthy();
 });
 
 describe('a first launch', () => {

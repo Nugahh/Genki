@@ -57,7 +57,7 @@ test('a card says when its source refuses the read', async () => {
 
 test('an empty hub says how to fill it', async () => {
   await setup({ hubMetrics: [] });
-  expect(screen.getByText('Aucune statistique ici pour l’instant. Touche « Modifier » pour en ajouter.')).toBeTruthy();
+  expect(screen.getByText('Aucune statistique ici pour l’instant. Touche « Modifier les cartes » pour en ajouter.')).toBeTruthy();
 });
 
 test('in the year view, a card is the mean of the months', async () => {
@@ -93,7 +93,7 @@ test('the period is chosen here and kept in the preferences', async () => {
 describe('the editor', () => {
   const open = async (ui?: UiPrefs) => {
     const result = await setup(ui);
-    await fireEvent.press(screen.getByText('Modifier'));
+    await fireEvent.press(screen.getByText('Modifier les cartes'));
     return result;
   };
 

@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import { Icon, Surface, Text, useTheme } from 'react-native-paper';
+import { ScrollView, StyleSheet, View } from 'react-native';
+import { Icon, Surface, Text, TouchableRipple, useTheme } from 'react-native-paper';
 import type { UiPrefs } from '@/modules/settings';
 import type { Clock } from '@/shared/clock';
 import type { AppTheme } from '@/theme';
@@ -93,27 +93,29 @@ export function MicronutrientsScreen({ tracking, goals, ui, onUiChange, clock, t
                 {rows
                   .filter((r) => r.info.group === group.id)
                   .map((r) => (
-                    <Pressable key={r.info.id} accessibilityRole="button" accessibilityLabel={spoken(r)} style={styles.row} onPress={() => onOpen(r.info.id)}>
-                      <View style={styles.line}>
-                        <Text variant="bodyLarge" style={styles.name}>
-                          {r.info.label}
-                        </Text>
-                        <Text variant="bodyLarge" style={styles.amount}>
-                          {r.value === undefined ? '—' : `${r.incomplete ? 'au moins ' : ''}${r.def.format(r.value)}`}
-                        </Text>
-                        <Text variant="titleMedium" style={styles.pct}>
-                          {r.pct === undefined ? '' : `${r.pct} %`}
-                        </Text>
+                    <TouchableRipple key={r.info.id} accessibilityRole="button" accessibilityLabel={spoken(r)} style={styles.row} onPress={() => onOpen(r.info.id)}>
+                      <View style={styles.rowContent}>
+                        <View style={styles.line}>
+                          <Text variant="bodyLarge" style={styles.name}>
+                            {r.info.label}
+                          </Text>
+                          <Text variant="bodyLarge" style={styles.amount}>
+                            {r.value === undefined ? '—' : `${r.incomplete ? 'au moins ' : ''}${r.def.format(r.value)}`}
+                          </Text>
+                          <Text variant="titleMedium" style={styles.pct}>
+                            {r.pct === undefined ? '' : `${r.pct} %`}
+                          </Text>
+                        </View>
+                        {r.incomplete && r.value !== undefined && (
+                          <Text variant="bodySmall" style={{ color: colors.onSurfaceVariant }}>
+                            partiel
+                          </Text>
+                        )}
+                        <View style={[styles.track, { backgroundColor: colors.surfaceVariant }]}>
+                          <View style={{ width: `${Math.min(r.pct ?? 0, 100)}%`, height: 6, borderRadius: 3, backgroundColor: paint[r.tone] }} />
+                        </View>
                       </View>
-                      {r.incomplete && r.value !== undefined && (
-                        <Text variant="bodySmall" style={{ color: colors.onSurfaceVariant }}>
-                          partiel
-                        </Text>
-                      )}
-                      <View style={[styles.track, { backgroundColor: colors.surfaceVariant }]}>
-                        <View style={{ width: `${Math.min(r.pct ?? 0, 100)}%`, height: 6, borderRadius: 3, backgroundColor: paint[r.tone] }} />
-                      </View>
-                    </Pressable>
+                    </TouchableRipple>
                   ))}
               </View>
             ))}
@@ -137,7 +139,8 @@ const styles = StyleSheet.create({
   section: { gap: 8 },
   group: { gap: 4 },
   // 48 dp is the touch target of a row.
-  row: { minHeight: 48, justifyContent: 'center', gap: 4, paddingVertical: 4 },
+  row: { minHeight: 48, justifyContent: 'center', paddingVertical: 4 },
+  rowContent: { gap: 4 },
   line: { flexDirection: 'row', alignItems: 'baseline', gap: 8 },
   name: { flex: 1 },
   amount: { flexShrink: 1, textAlign: 'right' },
