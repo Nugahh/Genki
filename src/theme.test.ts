@@ -60,7 +60,7 @@ test.each([
   expect(contrast(foreground, background)).toBeGreaterThanOrEqual(3);
 });
 
-test.each(['water', 'calories', 'protein', 'steps'] as const)('the icon of the %s disc reads on its tint', (metric) => {
+test.each(['water', 'calories', 'protein', 'carbs', 'fat', 'steps'] as const)('the icon of the %s disc reads on its tint', (metric) => {
   expect(contrast(colors.metric[metric].on, colors.metric[metric].container)).toBeGreaterThanOrEqual(4.5);
 });
 

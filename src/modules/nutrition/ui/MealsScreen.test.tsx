@@ -63,10 +63,24 @@ test('the journal lists the day under each meal, with the subtotals and the day 
   expect(lunch.queryByText('Rien pour l’instant.')).toBeNull();
   expect(screen.getAllByText('Rien pour l’instant.')).toHaveLength(3);
   expect(screen.getAllByText('0 kcal')).toHaveLength(3);
-  expect(screen.getByText(`Calories : 700 / ${goal} kcal`)).toBeTruthy();
-  expect(screen.getByText('Protéines : 14 / 130 g')).toBeTruthy();
-  expect(screen.getByText('Glucides nets : 156 / 255 g')).toBeTruthy();
-  expect(screen.getByText('Lipides : 1,2 / 75 g')).toBeTruthy();
+  expect(screen.getByText(`Énergie – 700 / ${goal} kcal`)).toBeTruthy();
+  expect(screen.getByText('Protéines – 14 / 130 g')).toBeTruthy();
+  expect(screen.getByText('Glucides nets – 156 / 255 g')).toBeTruthy();
+  expect(screen.getByText('Lipides – 1,2 / 75 g')).toBeTruthy();
+});
+
+test('the day\'s macros are four gauges with a percentage each, and no word on what is left', async () => {
+  const { meals } = await setup();
+  await lunchOfRice(meals);
+  const bars = screen.getAllByRole('progressbar').map((bar) => bar.props.accessibilityLabel as string);
+  expect(bars).toEqual([
+    `Énergie : 700 sur ${goal} kcal, 32 %`,
+    'Protéines : 14 sur 130 g, 11 %',
+    'Glucides nets : 156 sur 255 g, 61 %',
+    'Lipides : 1,2 sur 75 g, 2 %',
+  ]);
+  expect(screen.getByText('32 %')).toBeTruthy();
+  expect(screen.queryByText(/reste/i)).toBeNull();
 });
 
 test('« Ajouter » asks to add to that meal', async () => {
@@ -89,7 +103,7 @@ test('a touched line opens its sheet, and the corrected quantity reaches the lin
 
   expect(screen.getByText('150 g · 525 kcal')).toBeTruthy();
   expect(screen.getByLabelText('Riz blanc, cru, 150 g, 525 kcal')).toBeTruthy();
-  expect(screen.getByText(`Calories : 525 / ${goal} kcal`)).toBeTruthy();
+  expect(screen.getByText(`Énergie – 525 / ${goal} kcal`)).toBeTruthy();
   expect(screen.queryByLabelText('Quantité (g)')).toBeNull();
 });
 
@@ -155,10 +169,10 @@ test('« Supprimer » removes the line and the totals fall back to zero', async 
   expect(screen.queryByText('Supprimer')).toBeNull();
   expect(screen.queryByText('Riz blanc, cru')).toBeNull();
   expect(screen.getAllByText('Rien pour l’instant.')).toHaveLength(4);
-  expect(screen.getByText(`Calories : 0 / ${goal} kcal`)).toBeTruthy();
-  expect(screen.getByText('Protéines : 0 / 130 g')).toBeTruthy();
-  expect(screen.getByText('Glucides nets : 0 / 255 g')).toBeTruthy();
-  expect(screen.getByText('Lipides : 0 / 75 g')).toBeTruthy();
+  expect(screen.getByText(`Énergie – 0 / ${goal} kcal`)).toBeTruthy();
+  expect(screen.getByText('Protéines – 0 / 130 g')).toBeTruthy();
+  expect(screen.getByText('Glucides nets – 0 / 255 g')).toBeTruthy();
+  expect(screen.getByText('Lipides – 0 / 75 g')).toBeTruthy();
 });
 
 describe('the sheet of a line', () => {
@@ -204,7 +218,7 @@ describe('the sheet of a line', () => {
 
     expect(entries.entries[0]).toMatchObject({ meal: 'dinner', day: '2026-10-23', createdAt: new Date('2026-10-23T18:00:00Z') });
     expect(screen.queryByText('Riz blanc, cru')).toBeNull();
-    expect(screen.getByText(`Calories : 0 / ${goal} kcal`)).toBeTruthy();
+    expect(screen.getByText(`Énergie – 0 / ${goal} kcal`)).toBeTruthy();
   });
 
   test('keeps the time of the line when only the quantity changes', async () => {
@@ -304,7 +318,7 @@ test('an entry of another day is neither listed nor counted', async () => {
 
   expect(screen.queryByText('Pain')).toBeNull();
   expect(screen.getByText('Riz blanc, cru')).toBeTruthy();
-  expect(screen.getByText(`Calories : 700 / ${goal} kcal`)).toBeTruthy();
+  expect(screen.getByText(`Énergie – 700 / ${goal} kcal`)).toBeTruthy();
 });
 
 test('the day follows the profile time zone, not UTC', async () => {

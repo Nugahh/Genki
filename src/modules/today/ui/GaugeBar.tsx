@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
-import { AccessibilityInfo, Animated, Easing, StyleSheet, View } from 'react-native';
+import { Animated, StyleSheet, View } from 'react-native';
 import { Icon, Surface, Text, TouchableRipple, useTheme } from 'react-native-paper';
+import { useFillAnimation } from '@/shared/useFillAnimation';
 import type { AppTheme } from '@/theme';
 import type { GaugeColor } from '../domain/gauge';
 
@@ -35,16 +35,7 @@ type Props = {
 
 export function GaugeBar({ label, value, goal, remaining, hint, metric, progress, expected, color, status = PACE[color], note, icon, onPress }: Props) {
   const { colors } = useTheme<AppTheme>();
-  // The fill slides to its value (from empty when the screen opens), unless the phone asks for no motion.
-  const [fill] = useState(() => new Animated.Value(0));
-  const [reduceMotion, setReduceMotion] = useState(false);
-  useEffect(() => {
-    void AccessibilityInfo.isReduceMotionEnabled().then(setReduceMotion);
-  }, []);
-  useEffect(() => {
-    Animated.timing(fill, { toValue: Math.max(0, Math.min(progress, 1)), duration: reduceMotion ? 0 : 450, easing: Easing.out(Easing.cubic), useNativeDriver: false }).start();
-  }, [fill, progress, reduceMotion]);
-
+  const fill = useFillAnimation(progress);
   const tint = colors.metric[metric];
   return (
     <Surface mode="flat" elevation={1} style={styles.card}>

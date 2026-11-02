@@ -13,6 +13,7 @@ import { NUTRIENTS, sumNutrients } from '../domain/nutrients';
 import { netCarbs } from '../domain/portion';
 import { EntryDetail } from './EntryDetail';
 import { gramsText, kcalText, MEAL_LABELS } from './format';
+import { MacroGauge } from './MacroGauge';
 import type { PickWhen } from './WhenPicker';
 
 type Props = {
@@ -76,10 +77,10 @@ export function MealsScreen({ profile, clock, meals, onAdd, onOpenNutrients, pic
   return (
     <ScrollView key="journal" contentContainerStyle={styles.content}>
       <Surface style={styles.card}>
-        <Text variant="titleMedium">{`Calories : ${kcalText(total.kcal)} / ${kcalText(profile.goals.kcal)} kcal`}</Text>
-        <Text variant="titleMedium">{`Protéines : ${gramsText(total.protein)} / ${gramsText(profile.goals.proteinG)} g`}</Text>
-        <Text variant="titleMedium">{`Glucides nets : ${gramsText(netCarbsTotal)} / ${gramsText(profile.goals.carbsNetG)} g`}</Text>
-        <Text variant="titleMedium">{`Lipides : ${gramsText(total.fat)} / ${gramsText(profile.goals.fatG)} g`}</Text>
+        <MacroGauge metric="calories" label="Énergie" value={total.kcal} goal={profile.goals.kcal} unit="kcal" />
+        <MacroGauge metric="protein" label="Protéines" value={total.protein} goal={profile.goals.proteinG} unit="g" />
+        <MacroGauge metric="carbs" label="Glucides nets" value={netCarbsTotal} goal={profile.goals.carbsNetG} unit="g" />
+        <MacroGauge metric="fat" label="Lipides" value={total.fat} goal={profile.goals.fatG} unit="g" />
       </Surface>
       {least.length > 0 && (
         <Pressable accessibilityRole="button" accessibilityLabel={`Nutriments du jour : ${least.map(said).join(', ')}. Ouvrir le détail`} onPress={onOpenNutrients}>
@@ -153,7 +154,7 @@ export function MealsScreen({ profile, clock, meals, onAdd, onOpenNutrients, pic
 
 const styles = StyleSheet.create({
   content: { padding: 16, gap: 16 },
-  card: { padding: 16, gap: 8, borderRadius: 12 },
+  card: { padding: 16, gap: 12, borderRadius: 12 },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   nutrient: { flexDirection: 'row', justifyContent: 'space-between' },
   button: { minHeight: 48 },

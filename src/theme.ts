@@ -45,11 +45,13 @@ const colors = {
     level4: 'rgb(237, 231, 224)',
     level5: 'rgb(231, 226, 219)',
   },
-  // One pastel disc per measure under its icon: blue, lilac, turquoise, clear of the green, ochre and brick of the pace.
+  // One pastel disc per measure under its icon: blue, lilac, turquoise, sand, pink, slate, clear of the green, ochre and brick of the pace.
   metric: {
     water: { container: 'rgb(214, 227, 255)', on: 'rgb(0, 27, 60)' },
     calories: { container: 'rgb(249, 216, 254)', on: 'rgb(40, 19, 47)' },
     protein: { container: 'rgb(178, 237, 235)', on: 'rgb(0, 32, 31)' },
+    carbs: { container: 'rgb(246, 225, 188)', on: 'rgb(52, 33, 0)' },
+    fat: { container: 'rgb(255, 217, 228)', on: 'rgb(61, 0, 28)' },
     steps: { container: 'rgb(225, 228, 236)', on: 'rgb(18, 28, 43)' },
   },
   // Solid marks of the Suivi charts, one per measure, each 4.5:1 or more on the page. The green, ochre and brick of the pace tell how a day went and are not reused here.

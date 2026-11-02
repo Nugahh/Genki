@@ -263,11 +263,16 @@ Ink blue on ivory paper: a restrained Material 3 scheme with warm neutrals, plus
 - **Inverse Surface** (rgb(50, 48, 44)) with **Inverse Ink** (rgb(246, 240, 233)): the snackbars, whose action takes the inverse primary.
 
 ### Measure tints (custom, outside the Material roles)
-- **Water Tint** (rgb(214, 227, 255)), **Calories Tint** (rgb(249, 216, 254)) and **Protein Tint** (rgb(178, 237, 235)), each with its dark icon color (rgb(0, 27, 60), rgb(40, 19, 47), rgb(0, 32, 31)): the 32 dp disc under the icon of a gauge (a drop, a flame, a flexed arm). They are pastel and keep clear of green, ochre and brick, so a disc is never read as a pace. They live in the theme as `colors.metric`.
+- **Water Tint** (rgb(214, 227, 255)), **Calories Tint** (rgb(249, 216, 254)) and **Protein Tint** (rgb(178, 237, 235)), each with its dark icon color (rgb(0, 27, 60), rgb(40, 19, 47), rgb(0, 32, 31)): the 32 dp disc under the icon of a gauge (a drop, a flame, a flexed arm). The Repas screen adds a **Carbs Tint** (rgb(246, 225, 188), icon rgb(52, 33, 0): a grain of wheat) and a **Fat Tint** (rgb(255, 217, 228), icon rgb(61, 0, 28): a drop of oil). They are pastel and keep clear of green, ochre and brick, so a disc is never read as a pace. They live in the theme as `colors.metric`.
 
 ### Search result rows
 - **Row:** a two-line list item at least 48 dp tall: the name (two lines at most) and under it the quantity line, « 350 kcal / 100 g » for Ciqual and one's own foods, « 330 ml · Coca-Cola · 42 kcal / 100 g » for a product of a brand. At the right, the cooked or raw pill, or for a product of a brand its source in Label Small, « Open Food Facts ».
 - **Waiting and absence:** a line « Recherche de produits… » with a small activity indicator stays under the list while the network is asked, announced politely; when the products cannot be reached, a line says « Produits de marque indisponibles pour le moment (hors-ligne ou service occupé). » with a text button « Réessayer », and the rest of the list stays. No spinner replaces the list.
+
+### Macro gauges (Repas)
+- **Block:** one level-1 card (12 dp radius, 16 dp padding, 12 dp between rows) at the top of Repas, four rows: Énergie, Protéines, Glucides nets, Lipides. Each row is 48 dp tall: a 32 dp disc with the measure's icon (flame, flexed arm, grain of wheat, drop of oil), then « Énergie – 0 / 2 079 kcal » in Title Medium with tabular figures, then a 12 dp rounded track whose fill is the measure's own hue (`colors.chart`) with the percentage in Label Large to its right (« 32 % », always the real figure, « 125 % » past the goal).
+- **No pace, no remainder:** the fill is the identity of the macro, not a pace, so there is no tick and no pace color; the card does not say what is left. Past the goal the bar stays full and only the words say so, in the accessibility label (« au-dessus de l’objectif »).
+- **Behavior:** each row is one `progressbar` read as « Énergie : 700 sur 2 200 kcal, 32 % » with its value 0–100. The fill slides in 450 ms and stays still when the phone asks for no motion (the same behaviour as the Today gauges).
 
 ### Energy ring and goal lines
 - **Ring:** 128 dp, 14 dp stroke on a Sand-Variant track, three arcs from the top: protein, net carbs and fat in `colors.chart.protein`, `carbs` and `fat`, each arc 3 dp short of the next so a gap shows. The portion's calories sit at the centre in Headline Small, tabular, with « kcal » under them.
