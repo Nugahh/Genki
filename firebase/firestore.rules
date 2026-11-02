@@ -249,8 +249,9 @@ service cloud.firestore {
         && (
           (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['deletedAt'])
             && request.resource.data.deletedAt is timestamp)
-          || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'state', 'per100g', 'portions', 'updatedAt'])
-            && isFoodFields(request.resource.data))
+          || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'state', 'per100g', 'portions', 'nutrients', 'updatedAt'])
+            && isFoodFields(request.resource.data)
+            && isFoodExtras(request.resource.data))
         );
     }
 

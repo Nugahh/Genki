@@ -338,6 +338,17 @@ describe('foods', () => {
     await assertFails(setDoc(doc(db('alice'), 'users/alice/foods/f1'), { ...customFood(), ...override }));
   });
 
+  test('the micronutrients of a food can be added, rewritten and removed, within their bounds', async () => {
+    await seed('users/alice/foods/f1', customFood());
+    const ref = doc(db('alice'), 'users/alice/foods/f1');
+    await assertSucceeds(updateDoc(ref, { nutrients: { magnesium: 60000, vitD: 0.5 }, updatedAt: Timestamp.now() }));
+    await assertSucceeds(updateDoc(ref, { nutrients: { magnesium: 30000 }, updatedAt: Timestamp.now() }));
+    await assertFails(updateDoc(ref, { nutrients: { magnesium: -1 }, updatedAt: Timestamp.now() }));
+    await assertFails(updateDoc(ref, { nutrients: { magnesium: 1000001 }, updatedAt: Timestamp.now() }));
+    await assertFails(updateDoc(ref, { nutrients: { vitamin: 1 }, updatedAt: Timestamp.now() }));
+    await assertSucceeds(updateDoc(ref, { nutrients: deleteField(), updatedAt: Timestamp.now() }));
+  });
+
   test('the source, brand and barcode of a food are not changed afterwards', async () => {
     await seed('users/alice/foods/f1', { ...customFood(), source: 'off', brand: 'Coca-Cola', barcode: '5449000000996' });
     const ref = doc(db('alice'), 'users/alice/foods/f1');

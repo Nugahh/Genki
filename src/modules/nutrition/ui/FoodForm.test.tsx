@@ -186,3 +186,145 @@ test('a product of Open Food Facts keeps its source, brand, barcode and nutrient
   await fireEvent.press(screen.getByText('Enregistrer les modifications'));
   expect(onSubmit).toHaveBeenCalledWith({ ...product, name: 'Coca-Cola, canette' });
 });
+
+describe('the micronutrients', () => {
+  const addMicronutrient = async (name: string) => {
+    await fireEvent.press(screen.getByText('Ajouter un micronutriment'));
+    await fireEvent.press(screen.getByText(name));
+  };
+
+  test('are added from the list, valued in their unit, and saved with the food', async () => {
+    const { onSubmit } = await setup();
+    await fillValid('Magnésium');
+    await addMicronutrient('Magnésium');
+    await type('Magnésium (mg)', '300');
+    await fireEvent.press(screen.getByText('Enregistrer'));
+    expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ name: 'Magnésium', nutrients: { magnesium: 300 } }));
+  });
+
+  test('a food without any saves no nutrients at all', async () => {
+    const { onSubmit } = await setup();
+    await fillValid();
+    await fireEvent.press(screen.getByText('Enregistrer'));
+    expect(onSubmit.mock.calls[0][0]).not.toHaveProperty('nutrients');
+  });
+
+  test('the list offers what is not there yet', async () => {
+    await setup();
+    await addMicronutrient('Magnésium');
+    await fireEvent.press(screen.getByText('Ajouter un micronutriment'));
+    expect(screen.getByText('Vitamine C')).toBeTruthy();
+    expect(screen.queryByText('Magnésium')).toBeNull();
+  });
+
+  test('one can be taken out again', async () => {
+    const { onSubmit } = await setup();
+    await fillValid();
+    await addMicronutrient('Fer');
+    await type('Fer (mg)', '12');
+    await fireEvent.press(screen.getByLabelText('Retirer Fer'));
+    expect(screen.queryByLabelText('Fer (mg)')).toBeNull();
+    await fireEvent.press(screen.getByText('Enregistrer'));
+    expect(onSubmit.mock.calls[0][0]).not.toHaveProperty('nutrients');
+  });
+
+  test('one that is left empty, or is not a number, stops the food from being saved, and says why', async () => {
+    await setup();
+    await fillValid();
+    await addMicronutrient('Zinc');
+    expect(screen.getByText('Enregistrer')).toBeDisabled();
+    expect(screen.getByText('Les micronutriments doivent être des nombres positifs.').props.accessibilityLiveRegion).toBe('polite');
+    await type('Zinc (mg)', '9,5');
+    expect(screen.getByText('Enregistrer')).toBeEnabled();
+  });
+
+  test('a food that is changed shows its micronutrients and keeps them', async () => {
+    const { onSubmit } = await setup({
+      initial: { name: 'Whey', state: 'other', per100g: { kcal: 380, protein: 80, carbs: 6, fat: 5 }, portions: [], nutrients: { calcium: 450, vitD: 1.5 } },
+      submitLabel: 'Enregistrer les modifications',
+    });
+    expect(screen.getByLabelText('Calcium (mg)')).toHaveDisplayValue('450');
+    expect(screen.getByLabelText('Vitamine D (µg)')).toHaveDisplayValue('1,5');
+    await fireEvent.press(screen.getByText('Enregistrer les modifications'));
+    expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ nutrients: { calcium: 450, vitD: 1.5 } }));
+  });
+});
+
+describe('the values for a portion', () => {
+  const perPortion = () => fireEvent.press(screen.getByText('Pour une portion'));
+
+  test('are what the label gives: a capsule of 0,5 g with 300 mg of magnesium', async () => {
+    const { onSubmit } = await setup();
+    await type('Nom', 'Magnésium');
+    await perPortion();
+    await type('Poids d’une portion (g)', '0,5');
+    for (const label of ['Calories pour une portion', 'Protéines pour une portion', 'Glucides pour une portion', 'Lipides pour une portion']) await type(label, '0');
+    await fireEvent.press(screen.getByText('Ajouter un micronutriment'));
+    await fireEvent.press(screen.getByText('Magnésium'));
+    await type('Magnésium (mg)', '300');
+    await fireEvent.press(screen.getByText('Enregistrer'));
+    // 300 mg in 0,5 g is 60 000 mg in 100 g; the portion stays offered.
+    expect(onSubmit).toHaveBeenCalledWith({
+      name: 'Magnésium', state: 'other', per100g: { kcal: 0, protein: 0, carbs: 0, fat: 0 }, nutrients: { magnesium: 60000 }, portions: [{ label: '1 portion', grams: 0.5 }],
+    });
+  });
+
+  test('macros too: 30 g of whey with 120 kcal and 24 g of protein are 400 kcal and 80 g for 100 g', async () => {
+    const { onSubmit } = await setup();
+    await type('Nom', 'Whey');
+    await perPortion();
+    await type('Poids d’une portion (g)', '30');
+    await type('Calories pour une portion', '120');
+    await type('Protéines pour une portion', '24');
+    await type('Glucides pour une portion', '3');
+    await type('Lipides pour une portion', '2');
+    await fireEvent.press(screen.getByText('Enregistrer'));
+    expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ per100g: { kcal: 400, protein: 80, carbs: 10, fat: 6.7 }, portions: [{ label: '1 portion', grams: 30 }] }));
+  });
+
+  test('the portion is not added twice when one of the same weight is listed', async () => {
+    const { onSubmit } = await setup();
+    await type('Nom', 'Whey');
+    await fireEvent.press(screen.getByText('Ajouter une portion'));
+    await type('Nom de la portion', '1 mesure');
+    await type('Poids (g)', '30');
+    await perPortion();
+    await type('Poids d’une portion (g)', '30');
+    for (const label of ['Calories pour une portion', 'Protéines pour une portion', 'Glucides pour une portion', 'Lipides pour une portion']) await type(label, '1');
+    await fireEvent.press(screen.getByText('Enregistrer'));
+    expect(onSubmit.mock.calls[0][0].portions).toEqual([{ label: '1 mesure', grams: 30 }]);
+  });
+
+  test('need a weight of the portion between 0 and 5 000 g', async () => {
+    await setup();
+    await type('Nom', 'Whey');
+    await perPortion();
+    for (const label of ['Calories pour une portion', 'Protéines pour une portion', 'Glucides pour une portion', 'Lipides pour une portion']) await type(label, '1');
+    expect(screen.getByText('Le poids d’une portion est compris entre 0 et 5 000 g.')).toBeTruthy();
+    expect(screen.getByText('Enregistrer')).toBeDisabled();
+    await type('Poids d’une portion (g)', '5001');
+    expect(screen.getByText('Enregistrer')).toBeDisabled();
+    await type('Poids d’une portion (g)', '25');
+    expect(screen.getByText('Enregistrer')).toBeEnabled();
+  });
+
+  test('that cannot be true for 100 g are refused with the usual message', async () => {
+    await setup();
+    await type('Nom', 'Poudre');
+    await perPortion();
+    await type('Poids d’une portion (g)', '1');
+    await type('Calories pour une portion', '5');
+    await type('Protéines pour une portion', '2'); // 200 g of protein in 100 g
+    await type('Glucides pour une portion', '0');
+    await type('Lipides pour une portion', '0');
+    expect(screen.getByText('Protéines, glucides et lipides dépassent 100 g pour 100 g.')).toBeTruthy();
+  });
+
+  test('the switch names the choice that is made, with a check', async () => {
+    await setup();
+    expect(isChecked('Pour 100 g')).toBe(true);
+    await perPortion();
+    expect(isChecked('Pour une portion')).toBe(true);
+    expect(isChecked('Pour 100 g')).toBe(false);
+  });
+});

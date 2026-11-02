@@ -386,6 +386,10 @@ Standard Paper components, restrained: a tonal button, a soft card, a flat field
 - **Behavior:** each tab is announced as a tab with its selected state, the row as a tab list; the line is never the only sign. The add-food page has three: Tout (the search, the scan icon next to the field, and the recents while nothing is typed), Favoris (the foods with a star) and Personnalisé (two choice chips, Aliments and Repas, each a list under a tonal « Créer … » button).
 - **The star:** a 48 dp icon button at the end of the title row of a fiche, a star outline to mark a food, a filled star to unmark it, read as « Mettre en favori » / « Retirer des favoris ».
 
+### Custom food form
+- **Values for:** a two-segment switch, « Pour 100 g » / « Pour une portion » (one row of two, with the check). Choosing the portion adds a field « Poids d'une portion (g) » above the macros, whose labels read « … pour une portion ». The food is saved for 100 g, with a portion « 1 portion » of that weight unless one of the same weight is listed.
+- **Micronutrients:** under the macros, a title « Micronutriments (pour 100 g / pour une portion) », one 48 dp row per nutrient added (a field labelled with its name and unit, « Magnésium (mg) », and a bin « Retirer Magnésium »), and a text button « Ajouter un micronutriment » that opens a dialog listing what is not added yet, with its unit under each name. An empty or invalid value stops the save and says why, politely.
+
 ### Segmented switch
 - **Style:** a switch of two to four choices that change a value (the four Suivi periods, the group of a meal, Cru / Cuit / Autre), in rows of two, Pencil borders and 20 dp outer corners. The chosen segment takes Ink Tint and a check, so it is not told by its tint alone. Views of one list (the add-food page) are tabs, not a switch. The four Suivi periods (Jour, Semaine, Mois, Année) follow the same two rows of two, since « Semaine » and the check do not fit four in a row on a 360 dp phone. The Cru / Cuit / Autre switch of the custom-food form is one row of three with the same check.
 

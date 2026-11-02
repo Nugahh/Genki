@@ -1212,3 +1212,29 @@ describe('the tabs', () => {
     expect(entries.entries[0].foodRef).toEqual(customFoods(foods)[0].ref);
   });
 });
+
+describe('a supplement created by hand', () => {
+  test('keeps its micronutrients: created per capsule, it is found, opened and logged with them', async () => {
+    const { foods, entries } = await setup();
+    await openCreate();
+    await type('Nom', 'Magnésium 300');
+    await fireEvent.press(screen.getByText('Pour une portion'));
+    await type('Poids d’une portion (g)', '0,5');
+    for (const label of ['Calories pour une portion', 'Protéines pour une portion', 'Glucides pour une portion', 'Lipides pour une portion']) await type(label, '0');
+    await fireEvent.press(screen.getByText('Ajouter un micronutriment'));
+    await fireEvent.press(screen.getByText('Magnésium'));
+    await type('Magnésium (mg)', '300');
+    await fireEvent.press(screen.getByText('Enregistrer'));
+
+    expect(customFoods(foods)[0]).toMatchObject({ name: 'Magnésium 300', nutrients: { magnesium: 60000 }, portions: [{ label: '1 portion', grams: 0.5 }] });
+
+    await fireEvent.press(await screen.findByText('Magnésium 300'));
+    // The capsule is offered as a portion; two capsules are 1 g.
+    await fireEvent.press(screen.getByText('1 portion (0,5 g)'));
+    await fireEvent.changeText(screen.getByLabelText('Quantité (g)'), '1');
+    await fireEvent.press(screen.getByText('Nutriments'));
+    expect(screen.getByLabelText(/^Magnésium, 600 mg/)).toBeTruthy();
+    await fireEvent.press(screen.getByText('Ajouter à Déjeuner'));
+    expect(entries.entries[0]).toMatchObject({ grams: 1, nutrients: { magnesium: 600 } });
+  });
+});

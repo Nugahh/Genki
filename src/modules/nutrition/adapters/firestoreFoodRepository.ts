@@ -1,4 +1,4 @@
-import { collection, doc, onSnapshot, setDoc, Timestamp, updateDoc, type Firestore } from '@react-native-firebase/firestore';
+import { collection, deleteField, doc, onSnapshot, setDoc, Timestamp, updateDoc, type Firestore } from '@react-native-firebase/firestore';
 import type { FoodRepository } from '../application/ports';
 import type { Food, FoodInput } from '../domain/food';
 
@@ -19,7 +19,8 @@ export function firestoreFoodRepository(db: Firestore, uid: string): FoodReposit
       const ref = doc(foods);
       return { id: ref.id, write: () => setDoc(ref, { ...fields(food), deletedAt: null }) };
     },
-    update: (id, food) => updateDoc(doc(foods, id), fields(food)),
+    // A food that has no micronutrients any more loses the field: the others are rewritten with the same values, which changes nothing.
+    update: (id, food) => updateDoc(doc(foods, id), { ...fields(food), nutrients: food.nutrients ?? deleteField() }),
     remove: (id) => updateDoc(doc(foods, id), { deletedAt: Timestamp.now() }),
     observeAll(onNext, onError) {
       return onSnapshot(

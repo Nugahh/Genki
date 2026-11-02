@@ -1,7 +1,7 @@
 import type { Macros } from './macros';
 import type { Meal } from './meal';
 import { normalizeSearch } from './normalize';
-import type { Nutrients } from './nutrients';
+import { NUTRIENTS, type Nutrients } from './nutrients';
 
 export type FoodState = 'raw' | 'cooked' | 'other';
 export type FoodRef = { type: 'ciqual' | 'custom'; id: string };
@@ -59,6 +59,12 @@ export function validateFood(food: FoodInput): string | null {
   const { kcal, protein, carbs, fat } = food.per100g;
   if (kcal > 900) return 'Plus de 900 kcal pour 100 g n’est pas possible.';
   if (protein > 100 || carbs > 100 || fat > 100 || protein + carbs + fat > 100.5) return 'Protéines, glucides et lipides dépassent 100 g pour 100 g.';
+  for (const [id, value] of Object.entries(food.nutrients ?? {})) {
+    const info = NUTRIENTS.find((n) => n.id === id);
+    if (!info || !Number.isFinite(value) || value < 0 || value > 1000000) return 'Les micronutriments doivent être des nombres positifs.';
+    // 100 g of a food cannot hold more than 100 g of anything.
+    if (info.unit === 'g' && value > 100) return `${info.label} : plus de 100 g pour 100 g n’est pas possible.`;
+  }
   if (food.portions.length > 20) return '20 portions au maximum.';
   if (food.portions.some((p) => p.label.trim().length === 0 || !isValidGrams(p.grams))) {
     return 'Chaque portion a un nom et un poids entre 0 et 5 000 g.';

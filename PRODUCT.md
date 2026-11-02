@@ -41,7 +41,7 @@ A private, offline-first tracker built around one person's own programme and the
 - Offline-first with automatic sync between two phones. No backend and no REST API of its own. One developer; running cost must stay at zero.
 - Health data is private by default and kept in a European region. The app gives no medical advice: it shows a reminder to consult a professional before changing diet or resuming intense activity. Safety floors are domain constants that cannot be edited from the interface: at least 1,500 kcal per day proposed, at most 1% of body weight lost per week.
 - Scope in the app: water and the Today screen; food (Ciqual, products of brands, barcode scan, 26 micronutrients against the ANSES references of the profile, macro goals with net carbs, a day and time for each meal); the training programme with progression and milestones; a stats hub over a day, week, month or year with configurable metrics; steps; tobacco; body measures; settings with a JSON export and import. The iPhone version is on its own branch and is not merged.
-- Planned next: supplements (micronutrients in the custom food form) and recipes among the custom foods.
+- Planned next: recipes and saved meals built from ingredients among the custom foods.
 - Out of scope: a parkour-style skill tree, an LLM assistant, friends and multi-user, Google Health API, readings from a connected scale, reading QR codes.
 
 ## Brand Commitments

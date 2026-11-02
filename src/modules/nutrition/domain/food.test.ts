@@ -85,3 +85,26 @@ test('matchCustom finds a food by its brand too', () => {
   expect(matchCustom([nutella], 'nutella tartiner').map((f) => f.name)).toEqual(['Pâte à tartiner']);
   expect(matchCustom([nutella], 'nutella chocolat')).toEqual([]);
 });
+
+describe('the nutrients of a food', () => {
+  const base: FoodInput = { name: 'Magnésium', state: 'other', per100g: { kcal: 0, protein: 0, carbs: 0, fat: 0 }, portions: [] };
+
+  test('a food may carry micronutrients', () => {
+    expect(validateFood({ ...base, nutrients: { magnesium: 60000, vitD: 0.5, fiber: 12 } })).toBeNull();
+    expect(validateFood({ ...base, nutrients: {} })).toBeNull();
+  });
+
+  test.each([
+    ['negative', { iron: -1 }],
+    ['not a number', { iron: Number.NaN }],
+    ['above 1 000 000', { magnesium: 1000001 }],
+  ])('refuses a micronutrient that is %s', (_, nutrients) => {
+    expect(validateFood({ ...base, nutrients })).toBe('Les micronutriments doivent être des nombres positifs.');
+  });
+
+  test('refuses more than 100 g of a nutrient counted in grams for 100 g', () => {
+    expect(validateFood({ ...base, nutrients: { salt: 101 } })).toBe('Sel : plus de 100 g pour 100 g n’est pas possible.');
+    expect(validateFood({ ...base, nutrients: { salt: 100 } })).toBeNull();
+    expect(validateFood({ ...base, nutrients: { magnesium: 5000 } })).toBeNull(); // in milligrams: no such limit
+  });
+});

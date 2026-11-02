@@ -91,7 +91,7 @@ Tout est rangé sous `users/{uid}`. Les identifiants sont des UUID générés pa
 
 | Collection | Champs principaux |
 |---|---|
-| `foods/{id}` | `name`, `state` (`raw`, `cooked`, `other`), `per100g` (`kcal`, `protein`, `carbs`, `fat`), `portions` (liste de `{ label, grams }`), `nutrients` (facultatif, produit de marque), `source` (`off` : produit d'Open Food Facts devenu un aliment à soi), `brand`, `barcode` (8 à 14 chiffres), `updatedAt`, `deletedAt` |
+| `foods/{id}` | `name`, `state` (`raw`, `cooked`, `other`), `per100g` (`kcal`, `protein`, `carbs`, `fat`), `portions` (liste de `{ label, grams }`), `nutrients` (facultatif : produit de marque, ou micronutriments saisis à la main, valeurs pour 100 g), `source` (`off` : produit d'Open Food Facts devenu un aliment à soi), `brand`, `barcode` (8 à 14 chiffres), `updatedAt`, `deletedAt` |
 | `foodEntries/{id}` | `day`, `meal` (`breakfast`, `lunch`, `dinner`, `snack`), `foodRef` (`{ type: 'ciqual' ou 'custom', id }`), `foodName`, `grams`, `macros` (`kcal`, `protein`, `carbs`, `fat`, figées à la saisie), `nutrients` (facultatif : les valeurs de la portion pour les 26 nutriments que Ciqual détermine, figées à la saisie ; absent pour un aliment perso et pour un repas d'avant), `createdAt`, `updatedAt`, `deletedAt` |
 | `favoriteMeals/{id}` | `name`, `items` (liste de `{ foodRef, foodName, grams }`), `updatedAt` |
 | `starredFoods/{type}_{id}` | `foodRef`, `foodName`, `updatedAt` : un aliment marqué d'une étoile (le nom du document est celui de l'aliment, donc une seule étoile par aliment ; supprimé quand on retire l'étoile) |

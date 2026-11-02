@@ -108,3 +108,35 @@ test.each([
 ])('the rules refuse %s', async (_, patch) => {
   await expect(foodsOn(phone()).add({ ...coca(), ...patch }).write()).rejects.toThrow();
 });
+
+test('a food gains micronutrients when it is changed, rewrites them, and loses them all when none are left', async () => {
+  const db = phone();
+  await foodsOn(db).add(bread()).write();
+  const [created] = await foods(db);
+  const withMagnesium = { ...bread(), nutrients: { magnesium: 60000, vitD: 0.5 } };
+  await foodsOn(db).update(created.ref.id, withMagnesium);
+  expect(await foods(db)).toEqual([{ ref: created.ref, ...withMagnesium }]);
+
+  await foodsOn(db).update(created.ref.id, { ...bread(), nutrients: { magnesium: 30000 } });
+  expect((await foods(db))[0].nutrients).toEqual({ magnesium: 30000 });
+
+  await foodsOn(db).update(created.ref.id, bread());
+  expect((await foods(db))[0].nutrients).toBeUndefined();
+});
+
+test('changing a food that has no micronutrients and gets none still works', async () => {
+  const db = phone();
+  await foodsOn(db).add(bread()).write();
+  const [created] = await foods(db);
+  await foodsOn(db).update(created.ref.id, { ...bread(), name: 'Pain de mie' });
+  expect(await foods(db)).toEqual([{ ...created, name: 'Pain de mie' }]);
+});
+
+test('the rules refuse micronutrients out of bounds when a food is changed', async () => {
+  const db = phone();
+  await foodsOn(db).add(bread()).write();
+  const [created] = await foods(db);
+  await expect(foodsOn(db).update(created.ref.id, { ...bread(), nutrients: { iron: -1 } })).rejects.toThrow();
+  await expect(foodsOn(db).update(created.ref.id, { ...bread(), nutrients: { iron: 1000001 } })).rejects.toThrow();
+  await expect(foodsOn(db).update(created.ref.id, { ...bread(), nutrients: { vitamin: 1 } as never })).rejects.toThrow();
+});
