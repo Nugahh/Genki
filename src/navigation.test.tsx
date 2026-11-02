@@ -23,8 +23,10 @@ jest.mock('@/composition', () => {
     inMemoryFoodEntryRepository,
     inMemoryFoodRepository,
     inMemoryProductSource,
+    inMemoryStarredFoodRepository,
     mealUseCases,
     productSearch,
+    starredFoodUseCases,
   } = jest.requireActual('@/modules/nutrition');
   const { rateLimiter } = jest.requireActual('@/modules/nutrition/domain/rateLimiter');
   const { inMemoryMilestoneRepository, inMemoryPlanRepository, inMemoryWorkoutRepository, trainingUseCases } = jest.requireActual('@/modules/training');
@@ -72,6 +74,7 @@ jest.mock('@/composition', () => {
           timezone: DEFAULT_PROFILE.timezone,
         }),
         foods: foodUseCases({ catalog: inMemoryFoodCatalog([rice]), repo: inMemoryFoodRepository() }),
+        starred: starredFoodUseCases(inMemoryStarredFoodRepository()),
         products: productSearch({ source: inMemoryProductSource(), limiter: rateLimiter(10, 60000, Date.now), lookupLimiter: rateLimiter(15, 60000, Date.now) }),
       },
     }),

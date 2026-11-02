@@ -254,6 +254,17 @@ service cloud.firestore {
         );
     }
 
+    // The foods with a star: one document a food, named type_id, so that a food is starred once.
+    match /users/{uid}/starredFoods/{key} {
+      allow create, update: if isOwner(uid)
+        && request.resource.data.keys().hasOnly(['foodRef', 'foodName', 'updatedAt'])
+        && isFoodRef(request.resource.data.foodRef)
+        && key == request.resource.data.foodRef.type + '_' + request.resource.data.foodRef.id
+        && isShortText(request.resource.data.foodName, 200)
+        && request.resource.data.updatedAt is timestamp;
+      allow delete: if isOwner(uid);
+    }
+
     match /users/{uid}/favoriteMeals/{mealId} {
       allow create, update: if isOwner(uid)
         && request.resource.data.keys().hasOnly(['name', 'items', 'updatedAt'])

@@ -39,6 +39,9 @@ export type FavoriteItem = { foodRef: FoodRef; foodName: string; grams: number }
 export type FavoriteMeal = { id: string; name: string; items: FavoriteItem[] };
 export type NewFavoriteMeal = Omit<FavoriteMeal, 'id'>;
 
+/** A food with a star: where it is and the name it had when it was starred. */
+export type StarredFood = { ref: FoodRef; name: string };
+
 export type RecentFood = { ref: FoodRef; name: string; grams: number };
 
 /** The bound of a quantity of food and of a portion weight: above 0 and up to 5 000 g, like the Firestore rules. NaN and Infinity fail both comparisons. */

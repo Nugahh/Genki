@@ -1,5 +1,5 @@
 import type { OffProduct } from '../domain/openFoodFacts';
-import type { EntryChange, FavoriteMeal, Food, FoodEntry, FoodInput, NewFavoriteMeal, NewFoodEntry } from '../domain/food';
+import type { EntryChange, FavoriteMeal, Food, FoodEntry, FoodInput, FoodRef, NewFavoriteMeal, NewFoodEntry, StarredFood } from '../domain/food';
 
 type Observe<T> = (onNext: (value: T) => void, onError: (error: Error) => void) => () => void;
 
@@ -45,6 +45,13 @@ export interface ProductSource {
   search(query: string, signal: AbortSignal): Promise<OffProduct[]>;
   /** The product with this barcode; nothing when Open Food Facts does not know it. */
   byBarcode(code: string, signal: AbortSignal): Promise<OffProduct | undefined>;
+}
+
+/** The foods with a star. One star a food: starring a food again changes nothing. */
+export interface StarredFoodRepository {
+  add(food: StarredFood): Promise<void>;
+  remove(ref: FoodRef): Promise<void>;
+  observeAll: Observe<StarredFood[]>;
 }
 
 export interface FavoriteMealRepository {

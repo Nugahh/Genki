@@ -1,7 +1,7 @@
 export const BACKUP_VERSION = 1;
 
 /** The collections of `users/{uid}` a backup holds (spec §4). */
-export const COLLECTIONS = ['days', 'waterEntries', 'foodEntries', 'foods', 'favoriteMeals', 'plans', 'workoutLogs', 'milestones', 'cravings'] as const;
+export const COLLECTIONS = ['days', 'waterEntries', 'foodEntries', 'foods', 'favoriteMeals', 'starredFoods', 'plans', 'workoutLogs', 'milestones', 'cravings'] as const;
 export type CollectionName = (typeof COLLECTIONS)[number];
 
 /** A document in the JSON form of a backup: a time is `{ "__timestamp": "<ISO date>" }`. */

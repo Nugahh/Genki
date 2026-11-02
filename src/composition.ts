@@ -5,7 +5,8 @@ import { openFoodFactsClient } from '@/modules/nutrition/adapters/openFoodFactsC
 import { firestoreFavoriteMealRepository } from '@/modules/nutrition/adapters/firestoreFavoriteMealRepository';
 import { firestoreFoodEntryRepository } from '@/modules/nutrition/adapters/firestoreFoodEntryRepository';
 import { firestoreFoodRepository } from '@/modules/nutrition/adapters/firestoreFoodRepository';
-import { foodUseCases, mealUseCases, productSearch } from '@/modules/nutrition';
+import { foodUseCases, mealUseCases, productSearch, starredFoodUseCases } from '@/modules/nutrition';
+import { firestoreStarredFoodRepository } from '@/modules/nutrition/adapters/firestoreStarredFoodRepository';
 import { rateLimiter } from '@/modules/nutrition/domain/rateLimiter';
 import { firestoreMilestoneRepository } from '@/modules/training/adapters/firestoreMilestoneRepository';
 import { firestorePlanRepository } from '@/modules/training/adapters/firestorePlanRepository';
@@ -64,6 +65,7 @@ export function compose(uid: string) {
     tracking: trackingUseCases({ sources: { days: firestoreDaysSource(db, uid), training: trainingFactsSource(training), tobacco: tobaccoFactsSource(tobacco), meals: mealsFactsSource(meals) }, clock: systemClock, timezone: profile.timezone }),
     nutrition: {
       meals,
+      starred: starredFoodUseCases(firestoreStarredFoodRepository(db, uid)),
       foods: foodUseCases({ catalog: ciqualCatalog(openCiqual), repo: firestoreFoodRepository(db, uid) }),
       // Open Food Facts allows 10 searches and 15 product reads a minute.
       products: productSearch({ source: openFoodFactsClient(), limiter: rateLimiter(10, 60000, Date.now), lookupLimiter: rateLimiter(15, 60000, Date.now) }),
